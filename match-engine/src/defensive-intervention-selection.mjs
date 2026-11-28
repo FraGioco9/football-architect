@@ -1,3 +1,4 @@
+import {attackDirection,validateAttackPolarity} from './match-directions.mjs';
 // D-14: decision only. Candidate plans come from live canonical geometry;
 // delivery state comes from the earlier real pass/shot in the same LAB.
 // No shirt number, positional role, random outcome, impulse or possession.
@@ -23,10 +24,11 @@ export function selectDefensiveIntervention({actorId,context='duel',unavailable=
 
 // UME-04: a shot trajectory is an opportunity to block, never an observed
 // block. Use the actual defending player, not a selected fixture shirt.
-export function planNativeShotBlock({player,ball,velocity}={}){
+export function planNativeShotBlock({player,ball,velocity,attackPolarity=1}={}){
+ validateAttackPolarity(attackPolarity);
  if(!player||player.role==='goalkeeper'||!['home','away'].includes(player.team)||
     ![player.x,player.y,ball?.x,ball?.y,velocity?.x,velocity?.y].every(Number.isFinite))return null;
- const dir=player.team==='home'?-1:1;
+ const dir=-attackDirection(player.team,attackPolarity);
  if(dir*velocity.x<=2)return null;
  const eta=(player.x-ball.x)/velocity.x;
  if(eta<0||eta>0.65)return null;

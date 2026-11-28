@@ -1,3 +1,4 @@
+import {attackDirection,validateAttackPolarity} from './match-directions.mjs';
 // ME-PB-55 / A4.2b.1: self-contained, uniform 22-player football action
 // policy, called ONLY after an INTERNAL genuine Rapier shoe START.
 // Pure decision: never applies impulses, never accepts an authenticated
@@ -37,9 +38,9 @@ const IMMEDIATE_PRESSURE_M=3.0;
 export const BASIC_KEEPER_SAVE_VERSION='actions-b02-authentic-keeper-foot-parry-v1';
 // No catch, gloves or airborne body simulated yet: one native shoe parry
 // of an ACTUAL incoming ball is an attempt, never an official save.
-export function eligibleLiveKeeperSave(player,ballPosition,ballVelocity){
+export function eligibleLiveKeeperSave(player,ballPosition,ballVelocity,attackPolarity=1){
  if(player.role!=='goalkeeper')return false;
- const attack=player.team==='home'?1:-1;
+ const attack=attackDirection(player.team,attackPolarity);
  const ownGoalX=-attack*PLAYER_PITCH.lengthM/2;
  return Math.abs(ownGoalX-ballPosition.x)<=12&&
   Math.abs(ballPosition.y)<=4.5&&
@@ -108,8 +109,8 @@ export function chooseKeeperDuelAttackIntent(ball,velocity,team,keeper){
 }
 // Distinct high/wide CROSS uses a LIVE same-team penalty-area option.
 // Never stages a teammate, creates a contact, or awards a header/goal.
-function chooseLiveCrossRecipient(actor,ball,players){
- const attack=actor.team==='home'?1:-1;
+function chooseLiveCrossRecipient(actor,ball,players,attackPolarity=1){
+ const attack=attackDirection(actor.team,attackPolarity);
  if(actor.role==='goalkeeper'||
     attack*ball.x<CROSS_ATTACK_MIN_X_M||
     attack*ball.x>CROSS_ATTACK_MAX_X_M||
@@ -131,8 +132,8 @@ function chooseLiveCrossRecipient(actor,ball,players){
    ids.indexOf(a.player.id)-ids.indexOf(b.player.id));
  return choices[0]??null;
 }
-export function chooseRecipient(actor,ball,players){
- const attack=actor.team==='home'?1:-1;
+export function chooseRecipient(actor,ball,players,attackPolarity=1){
+ const attack=attackDirection(actor.team,attackPolarity);
  const choices=players.filter(p=>p.team===actor.team&&
   p.id!==actor.id).map(p=>{
    const d=Math.hypot(p.x-actor.x,p.y-actor.y);
@@ -264,8 +265,11 @@ export function selectUniformAutonomousContactAction({
  tick,contactStarted,contactActive,playerFrame,ballPosition,ballVelocity,
  lastActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS,ballRadiusM,
  allowPhysicalCarry=false,activePlayerIds=null,smallSidedDecisionContext=null,
- isolatedDribbleContext=null,keeperSingleShotSide=null,duelTransition=null,interceptionContext=null,blockContext=null,collectiveControl=null,nativeActionPolicy=false
+ isolatedDribbleContext=null,keeperSingleShotSide=null,duelTransition=null,interceptionContext=null,blockContext=null,collectiveControl=null,nativeActionPolicy=false,attackPolarity=1
 }){
+ validateAttackPolarity(attackPolarity);
+ if(attackPolarity!==1&&(!nativeActionPolicy||activePlayerIds?.length!==22))
+  throw new TypeError('Reversed actions require all original native full-field participants');
  if(typeof nativeActionPolicy!=='boolean'||(nativeActionPolicy&&(!allowPhysicalCarry||!Array.isArray(activePlayerIds)||smallSidedDecisionContext!==null||isolatedDribbleContext!==null||keeperSingleShotSide!==null||blockContext!==null||interceptionContext!==null)))throw new TypeError('Native action policy requires explicit physical participants and no isolated action override');
  if(collectiveControl!==null&&(!nativeActionPolicy||collectiveControl.tick!==tick-1||collectiveControl.officialPossession!==false||!['controlled','loose'].includes(collectiveControl.kind)|| (collectiveControl.kind==='controlled'&&!activePlayerIds?.includes(collectiveControl.playerId))))throw new TypeError('Prior native collective control required');
  if(nativeActionPolicy&&collectiveControl===null)throw new TypeError('Collective action needs live control observation');
@@ -345,7 +349,7 @@ export function selectUniformAutonomousContactAction({
    continue;
   const gap=Math.hypot(player.x-ballPosition.x,player.y-ballPosition.y);
   if(!finite(gap)||gap>MAX_GAP_M)continue;
-  const attack=player.team==='home'?1:-1;
+  const attack=attackDirection(player.team,attackPolarity);
   const goalX=attack*PLAYER_PITCH.lengthM/2;
   const toGoal=goalX-ballPosition.x;
   const nearestOpponentM=nearOpponent(player,player.team,actors);
@@ -364,7 +368,7 @@ export function selectUniformAutonomousContactAction({
   const opponentControl=!!owner&&owner.team!==player.team&&Math.hypot(owner.x-ballPosition.x,owner.y-ballPosition.y)<=1.15;
   const nativeSlide=collective?playerFrame.nativeSlides?.[id]??null:null;
   if(collective&&(isNativeRecoveryLocked(collectiveControl,id,tick)||nativeSlide?.phase==='recovery'))continue;
-  const collectiveTouch=collective?chooseCollectiveDefensiveTouch({player,players:actors,ballPosition,ballVelocity,control:collectiveControl,tick,slide:nativeSlide,ballRadiusM}):null;
+  const collectiveTouch=collective?chooseCollectiveDefensiveTouch({player,players:actors,ballPosition,ballVelocity,control:collectiveControl,tick,slide:nativeSlide,ballRadiusM,attackPolarity}):null;
   if(nativeSlide?.phase==='slide'&&!collectiveTouch)continue;
   const defensiveAttempt=collective?null:chooseBasicDefensiveAttempt({actor:player,players:actors,ball:ballPosition,velocity:ballVelocity});
   // LAB-VAR-02 only: AFTER verified genuine exclusive Rapier shoe START,
@@ -374,7 +378,7 @@ export function selectUniformAutonomousContactAction({
    (collective?!opponentControl:smallSidedDecisionContext!==null&&player.team===smallSidedDecisionContext.attackingSide)&&
    player.role!=='goalkeeper'&&!defensiveAttempt&&!collectiveTouch;
   const contextualRecipient=contextualAttacker?
-   chooseRecipient(player,ballPosition,actors):null;
+   chooseRecipient(player,ballPosition,actors,attackPolarity):null;
   const carryPossible=contextualAttacker&&allowPhysicalCarry&&
    Math.abs(ballPosition.y)<=20&&
    (collective||attack*ballPosition.x>=-30)&&attack*ballPosition.x<=45&&
@@ -431,7 +435,7 @@ export function selectUniformAutonomousContactAction({
    if(dribbleTouch.magnitudeNs<0.025)continue;
    action='carry';dx=dribbleTouch.dx;dy=dribbleTouch.dy;
    rule=ic?'interception-recovery-native-carry':isolatedDribbleContext?.directed===true?'directed-live-opponent-ground-touch':'isolated-dribble-real-shoe-variable-ground-touch';
-  }else if(eligibleLiveKeeperSave(player,ballPosition,ballVelocity)){
+  }else if(eligibleLiveKeeperSave(player,ballPosition,ballVelocity,attackPolarity)){
    action='save';dx=attack*7;
    dy=ballPosition.y>=0?9:-9;vertical=0.24;
    rule='incoming-goalward-keeper-physical-parry-attempt';
@@ -469,8 +473,8 @@ export function selectUniformAutonomousContactAction({
    rule=chosenShotLane.target.y===0?
     'unblocked-goal-lane':'unblocked-near-post-lane';
   }else{
-   crossInfo=chooseLiveCrossRecipient(player,ballPosition,actors);
-   recipientInfo=crossInfo?null:chooseRecipient(player,ballPosition,actors);
+   crossInfo=chooseLiveCrossRecipient(player,ballPosition,actors,attackPolarity);
+   recipientInfo=crossInfo?null:chooseRecipient(player,ballPosition,actors,attackPolarity);
    if(crossInfo){
     recipient=crossInfo.player;
     action='cross';dx=recipient.x-ballPosition.x;
@@ -511,7 +515,7 @@ export function selectUniformAutonomousContactAction({
   let nativeCarryTouch=null;
   if(collective&&action==='carry'){
    const nearest=actors.filter(p=>p.team!==player.team).sort((a,b)=>Math.hypot(a.x-ballPosition.x,a.y-ballPosition.y)-Math.hypot(b.x-ballPosition.x,b.y-ballPosition.y)||a.id.localeCompare(b.id))[0]??null;
-   nativeCarryTouch=planNativeCarryTouch({attacker:player,attackingSide:player.team,defender:nearest,ballPosition,ballVelocity,tieSide:ballPosition.y>0?-1:1});
+   nativeCarryTouch=planNativeCarryTouch({attacker:player,attackingSide:player.team,defender:nearest,ballPosition,ballVelocity,tieSide:ballPosition.y>0?-1:1,attackPolarity});
    if(nativeCarryTouch.magnitudeNs<0.025)continue;
    dx=nativeCarryTouch.dx;dy=nativeCarryTouch.dy;
    rule='native-live-opponent-ground-touch';

@@ -1,3 +1,4 @@
+import {validateAttackPolarity} from './match-directions.mjs';
 // Extracted #481 A4.2b.1 physical impulse boundary.
 // A private, opt-in adapter for the SAME Rapier ball body and canonical
 // 22-shoe event source. No world, policy/mover override or official results.
@@ -161,9 +162,12 @@ export function createPrivatePhysicalActionExecutor({
  let firstReceiverChoice=null,firstReceiverTap=null;
  const ensureOpen=()=>{if(closed)throw new Error('Physical action executor disposed');};
  function apply(nextTick,playerFrame,{
-  suppressOriginalAction=false,suppressPhysicalBodyContact=false,priorNativeBallVelocity=null,duelTransition=null,collectiveControl=null,keeperDistribution=null
+  suppressOriginalAction=false,suppressPhysicalBodyContact=false,priorNativeBallVelocity=null,duelTransition=null,collectiveControl=null,keeperDistribution=null,attackPolarity=1
  }={}){
   ensureOpen();
+  validateAttackPolarity(attackPolarity);
+  if(attackPolarity!==1&&(!nativeActionPolicy||activePlayerIds?.length!==22))
+   throw new TypeError('Reversed executor requires all native full-field participants');
   if(firstTimeShot&&(!priorNativeBallVelocity||!['x','y','z'].every(k=>Number.isFinite(priorNativeBallVelocity[k]))))
    throw new TypeError('First-time shot requires real pre-step velocity');
   if(typeof suppressOriginalAction!=='boolean'||
@@ -243,7 +247,7 @@ export function createPrivatePhysicalActionExecutor({
   const originalChoice=suppressOriginalAction||suppressPhysicalBodyContact||
    !isolatedNativeShoeSourceValid?null:
    selectUniformAutonomousContactAction({...input,activePlayerIds,
-    smallSidedDecisionContext,isolatedDribbleContext,keeperSingleShotSide,duelTransition,collectiveControl,nativeActionPolicy,
+    smallSidedDecisionContext,isolatedDribbleContext,keeperSingleShotSide,duelTransition,collectiveControl,nativeActionPolicy,attackPolarity,
     interceptionContext:interceptionPassSide===null?null:{side:interceptionPassSide,phase:interceptionPhase},
     blockContext:blockShotSide===null?null:{side:blockShotSide,shotTaken:blockShotTaken}});
   let orientedCandidate=null,orientedDelivery=null;

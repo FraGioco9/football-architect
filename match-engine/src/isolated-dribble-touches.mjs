@@ -1,3 +1,4 @@
+import {attackDirection,validateAttackPolarity} from './match-directions.mjs';
 // #628 research: proposal only; actual ball impulse needs authentic Rapier START.
 import {selectDefensiveIntervention,planNativeShotBlock,observeNativeShotBlock} from './defensive-intervention-selection.mjs';
 export const ISOLATED_DRIBBLE_TOUCH_VERSION='me-628-dribble-grounded-pressure-paced-v3';
@@ -166,11 +167,12 @@ export function chooseDirectedDribbleTouch({attackingSide,ballPosition:b,ballVel
 // One live carry geometry for free play and locked duels. The experiment
 // can retain its accepted impulse ceiling and tie preference; neither
 // selects a player or grants an impulse without the original shoe gate.
-export function planNativeCarryTouch({attacker=null,attackingSide,defender=null,ballPosition:b,ballVelocity:v,tieSide=1,maxImpulseNs=0.42}={}){
+export function planNativeCarryTouch({attacker=null,attackingSide,defender=null,ballPosition:b,ballVelocity:v,tieSide=1,maxImpulseNs=0.42,attackPolarity=1}={}){
+ validateAttackPolarity(attackPolarity);
  if(!['home','away'].includes(attackingSide)||![b?.x,b?.y,v?.x,v?.y].every(Number.isFinite)||
     (defender!==null&&(defender.team===attackingSide||![defender.x,defender.y].every(Number.isFinite)))||
     ![-1,1].includes(tieSide)||![0.30,0.42].includes(maxImpulseNs))throw new TypeError('Live native carry geometry required');
- const dir=attackingSide==='home'?1:-1;
+ const dir=attackDirection(attackingSide,attackPolarity);
  const ahead=defender?dir*(defender.x-b.x):Infinity,lateral=defender?defender.y-b.y:0;
  const pressure=clamp((5-Math.hypot(ahead,lateral))/3.5,0,1);
  const threatening=ahead>=-0.65&&ahead<=5&&Math.abs(lateral)<2.2;
@@ -178,7 +180,7 @@ export function planNativeCarryTouch({attacker=null,attackingSide,defender=null,
  const side=Math.abs(lateral)>0.12?-Math.sign(lateral):tieSide;
  const targetY=threatening?clamp(defender.y+side*1.35,-32,32):clamp(b.y,-24,24);
  const angle=clamp(Math.atan2(targetY-b.y,Math.max(1.5,ahead+1.0)),-0.70,0.70);
- const shield=planDribbleShield(attacker,defender,b,v,attackingSide);
+ const shield=planDribbleShield(attacker,defender,b,v,attackingSide,attackPolarity);
  const speed=threatening?2.5-0.5*pressure:3.0;
  const desired=shield?{x:0.85*shield.away.x+dir*0.30,y:0.85*shield.away.y}:
   {x:dir*speed*Math.cos(angle),y:speed*Math.sin(angle)};
@@ -210,10 +212,11 @@ export function directedDribbleApproachTarget(attacker,b,v,attackingSide,defende
 // D-03: protect a reachable ball from close side/rear pressure. The
 // target is only intent; the existing mover and Rapier contacts decide
 // whether the player can actually get his body between opponent and ball.
-export function planDribbleShield(attacker,defender,b,v,attackingSide){
+export function planDribbleShield(attacker,defender,b,v,attackingSide,attackPolarity=1){
+ validateAttackPolarity(attackPolarity);
  if(!['home','away'].includes(attackingSide)||!attacker||!defender||
     ![attacker.x,attacker.y,defender.x,defender.y,b?.x,b?.y,v?.x,v?.y].every(Number.isFinite))return null;
- const dir=attackingSide==='home'?1:-1;
+ const dir=attackDirection(attackingSide,attackPolarity);
  const dx=defender.x-b.x,dy=defender.y-b.y,pressureGap=Math.hypot(dx,dy);
  const ballGap=Math.hypot(attacker.x-b.x,attacker.y-b.y);
  // Do not turn an open forward lane or a lost ball into shielding.
@@ -290,8 +293,8 @@ export function planDribbleDefender({attackingSide,attacker,defender,ballPositio
 export const STANDING_TACKLE_TARGET_SPEED_MPS=2.8;
 export const SLIDING_TACKLE_TARGET_SPEED_MPS=6.5;
 export const SLIDING_TACKLE_MAX_IMPULSE_NS=3.2;
-export function planDefensiveBallRelease(attacker,defender,b,attackingSide,{sliding=false}={}){
- const dir=attackingSide==='home'?1:-1;
+export function planDefensiveBallRelease(attacker,defender,b,attackingSide,{sliding=false,attackPolarity=1}={}){
+ const dir=attackDirection(attackingSide,attackPolarity);
  const da=Math.hypot(defender.x-attacker.x,defender.y-attacker.y);
  if(da<0.15)return null;
  const ax=(defender.x-attacker.x)/da,ay=(defender.y-attacker.y)/da;
@@ -399,10 +402,11 @@ export function planDuelPostContactAlignment({attacker,defender,attackingSide,ca
 
 // D-05: grounded defensive intent, authorized only by the existing
 // exclusive native shoe START gate. No automatic turnover.
-export function chooseDribbleDefensiveTouch({attackingSide,attacker,defender,ballPosition:b,ballVelocity:v,sliding=false}={}){
+export function chooseDribbleDefensiveTouch({attackingSide,attacker,defender,ballPosition:b,ballVelocity:v,sliding=false,attackPolarity=1}={}){
+ validateAttackPolarity(attackPolarity);
  if(!isOpposingDuelPair(attackingSide,attacker,defender)||
     ![attacker.x,attacker.y,defender.x,defender.y,b?.x,b?.y,b?.z,v?.x,v?.y,v?.z].every(Number.isFinite))return null;
- const dir=attackingSide==='home'?1:-1;
+ const dir=attackDirection(attackingSide,attackPolarity);
  const gap=Math.hypot(defender.x-b.x,defender.y-b.y),carrierGap=Math.hypot(attacker.x-b.x,attacker.y-b.y);
  const speed=Math.hypot(v.x,v.y);
  if(gap>0.85||b.z<0.095||b.z>0.23||speed>8||observeDribbleShield(attacker,defender,b))return null;
@@ -410,7 +414,7 @@ export function chooseDribbleDefensiveTouch({attackingSide,attacker,defender,bal
  const kind=carrierGap>1.15&&incoming?'interception':carrierGap<=1.15?'tackle':null;
  if(!kind)return null;
  const slidingStrike=sliding&&kind==='tackle';
- const release=planDefensiveBallRelease(attacker,defender,b,attackingSide,{sliding:slidingStrike});
+ const release=planDefensiveBallRelease(attacker,defender,b,attackingSide,{sliding:slidingStrike,attackPolarity});
  if(!release)return null;
  const desiredSpeed=kind==='interception'?2.4:slidingStrike?SLIDING_TACKLE_TARGET_SPEED_MPS:STANDING_TACKLE_TARGET_SPEED_MPS;
  const desiredVelocity=Object.freeze({x:release.ux*desiredSpeed,y:release.uy*desiredSpeed});
@@ -435,11 +439,12 @@ export function observeEffectiveDuelIntervention(actor,rival,b,v){
 // D-11: enter the carrier's lateral running lane, not his back.
 // This is only a movement proposal. Actual torso contact is reported
 // separately by the original Rapier solver, without a ball impulse.
-export function planDuelShoulderApproach({attacker,defender,attackingSide,ballPosition:b,ballVelocity:v}){
+export function planDuelShoulderApproach({attacker,defender,attackingSide,ballPosition:b,ballVelocity:v,attackPolarity=1}){
+ validateAttackPolarity(attackPolarity);
  if(!isOpposingDuelPair(attackingSide,attacker,defender)||
     ![attacker.x,attacker.y,defender.x,defender.y,b?.x,b?.y,v?.x,v?.y].every(Number.isFinite))return null;
  if(Math.hypot(attacker.x-b.x,attacker.y-b.y)>1.35)return null;
- const dir=attackingSide==='home'?1:-1;
+ const dir=attackDirection(attackingSide,attackPolarity);
  const speed=Math.hypot(attacker.vx??0,attacker.vy??0);
  const ux=speed>0.55?attacker.vx/speed:dir,uy=speed>0.55?attacker.vy/speed:0;
  const rx=defender.x-attacker.x,ry=defender.y-attacker.y;
@@ -520,15 +525,16 @@ export function isShoulderCollecting(state,id,tick){
 export function planDuelInterception(source){
  return planNativeRollingInterception(source,false);
 }
-export function planNativePassInterception({passer,recipient,defender,ballPosition,ballVelocity}={}){
+export function planNativePassInterception({passer,recipient,defender,ballPosition,ballVelocity,attackPolarity=1}={}){
  if(!passer||!recipient||recipient.id===passer.id||recipient.team!==passer.team||
     ![recipient.x,recipient.y].every(Number.isFinite))return null;
- return planNativeRollingInterception({attackingSide:passer.team,attacker:passer,defender,ballPosition,ballVelocity},true);
+ return planNativeRollingInterception({attackingSide:passer.team,attacker:passer,defender,ballPosition,ballVelocity,attackPolarity},true);
 }
-function planNativeRollingInterception({attackingSide,attacker,defender,ballPosition:b,ballVelocity:v}={},witnessedPass){
+function planNativeRollingInterception({attackingSide,attacker,defender,ballPosition:b,ballVelocity:v,attackPolarity=1}={},witnessedPass){
+ validateAttackPolarity(attackPolarity);
  if(!isOpposingDuelPair(attackingSide,attacker,defender)||
     ![attacker.x,attacker.y,defender.x,defender.y,b?.x,b?.y,v?.x,v?.y].every(Number.isFinite))return null;
- const speed=Math.hypot(v.x,v.y),dir=attackingSide==='home'?1:-1;
+ const speed=Math.hypot(v.x,v.y),dir=attackDirection(attackingSide,attackPolarity);
  if(speed<0.70||speed>14||(!witnessedPass&&v.x*dir<0.45)||Math.hypot(attacker.x-b.x,attacker.y-b.y)<=1.15)return null;
  const ux=v.x/speed,uy=v.y/speed;
  if((defender.x-b.x)*ux+(defender.y-b.y)*uy< -0.65)return null;
@@ -574,7 +580,8 @@ export function planNativeInterceptionCushion(source={}){
 // A witnessed pass can travel sideways or backwards. The actual passer
 // and intended receiver must both be separated from the ball. Keep the
 // previously tested pass cushion and ceiling; final calibration is last.
-export function chooseNativePassInterceptionTouch({passer,recipient,defender,ballPosition:b,ballVelocity:v,ballRadiusM=0.11}={}){
+export function chooseNativePassInterceptionTouch({passer,recipient,defender,ballPosition:b,ballVelocity:v,ballRadiusM=0.11,attackPolarity=1}={}){
+ validateAttackPolarity(attackPolarity);
  if(!isOpposingDuelPair(passer?.team,passer,defender)||
     !recipient||recipient.id===passer.id||recipient.team!==passer.team||
     ![passer.x,passer.y,recipient.x,recipient.y,defender.x,defender.y,b?.x,b?.y,b?.z,v?.x,v?.y,ballRadiusM].every(Number.isFinite)||
@@ -582,7 +589,7 @@ export function chooseNativePassInterceptionTouch({passer,recipient,defender,bal
     Math.hypot(passer.x-b.x,passer.y-b.y)<1.15||Math.hypot(recipient.x-b.x,recipient.y-b.y)<1.15)return null;
  const speed=Math.hypot(v.x,v.y);
  if(speed>14)return null;
- const ux=defender.team==='home'?1:-1,uy=(defender.y-b.y>=0?1:-1)*0.40;
+ const ux=attackDirection(defender.team,attackPolarity),uy=(defender.y-b.y>=0?1:-1)*0.40;
  const norm=Math.hypot(ux,uy),desiredVelocity=Object.freeze({x:ux*1.3/norm,y:uy*1.3/norm});
  const touch=planNativeInterceptionCushion({attackingSide:passer.team,attacker:passer,defender,ballPosition:b,ballVelocity:v,desiredVelocity,maxImpulseNs:5.8});
  return touch?Object.freeze({...touch,version:'me-628-interception-pass-cushion-v1',incomingSpeedMps:speed}):null;
@@ -605,15 +612,16 @@ export function chooseDuelInterceptionTouch({attackingSide,attacker,defender,bal
 // No LAB identity or player formation role determines the decision.
 export function planNativeDefensiveIntervention({attacker,recipient=null,defender,ballPosition,ballVelocity,
  unavailable=false,recovering=false,activeSlide=false,sliding=null,available=true,
- context='duel',allowShoulder=true,allowStanding=true,allowInterception=true}={}){
+ context='duel',allowShoulder=true,allowStanding=true,allowInterception=true,attackPolarity=1}={}){
+ validateAttackPolarity(attackPolarity);
  if(!defender||defender.role==='goalkeeper')return null;
- const source={attackingSide:attacker?.team,attacker,defender,ballPosition,ballVelocity};
+ const source={attackingSide:attacker?.team,attacker,defender,ballPosition,ballVelocity,attackPolarity};
  const eligible=available&&!unavailable&&!recovering;
  const shoulder=eligible&&context==='duel'&&allowShoulder?planDuelShoulderApproach(source):null;
  const standing=eligible&&context==='duel'&&allowStanding?chooseDribbleDefensiveTouch(source):null;
  const interception=eligible&&context!=='shot'&&allowInterception?
-  context==='pass'?planNativePassInterception({passer:attacker,recipient,defender,ballPosition,ballVelocity}):planDuelInterception(source):null;
- const block=eligible&&context==='shot'?planNativeShotBlock({player:defender,ball:ballPosition,velocity:ballVelocity}):null;
+  context==='pass'?planNativePassInterception({passer:attacker,recipient,defender,ballPosition,ballVelocity,attackPolarity}):planDuelInterception(source):null;
+ const block=eligible&&context==='shot'?planNativeShotBlock({player:defender,ball:ballPosition,velocity:ballVelocity,attackPolarity}):null;
  const decision=selectDefensiveIntervention({actorId:defender.id,context,unavailable,recovering,activeSlide,
   shoulder,standing,sliding:eligible?sliding:null,interception:context==='pass'?(interception?.reachable?interception:null):interception,block,
   ballGapM:Math.hypot(defender.x-ballPosition.x,defender.y-ballPosition.y)});
@@ -622,15 +630,16 @@ export function planNativeDefensiveIntervention({attacker,recipient=null,defende
 // COL-05: the same standing/interception geometry for any outfield
 // participant, independent of formation role. An interception of a
 // loose pass needs a witnessed opposing release, not guessed ownership.
-export function chooseCollectiveDefensiveTouch({player,players,ballPosition,ballVelocity,control,tick,slide=null,ballRadiusM=0.11}){
+export function chooseCollectiveDefensiveTouch({player,players,ballPosition,ballVelocity,control,tick,slide=null,ballRadiusM=0.11,attackPolarity=1}){
+ validateAttackPolarity(attackPolarity);
  if(!player||player.role==='goalkeeper'||!Array.isArray(players)||!control)return null;
  const owner=control.kind==='controlled'?players.find(p=>p.id===control.playerId):null;
  if(slide?.phase==='slide'&&slide.actorId===player.id){
   const rival=players.find(p=>p.id===slide.opponentId&&p.team!==player.team);
-  return rival?chooseDribbleDefensiveTouch({attackingSide:rival.team,attacker:rival,defender:player,ballPosition,ballVelocity,sliding:true}):null;
+  return rival?chooseDribbleDefensiveTouch({attackingSide:rival.team,attacker:rival,defender:player,ballPosition,ballVelocity,sliding:true,attackPolarity}):null;
  }
  if(owner&&owner.team!==player.team&&Math.hypot(owner.x-ballPosition.x,owner.y-ballPosition.y)<=1.15){
-  const plan=planNativeDefensiveIntervention({attacker:owner,defender:player,ballPosition,ballVelocity,allowShoulder:false,allowInterception:false});
+  const plan=planNativeDefensiveIntervention({attacker:owner,defender:player,ballPosition,ballVelocity,allowShoulder:false,allowInterception:false,attackPolarity});
   return plan?.decision?.kind==='standing-tackle'||plan?.decision?.kind==='interception'?plan.standing:null;
  }
  const delivery=control.delivery;
@@ -639,7 +648,7 @@ export function chooseCollectiveDefensiveTouch({player,players,ballPosition,ball
  const passer=players.find(p=>p.id===delivery.playerId&&p.team===delivery.team);
  const recipient=players.find(p=>p.id===delivery.recipientId&&p.team===delivery.team);
  if(!passer||!recipient)return null;
- const touch=chooseNativePassInterceptionTouch({passer,recipient,defender:player,ballPosition,ballVelocity,ballRadiusM});
+ const touch=chooseNativePassInterceptionTouch({passer,recipient,defender:player,ballPosition,ballVelocity,ballRadiusM,attackPolarity});
  const decision=selectDefensiveIntervention({actorId:player.id,context:'pass',interception:touch});
  return decision.kind==='interception'?touch:null;
 }

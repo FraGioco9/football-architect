@@ -11,7 +11,9 @@ import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT,
  from '../src/small-sided-lab-scenarios.mjs';
 import {createControlledActionLab,projectActiveLabDecisions,createNativeFullFieldSession} from '../src/action-labs.mjs';
 import {createCollectiveBallControlObserver,createNativeBallControlObserver,createDribbleTransitionObserver,chooseCollectiveDefensiveTouch,planNativeDefensiveIntervention,isNativeRecoveryLocked,applyNativeSlideRecovery} from '../src/isolated-dribble-touches.mjs';
-import {observeNativeShotBlock} from '../src/defensive-intervention-selection.mjs';
+import {observeNativeShotBlock,planNativeShotBlock} from '../src/defensive-intervention-selection.mjs';
+import {selectUniformAutonomousContactAction,chooseRecipient,eligibleLiveKeeperSave} from '../src/player-ball-uniform-autonomous-action.mjs';
+import {planNativeCarryTouch,chooseNativePassInterceptionTouch} from '../src/isolated-dribble-touches.mjs';
 import {detectFirstFullyOutBallB05} from '../src/basic-match-referee-b05.mjs';
 import {SOLO_CARRY_PHASES,advanceSoloCarryPhase} from '../src/solo-carry-phases.mjs';
 
@@ -1878,4 +1880,44 @@ test('UME-06D4B original mover reversed formation preparation is bounded and ide
   assert.equal(target.y,p.id==='away-10'?0:base.y);
  }
  assert.throws(()=>mover.step(ball,null,null,v,null,false,false,null,null,null,{tick:1,kind:'controlled',playerId:'home-10',officialPossession:false},null,-1),/Reversed movement/);
+});
+
+test('UME-06D4C1 native action and defensive touch direction preserves actor and mirrored geometry',()=>{
+ const mirror=p=>({...p,x:-p.x,...(Number.isFinite(p.vx)?{vx:-p.vx}:{})});
+ const actor={id:'home-10',team:'home',role:'forward',x:29.6,y:0,vx:0,vy:0};
+ const receiver={id:'home-9',team:'home',role:'forward',x:38,y:5,vx:0,vy:0};
+ const rival={id:'away-2',team:'away',role:'defender',x:34,y:9,vx:0,vy:0};
+ const ball={x:30,y:0,z:0.11},v={x:1,y:0,z:0};
+ const actors=[actor,receiver,rival];
+ const pass=chooseRecipient(actor,ball,actors),rev=chooseRecipient(mirror(actor),mirror(ball),actors.map(mirror),-1);
+ assert.ok(pass&&rev);assert.equal(pass.player.id,rev.player.id);assert.equal(pass.forward,rev.forward);
+ const a=planNativeCarryTouch({attacker:actor,attackingSide:'home',defender:rival,ballPosition:ball,ballVelocity:v});
+ const b=planNativeCarryTouch({attacker:mirror(actor),attackingSide:'home',defender:mirror(rival),ballPosition:mirror(ball),ballVelocity:mirror(v),attackPolarity:-1});
+ assert.ok(Math.abs(a.dx+b.dx)<1e-9);assert.ok(Math.abs(a.dy-b.dy)<1e-9);assert.equal(a.magnitudeNs,b.magnitudeNs);
+ const keeper={id:'away-1',team:'away',role:'goalkeeper',x:48,y:0};
+ const incoming={x:46,y:0,z:0.11},shot={x:10,y:0,z:0};
+ assert.equal(eligibleLiveKeeperSave(keeper,incoming,shot),true);
+ assert.equal(eligibleLiveKeeperSave(mirror(keeper),mirror(incoming),mirror(shot),-1),true);
+ const blocker={...rival,x:32,y:0};
+ const block=planNativeShotBlock({player:blocker,ball,velocity:shot}),reverseBlock=planNativeShotBlock({player:mirror(blocker),ball:mirror(ball),velocity:mirror(shot),attackPolarity:-1});
+ assert.ok(block&&reverseBlock);assert.equal(block.actorId,reverseBlock.actorId);assert.equal(block.target.x,-reverseBlock.target.x);
+ const defender={...rival,x:30.3,y:0.2},passer={...actor,x:25},recipient={...receiver,x:36};
+ const touch=chooseNativePassInterceptionTouch({passer,recipient,defender,ballPosition:ball,ballVelocity:shot});
+ const reverseTouch=chooseNativePassInterceptionTouch({passer:mirror(passer),recipient:mirror(recipient),defender:mirror(defender),ballPosition:mirror(ball),ballVelocity:mirror(shot),attackPolarity:-1});
+ assert.ok(touch&&reverseTouch);assert.equal(touch.actorId,reverseTouch.actorId);
+ assert.ok(Math.abs(touch.dx+reverseTouch.dx)<1e-9);assert.ok(Math.abs(touch.dy-reverseTouch.dy)<1e-9);
+ // Pure selector inputs, NOT physical contact evidence.
+ const players=INITIAL_PLAYERS.map(p=>p.id===actor.id?{...p,...actor}:p.id===receiver.id?{...p,...receiver}:{...p,x:p.team==='home'?-20:10,y:p.y});
+ const frame=createPlayerMovement().snapshot();
+ const select=(polarity,contacts=[actor.id])=>selectUniformAutonomousContactAction({tick:1,contactStarted:contacts,contactActive:contacts,
+  playerFrame:{...frame,tick:1,players:polarity===1?players:players.map(mirror)},ballPosition:polarity===1?ball:mirror(ball),
+  ballVelocity:polarity===1?v:mirror(v),ballRadiusM:0.11,allowPhysicalCarry:true,
+  activePlayerIds:players.map(p=>p.id),nativeActionPolicy:true,collectiveControl:{tick:0,kind:'loose',officialPossession:false},
+  attackPolarity:polarity});
+ const normal=select(1),reversed=select(-1);
+ assert.ok(normal&&reversed);assert.equal(normal.playerId,reversed.playerId);assert.equal(normal.action,reversed.action);
+ assert.ok(Math.abs(normal.impulseNs.x+reversed.impulseNs.x)<1e-9);
+ assert.ok(Math.abs(normal.impulseNs.y-reversed.impulseNs.y)<1e-9);
+ assert.equal(normal.impulseNs.z,reversed.impulseNs.z);
+ assert.equal(select(-1,[]),null);assert.equal(select(-1,[actor.id,receiver.id]),null);
 });
