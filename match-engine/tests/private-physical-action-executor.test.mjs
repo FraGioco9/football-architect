@@ -342,9 +342,11 @@ test('ME-01-QA U-02e2: mirrored physical header subtypes and ground clearance re
     assert.equal(a.officialMatchAction,false);
     if(!ground){assert.equal(a.nativeExclusiveHeadStart,true);assert.equal(a.actualNativeSolverContact,true);assert.ok(Math.hypot(...Object.values(a.impulseNs))<=5+1e-8);}
     if(kind==='header-pass')assert.equal(a.recipientId,mateId);
-    assert.ok(dir*a.after.x>0,'actual ball exits in the authorized attacking direction');
-    assert.ok(d3(sample().velocity,post.velocity)>.01);
-    assert.deepEqual(sample().velocity,a.after);
+    const actual=sample().velocity;
+    assert.ok(dir*actual.x>0,'actual ball exits in the authorized attacking direction');
+    assert.ok(d3(actual,post.velocity)>.01);
+    if(!ground)assert.deepEqual(actual,a.after);
+    else for(const axis of ['x','y','z'])assert.ok(Math.abs((actual[axis]-post.velocity[axis])*body.mass()-a.impulseNs[axis])<1e-5,'ground impulse must match the measured velocity change');
     break;
    }
    assert.ok(observed,team+'/'+kind+'/'+permitted+' requires actual native START');
