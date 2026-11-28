@@ -17,6 +17,7 @@ import {planNativeCarryTouch,chooseNativePassInterceptionTouch} from '../src/iso
 import {planNativeKeeperDive,planNativeKeeperHighClaim,planNativeHighHandAction,planNativeKeeperChallenge,eligibleKeeperGrip,planNativeKeeperDistribution,createNativeAerialHead,planNativeAerialJump,aerialHeadHeight,AERIAL_JUMP_TICKS,planNativeAerialControl,planNativeAerialCushion,createNativeAerialControl,exclusiveNativeAerialStart,observeNativeAerialDuel} from '../src/small-sided-native-body-guard.mjs';
 import {planSlidingTackle} from '../src/sliding-tackle.mjs';
 import {detectFirstFullyOutBallB05} from '../src/basic-match-referee-b05.mjs';
+import {createNativeFundamentalMask,nativeObservedActionAllowed} from '../src/native-fundamental-mask.mjs';
 import {SOLO_CARRY_PHASES,advanceSoloCarryPhase} from '../src/solo-carry-phases.mjs';
 
 test('COL-01 both teams pursue the real ball without a shirt-number runner or inferred possession',()=>{
@@ -2508,4 +2509,54 @@ test('ME-01-QA U-01C-R1: a real throw-in blocker yields without changing the tak
   const endTarget=planNativeThrowInClearance(endBlocker,nearEnd,{x:sign*52,y:base.y});
   assert.ok(Math.abs(endTarget.x)<Math.abs(nearEnd.x));
  }
+});
+
+// Synthetic observer inputs test rejection logic, not physical contact claims.
+test('ME-01-QA U-02d3: capability gate also protects native control and delivery observers',()=>{
+ for(const side of ['home','away']){
+  const other=side==='home'?'away':'home',dir=side==='home'?1:-1;
+  const a={id:side+'-10',team:side,x:dir*29.6,y:0},b={id:side+'-9',team:side,x:dir*27,y:2},k={id:side+'-1',team:side,role:'goalkeeper',x:0,y:0};
+  const players=[a,b,k],ids=players.map(p=>p.id),ball={position:{x:dir*30,y:0,z:.11},velocity:{x:dir,y:0,z:0}};
+  const observe=(obs,tick,action=null,extra={})=>obs.observe({tick,players,ball,starts:action?[a.id]:[],active:action?[a.id]:[],action:action?{tick,playerId:a.id,team:side,appliedByRapier:true,actualPhysicsImpulseApplied:true,...action}:null,...extra});
+  const make=mask=>createNativeBallControlObserver(ids,[a.id,b.id],mask);
+  const onlyPass=make(['pass']);
+  assert.equal(observe(onlyPass,1,{action:'carry'}).kind,'loose');
+  assert.equal(observe(onlyPass,2,{action:'shot'}).delivery,null);
+  assert.equal(observe(onlyPass,3,{action:'pass',recipientId:b.id}).delivery.recipientId,b.id);
+  assert.equal(observe(onlyPass,4,{action:'carry'}).delivery,null);
+  const onlyCarry=make(['carry']);
+  assert.equal(observe(onlyCarry,1,{action:'carry'}).playerId,a.id);
+  assert.equal(observe(onlyCarry,2,{action:'shot'}).kind,'loose');
+  const head={action:'pass',recipientId:b.id,nativeExclusiveHeadStart:true,actualNativeSolverContact:true};
+  const aerial={starts:[],active:[],bodyStarts:[a.id],bodyActive:[a.id],headStarts:[a.id],headActive:[a.id]};
+  assert.equal(observe(make(['pass']),1,head,aerial).delivery,null);
+  assert.equal(observe(make(['header','header-pass']),1,head,aerial).delivery.recipientId,b.id);
+  const volley={action:'shot',surface:'foot',nativeVolley:true,nativeExclusiveAerialControlStart:true,actualNativeSolverContact:true};
+  const foot={starts:[],active:[],bodyStarts:[a.id],bodyActive:[a.id],aerialControlStarts:[a.id],aerialControlActive:[a.id]};
+  assert.equal(observe(make(['shot']),1,volley,foot).delivery,null);
+  assert.equal(observe(make(['volley']),1,volley,foot).delivery.kind,'shot');
+  const grip={tick:1,keeperId:k.id,catchState:{active:true,confirmedTick:1}};
+  const release={tick:2,keeperId:k.id,catchState:{active:false,released:true},distribution:{tick:2,keeperId:k.id,team:side,kind:'pass',recipientId:b.id,confirmedGripTick:1,nativeGripReleased:true,appliedByRapier:true,actualPhysicsImpulseApplied:true}};
+  for(const [mask,hold,pass] of [[[],false,false],[['pass'],false,false],[['save'],true,false],[['save','pass'],true,true]]){
+   const obs=make(mask);
+   assert.equal(!!observe(obs,1,null,{keeperStates:[grip]}).keeperHold,hold);
+   assert.equal(!!observe(obs,2,null,{keeperStates:[release]}).keeperDistribution,pass);
+  }
+ }
+});
+test('ME-01-QA U-02d3: observed aerial kind is distinct from ground permission',()=>{
+ const head={action:'shot',nativeExclusiveHeadStart:true};
+ const volley={action:'shot',nativeExclusiveAerialControlStart:true,nativeVolley:true,surface:'foot'};
+ const control={action:'aerial-control',nativeExclusiveAerialControlStart:true,surface:'chest'};
+ for(const [action,allowed] of [[head,['header','header-shot']],[volley,['volley']],[control,['aerial-control']],[{action:'shot'},['shot']]]){
+  assert.equal(nativeObservedActionAllowed(createNativeFundamentalMask(allowed),action),true);
+  assert.equal(nativeObservedActionAllowed([],action),false);
+ }
+ assert.equal(nativeObservedActionAllowed(['shot'],head),false);
+ assert.equal(nativeObservedActionAllowed(['header-shot'],head),false);
+ assert.equal(nativeObservedActionAllowed(['shot'],volley),false);
+ assert.equal(nativeObservedActionAllowed(['aerial-control'],{action:'aerial-control'}),false);
+ assert.equal(nativeObservedActionAllowed(['volley'],{...volley,surface:'chest'}),false);
+ assert.equal(nativeObservedActionAllowed(['header','header-shot'],{...head,nativeVolley:true}),false);
+ assert.equal(nativeObservedActionAllowed(['shot'],{}),false);
 });

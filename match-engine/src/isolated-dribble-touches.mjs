@@ -2,7 +2,7 @@ import {attackDirection,validateAttackPolarity} from './match-directions.mjs';
 import {selectNativeOpenCarryPhase,planNativeCarryPhaseImpulse,hasNativeOpenCarrySpace} from './solo-carry-phases.mjs';
 // #628 research: proposal only; actual ball impulse needs authentic Rapier START.
 import {selectDefensiveIntervention,planNativeShotBlock,observeNativeShotBlock,selectPermittedDefensiveTouch} from './defensive-intervention-selection.mjs';
-import {createNativeFundamentalMask,createNativeDuelFundamentalMask,nativeDefensiveInterventionAllowed,nativePhysicalActionAllowed} from './native-fundamental-mask.mjs';
+import {createNativeFundamentalMask,createNativeDuelFundamentalMask,nativeDefensiveInterventionAllowed,nativePhysicalActionAllowed,nativeObservedActionAllowed} from './native-fundamental-mask.mjs';
 export const ISOLATED_DRIBBLE_TOUCH_VERSION='me-628-dribble-grounded-pressure-paced-v3';
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const opposite=side=>side==='home'?'away':'home';
@@ -45,13 +45,14 @@ export function createNativeBallControlObserver(activeIds,outfieldIds,allowedFun
    headStarts.length===1&&headStarts[0]===action.playerId&&headActive.length===1&&headActive[0]===action.playerId&&
    starts.length===0&&active.length===0;
   const aerialControl=action?.nativeExclusiveAerialControlStart===true&&action.actualNativeSolverContact===true&&aerialControlStarts.length===1&&aerialControlStarts[0]===action.playerId&&aerialControlActive.length===1&&aerialControlActive[0]===action.playerId&&!headActive.length&&!starts.length&&!active.length;
-  const real=action?.tick===tick&&activeIds.includes(action.playerId)&&
+  const physical=action?.tick===tick&&activeIds.includes(action.playerId)&&
    (header||aerialControl||starts.length===1&&starts[0]===action.playerId&&active.length===1&&active[0]===action.playerId)&&
    touching.length===1&&touching[0]===action.playerId&&action.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true;
-  if(witness&&(headActive.length||aerialControlActive.length||started.some(id=>id!==witness.playerId)||touching.some(id=>id!==witness.playerId)||real&&action.action!=='carry'))witness=null;
+  const real=physical&&nativeObservedActionAllowed(mask,action);
+  if(witness&&(headActive.length||aerialControlActive.length||started.some(id=>id!==witness.playerId)||touching.some(id=>id!==witness.playerId)||physical&&(!real||action.action!=='carry')))witness=null;
   const block=nativeDefensiveInterventionAllowed(mask,'block')?observeNativeShotBlock({tick,delivery,players:participants,starts,bodyStarts,before:beforeBallVelocity,after:afterSolverVelocity,attackPolarity}):null;
   if(block){lastBlock=block;if(block.blocked)blockCount++;}
-  if(delivery&&(tick-delivery.tick>180||started.some(id=>id!==delivery.playerId)||touching.some(id=>id!==delivery.playerId)))delivery=null;
+  if(delivery&&(tick-delivery.tick>180||started.some(id=>id!==delivery.playerId)||touching.some(id=>id!==delivery.playerId)||physical&&!real))delivery=null;
   if(real){
    const source=players.find(p=>p.id===action.playerId);
    const receiver=['pass','cross'].includes(action.action)?players.find(p=>p.id===action.recipientId&&p.team===source?.team&&p.id!==source.id&&activeIds.includes(p.id)):null;
@@ -80,11 +81,11 @@ export function createNativeBallControlObserver(activeIds,outfieldIds,allowedFun
   if(physicalChallengeReleased===true||shoulderReleased){witness=null;delivery=null;}
   // Hand releases are a separate native physical source, never shoe evidence.
   const currentKeepers=keeperStates.filter(k=>k.tick===tick&&activeIds.includes(k.keeperId)&&players.some(p=>p.id===k.keeperId&&p.role==='goalkeeper'));
-  const holding=currentKeepers.filter(k=>k.catchState?.active&&Number.isSafeInteger(k.catchState.confirmedTick)&&k.catchState.confirmedTick<=tick);
+  const holding=(mask.includes('save')?currentKeepers:[]).filter(k=>k.catchState?.active&&Number.isSafeInteger(k.catchState.confirmedTick)&&k.catchState.confirmedTick<=tick);
   const keeperHold=holding.length===1?Object.freeze({keeperId:holding[0].keeperId,confirmedTick:holding[0].catchState.confirmedTick}):null;
   const released=currentKeepers.filter(k=>k.distribution?.tick===tick&&k.distribution.keeperId===k.keeperId&&k.distribution.appliedByRapier===true&&k.distribution.actualPhysicsImpulseApplied===true&&k.distribution.nativeGripReleased===true&&k.catchState?.active===false&&k.catchState.released===true&&latest.keeperHold?.keeperId===k.keeperId&&latest.keeperHold.confirmedTick===k.distribution.confirmedGripTick);
   const candidate=released.length===1?released[0].distribution:null;
-  const keeperDistribution=candidate&&players.some(p=>p.id===candidate.keeperId&&p.team===candidate.team)&&['pass','clearance'].includes(candidate.kind)&&
+  const keeperDistribution=candidate&&mask.includes('save')&&mask.includes(candidate.kind)&&players.some(p=>p.id===candidate.keeperId&&p.team===candidate.team)&&['pass','clearance'].includes(candidate.kind)&&
    (candidate.kind==='clearance'?candidate.recipientId===null:participants.some(p=>p.id===candidate.recipientId&&p.team===candidate.team))&&!real?candidate:null;
   if(keeperHold){witness=null;delivery=null;}
   if(keeperDistribution){witness=null;delivery=keeperDistribution.kind==='pass'?Object.freeze({tick,playerId:keeperDistribution.keeperId,team:keeperDistribution.team,kind:'pass',recipientId:keeperDistribution.recipientId,source:'native-keeper-grip-release'}):null;}
@@ -711,7 +712,7 @@ export function createDribbleTransitionObserver(side,profile='mixed'){
   const touching=ids.filter(id=>active.includes(id)||bodyActive.includes(id));
   const started=ids.filter(id=>starts.includes(id)||bodyStarts.includes(id));
   const inField=Math.abs(ball.position.x)<52.39&&Math.abs(ball.position.y)<33.89;
-  const real=action?.tick===tick&&ids.includes(action.playerId)&&
+  const real=action?.tick===tick&&ids.includes(action.playerId)&&nativeObservedActionAllowed(mask,action)&&
     starts.length===1&&starts[0]===action.playerId&&active.length===1&&active[0]===action.playerId&&
     action.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true&&touching.length===1;
   if(!inField||candidateId!==null&&tick-candidateTick>120){

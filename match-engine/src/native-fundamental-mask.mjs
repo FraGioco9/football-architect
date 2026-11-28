@@ -60,6 +60,20 @@ export function nativePhysicalActionAllowed(mask,choice){
  return true;
 }
 
+// An emitted aerial redirect uses shot/pass/clearance as its result kind,
+// not the ground capability of that name. Permission does not prove contact.
+export function nativeObservedActionAllowed(mask,action){
+ if(!action)return false;
+ if(action.nativeExclusiveHeadStart===true){
+  return action.nativeExclusiveAerialControlStart!==true&&action.nativeVolley!==true&&
+   ['shot','pass','clearance'].includes(action.action)&&nativeFundamentalAllowed(mask,'header')&&nativeFundamentalAllowed(mask,'header-'+action.action);
+ }
+ if(action.nativeVolley===true)return action.nativeExclusiveAerialControlStart===true&&action.action==='shot'&&action.surface==='foot'&&nativeFundamentalAllowed(mask,'volley');
+ if(action.nativeExclusiveAerialControlStart===true)return action.action==='aerial-control'&&['chest','foot'].includes(action.surface)&&nativeFundamentalAllowed(mask,'aerial-control');
+ if(action.action==='aerial-control'||action.action==='volley'||action.action==='header'||typeof action.action==='string'&&action.action.startsWith('header-'))return false;
+ return nativePhysicalActionAllowed(mask,action);
+}
+
 // Generic bounded delivery exercise configuration; only the boundary
 // translates a scenario into actor, recipient, profile and surface.
 export function nativeLabAerialSequence({id,side}={}){

@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {initializeRapier} from '../src/core.mjs';
+import {nativeObservedActionAllowed} from '../src/native-fundamental-mask.mjs';
 import {ACTION_LAB_SCENARIOS,getActionLabScenario,
  classifyActionLabEvidence} from '../src/action-lab-scenarios.mjs';
 import {createControlledActionLab as createCurrentActionLab,resolveInlineActionLabOptions} from '../src/action-labs.mjs';
@@ -727,6 +728,7 @@ test('ME-01-QA U-02d2b: modern LAB sessions expose and respect bounded native ca
     assert.equal(f.officialMatchResult,null,label);
     if(a){
      const kind=a.nativeExclusiveHeadStart?'header-'+a.action:a.nativeVolley?'volley':a.action;
+     assert.ok(nativeObservedActionAllowed(initial.allowedFundamentals,a),label+': unauthorized native evidence '+kind);
      assert.ok(allowed.includes(kind),label+': unauthorized '+kind);
      assert.equal(a.actualPhysicsImpulseApplied,true,label);
      if(a.nativeExclusiveHeadStart)assert.ok(allowed.includes('header'),label);
