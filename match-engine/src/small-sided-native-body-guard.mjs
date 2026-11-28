@@ -468,6 +468,16 @@ export function planNativeHighHandAction({keeper,players,ballPosition,incoming,v
  return freeze({kind:'punch',impulseNs:freeze({x:raw.x*scale,y:raw.y*scale,z:raw.z*scale}),decisionOnly:true,officialPossession:false});
 }
 export const NATIVE_KEEPER_DISTRIBUTION_DELAY_TICKS=120;
+// A bounded provisional hold is a physics lifecycle constraint, not
+// adjudication of a handling offence. Give live distribution a retry
+// window, but do not retain the ball forever when no plan is possible.
+export const NATIVE_KEEPER_MAX_HOLD_TICKS=180;
+export function nativeKeeperHoldReleaseDue({tick,confirmedTick,distributionEnabled,allowedFundamentals=null}={}){
+ const mask=createNativeFundamentalMask(allowedFundamentals);
+ if(!Number.isSafeInteger(tick)||!Number.isSafeInteger(confirmedTick)||confirmedTick<1||tick<confirmedTick||typeof distributionEnabled!=='boolean')return false;
+ const canDistribute=distributionEnabled&&(nativeFundamentalAllowed(mask,'pass')||nativeFundamentalAllowed(mask,'clearance'));
+ return tick-confirmedTick>=(canDistribute?NATIVE_KEEPER_MAX_HOLD_TICKS:NATIVE_KEEPER_DISTRIBUTION_DELAY_TICKS);
+}
 export function planNativeKeeperDistribution(keeper,position,players,attackPolarity=1,allowedFundamentals=null){
  const mask=createNativeFundamentalMask(allowedFundamentals);
  validateAttackPolarity(attackPolarity);
@@ -541,7 +551,14 @@ export function createNativeKeeperGrip(R,world,hand,ballBody,team,allowedFundame
    origin,before,after:freeze({...ballBody.linvel()}),impulseNs:impulse,nativeGripReleased:true,
    appliedByRapier:true,actualPhysicsImpulseApplied:true,officialPossession:false,officialSave:false});
  }
- return freeze({tryGrip,observe,release,distribute,active:()=>joint!==null,snapshot:()=>latest});
+ function releaseIfDue(tick,distributionEnabled){
+  if(!joint||lastObservedTick!==tick||!nativeKeeperHoldReleaseDue({tick,confirmedTick,distributionEnabled,allowedFundamentals:mask}))return null;
+  const origin=freeze({...ballBody.translation()}),velocity=freeze({...ballBody.linvel()}),confirmedGripTick=confirmedTick;
+  release();
+  latest=freeze({...latest,active:false,heldSince:null,confirmedTick:null,released:true,releaseReason:'bounded-hold'});
+  return freeze({tick,team,confirmedGripTick,origin,velocity,nativeGripReleased:true,actualPhysicsImpulseApplied:false,officialPossession:false,officialSave:false});
+ }
+ return freeze({tryGrip,observe,release,distribute,releaseIfDue,active:()=>joint!==null,snapshot:()=>latest});
 }
 // Nearby keeper challenge: only a reachable, slow, live ball near an
 // opponent inside the penalty area. The solver decides contact and grip.
@@ -705,14 +722,20 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
   }
   let catchState=grip?.observe(tick)??null;
   const distribution=nativeOpenPlay&&catchState?.active?grip.distribute(tick,prepared.actor,prepared.physicalPlayers):null;
-  if(distribution){catchState=grip.snapshot();shotTick=null;lastChallengeTick=tick;glove.setCollisionGroups(0);}
+  // Try normal authorized distribution first, even on the final tick.
+  // If it is unavailable, detach the actual joint without a kick, a
+  // position/velocity setter or a fabricated distribution event.
+  const boundedRelease=!distribution&&catchState?.active?grip.releaseIfDue(tick,nativeOpenPlay):null;
+  if(distribution||boundedRelease){
+   catchState=grip.snapshot();shotTick=null;crossTick=null;lastChallengeTick=tick;glove.setCollisionGroups(0);
+  }
   if(catchState?.released){active=false;plan=null;highGripSettling=null;}
   latest=freeze({version:KEEPER_DIVE_VERSION,tick,keeperId:keeper.id,
    phase:prepared.phase,started:prepared.started,plan:prepared.plan,
    glove:active?freeze({x:pos.x,y:pos.y,z:pos.z}):null,
    contact:hit,contactStarted:hit&&!priorHit,
    contactMotion:hit?freeze({before:prepared.priorVelocity,after:freeze({...postVelocity})}):null,
-   catchState,...(nativeOpenPlay?{distribution,highHandAction,highHandDiagnostic}:{}),
+   catchState,...(boundedRelease?{boundedRelease}:{}),...(nativeOpenPlay?{distribution,highHandAction,highHandDiagnostic}:{}),
    ...(keeperSequence!==null?{sequenceDeliveryTick:sequenceDelivery?.tick??null,sequenceAirborne:sequenceDelivery?.airborne??false}:{}),
    officialSave:false,source:'native-rapier-solver-manifold'});
   if(keeperSequence!==null&&hit)sequenceDelivery=null;

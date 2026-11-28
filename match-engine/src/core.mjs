@@ -1024,7 +1024,7 @@ export function createEngine(RAPIER, input = {}, {
       duelTransition:duelTransition?.snapshot()??null,
       collectiveControl:collectiveObserver?.snapshot()??null,keeperDistribution:distribution,attackPolarity:nativeAttackPolarity,
       ...(diagnosticNativeAerialEnabled?{aerialEvidence:smallBodyGuard.snapshot().aerial,
-       aerialConflict:smallBodyGuard.snapshot().lowerLegBallContacts.length>0||hands.some(k=>k.contact||k.catchState?.active||k.distribution?.tick===tick)}:{}),
+       aerialConflict:smallBodyGuard.snapshot().lowerLegBallContacts.length>0||hands.some(k=>k.contact||k.catchState?.active||k.distribution?.tick===tick||k.boundedRelease?.tick===tick)}:{}),
       ...(diagnosticFirstTimeShot?{priorNativeBallVelocity:preStepBall.velocity}:{}),
       suppressOriginalAction:restarting||(diagnosticB06bNativeShotSide!==null&&(
        b06bGoalPending!==null||
@@ -1032,7 +1032,7 @@ export function createEngine(RAPIER, input = {}, {
        (diagnosticKeeperSingleShot&&keeperSingleShotTick!==null&&
         shoeBridge.snapshot().started.includes(smallSided.side+'-10')),
       suppressPhysicalBodyContact:smallBodyGuard?.snapshot()
-       .lowerLegBallContacts.length>0||(smallBodyGuard?.snapshot().headBallContacts?.length??0)>0||(smallBodyGuard?.snapshot().aerialControlContacts?.length??0)>0||keeperDives.some(controller=>controller.snapshot().contact===true||controller.snapshot().catchState?.active===true||controller.snapshot().distribution?.tick===tick)
+       .lowerLegBallContacts.length>0||(smallBodyGuard?.snapshot().headBallContacts?.length??0)>0||(smallBodyGuard?.snapshot().aerialControlContacts?.length??0)>0||keeperDives.some(controller=>controller.snapshot().contact===true||controller.snapshot().catchState?.active===true||controller.snapshot().distribution?.tick===tick||controller.snapshot().boundedRelease?.tick===tick)
     });
     if(collectiveObserver){
      const shoe=shoeBridge.snapshot(),physical=smallBodyGuard.snapshot();
@@ -1104,7 +1104,7 @@ export function createEngine(RAPIER, input = {}, {
       solver:shoeBridge.solver(),action:raw?.tick===tick?raw:null,
       keeperDive:hands.length===1?hands[0]:null,
       ...(diagnosticNativeAerialEnabled?{aerialEvidence:smallBodyGuard.snapshot().aerial,
-       aerialConflict:smallBodyGuard.snapshot().lowerLegBallContacts.length>0||keeperSnapshots().some(k=>k.contact||k.catchState?.active||k.distribution?.tick===tick)}:{})});
+       aerialConflict:smallBodyGuard.snapshot().lowerLegBallContacts.length>0||keeperSnapshots().some(k=>k.contact||k.catchState?.active||k.distribution?.tick===tick||k.boundedRelease?.tick===tick)}:{})});
      if(nativeRestartTake?.tick===tick&&nativeRestartTake.type==='throw-in')
       nativeMatchReferee.recordNativeThrowIn(nativeRestartTake);
     }

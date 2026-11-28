@@ -13,7 +13,7 @@ import {eligibleLiveKeeperSave,selectUniformAutonomousContactAction,chooseKeeper
 import {initializeRapier,FIXED_DT} from '../src/core.mjs';
 import {advanceGoalkeeperBallOrientation} from '../src/individual-kinematics.mjs';
 import {keeperDuelReboundTarget,keeperDuelCloseDownTarget} from '../src/small-sided-lab-scenarios.mjs';
-import {planNativeKeeperDive,planNativeKeeperChallenge,createNativeKeeperDive,eligibleKeeperGrip,createNativeKeeperGrip,planNativeHighHandAction,planNativeKeeperDistribution,NATIVE_KEEPER_DISTRIBUTION_DELAY_TICKS} from '../src/small-sided-native-body-guard.mjs';
+import {planNativeKeeperDive,planNativeKeeperChallenge,createNativeKeeperDive,eligibleKeeperGrip,createNativeKeeperGrip,planNativeHighHandAction,planNativeKeeperDistribution,NATIVE_KEEPER_DISTRIBUTION_DELAY_TICKS,NATIVE_KEEPER_MAX_HOLD_TICKS,nativeKeeperHoldReleaseDue} from '../src/small-sided-native-body-guard.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 
 function candidate(side,players,ball,active=[side+'-1'],started=active){
@@ -579,3 +579,19 @@ test('ACTIONS-B02 real HOME/AWAY original Rapier keeper shoe START, parry, dive 
    assert.equal(near.action,'shot');
   }
  });
+
+test('ME-01-QA U-01F5: native grip hold has a finite fallback without unauthorized distribution',()=>{
+ for(const mask of [[],['save'],['save','pass'],['save','clearance'],null])for(const enabled of [true,false]){
+  const canDistribute=enabled&&(mask===null||mask.includes('pass')||mask.includes('clearance'));
+  const limit=canDistribute?NATIVE_KEEPER_MAX_HOLD_TICKS:NATIVE_KEEPER_DISTRIBUTION_DELAY_TICKS;
+  for(const confirmedTick of [1,7,120]){
+   const input={confirmedTick,distributionEnabled:enabled,allowedFundamentals:mask};
+   assert.equal(nativeKeeperHoldReleaseDue({...input,tick:confirmedTick-1}),false);
+   assert.equal(nativeKeeperHoldReleaseDue({...input,tick:confirmedTick+limit-1}),false);
+   assert.equal(nativeKeeperHoldReleaseDue({...input,tick:confirmedTick+limit}),true);
+   assert.equal(nativeKeeperHoldReleaseDue({...input,tick:confirmedTick+limit+1}),true);
+  }
+ }
+ assert.equal(nativeKeeperHoldReleaseDue({tick:300,confirmedTick:null,distributionEnabled:true}),false);
+ assert.equal(nativeKeeperHoldReleaseDue({tick:300,confirmedTick:1,distributionEnabled:'true'}),false);
+});
