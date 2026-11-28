@@ -74,7 +74,7 @@ const aerialDuelDefinition=freeze({...headerDefinition,id:'aerial-duel',title:'A
 const loftedPassDefinition=freeze({...headerDefinition,id:'lofted-pass',title:'Pass · Lofted',description:'Two separated teammates, a genuine long lofted pass and physical receiving opportunity.'});
 const volleyDefinition=freeze({...headerDefinition,id:'volley-solo',title:'Shot · Volley from cross',description:'Two teammates with a grounded ball and open crossing geometry. A real cross precedes an exclusive raised-foot first-time shot.'});
 const highClaimDefinition=freeze({...headerDefinition,id:'keeper-high-cross',title:'Goalkeeper · High cross',includeGoalkeeper:true,description:'Two attacking teammates and an opposing goalkeeper. A real cross offers a high interception, grip or deflection opportunity.'});
-const highInterceptDefinition=freeze({...highClaimDefinition,id:'keeper-high-intercept',title:'Goalkeeper · High interception',description:'A shorter near-side cross and a keeper starting closer to the delivery lane, to investigate interception before the intended receiver. Real pressure and outcomes are measured, not assigned.'});
+const highInterceptDefinition=freeze({...highClaimDefinition,id:'keeper-high-intercept',title:'Goalkeeper · High interception',description:'A deeper near-side cross and a keeper starting closer to the delivery lane, to investigate interception before the intended receiver. Real pressure and outcomes are measured, not assigned.'});
 const shortLoftDefinition=freeze({...loftedPassDefinition,id:'lofted-short',title:'Pass · Lofted short',defenders:freeze([2]),description:'Two teammates and one middle-lane opponent. A live blocked ground lane offers a short lofted pass.'});
 const switchDefinition=freeze({...loftedPassDefinition,id:'lofted-switch',title:'Pass · Switch of play',description:'Two teammates on opposite flanks, outside ordinary ground-pass range.'});
 const byId=new Map([...definitions,headerDefinition,chestDefinition,footDefinition,aerialDuelDefinition,loftedPassDefinition,volleyDefinition,highClaimDefinition,highInterceptDefinition,shortLoftDefinition,switchDefinition].map(s=>[s.id,s]));
@@ -487,12 +487,14 @@ export function smallSidedSetup(id,side,canonicalPlayers,{
   const random=seededGeometry(id,variantIndex);
   for(let attempt=0;attempt<96;attempt++){
    const flank=variantIndex%2===0?1:-1;
-   const bx=intercept?38+random()*4:29+random()*2,by=flank*(intercept?20.5+random()*2:25+random()*2);
-   const rx=intercept?45+random()*2:41+random()*2,ry=flank*(intercept?8+random()*3:-(2+random()*3));
+   // The short near-side delivery may never supply a descending high
+   // hand opportunity. Give this exercise a genuine deeper flight path.
+   const bx=intercept?34+random()*2:29+random()*2,by=flank*(intercept?28+random()*2:25+random()*2);
+   const rx=intercept?46+random()*2:41+random()*2,ry=flank*(intercept?4+random()*2:-(2+random()*3));
    // Keeper is offset from the original passing lane; normal movement
    // and the existing reach planner decide if he gets there first.
-   const gx=intercept?rx-2.8-random()*1.2:49+random()*1.2,
-    gy=flank*(intercept?Math.abs(ry)-2.4-random()*1.0:random()*1.2);
+   const gx=intercept?rx-3.2-random()*0.8:49+random()*1.2,
+    gy=flank*(intercept?Math.abs(ry)+1+random():random()*1.2);
    const staged=stage(new Map([[side+'-10',[bx-0.30,by]],[side+'-9',[rx,ry]],[opponent+'-1',[gx,gy]]]));
    if(!physicallySeparated(staged,1.15))continue;
    return freeze({id,side,opponent,variantIndex,activeIds,staged,aerialSurface:'head',

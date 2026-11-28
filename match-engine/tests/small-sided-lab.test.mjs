@@ -7,7 +7,7 @@ import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {createEngine,initializeRapier} from '../src/core.mjs';
 import {createPlayerMovement,INITIAL_PLAYERS,goalkeeperPosition} from '../src/player-movement.mjs';
 import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT,
- keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget,planCollectiveApproaches,planCollectiveSupport,planCollectiveDefense,planNativeFootballMovement,supportsNativeOpenPlay,planNativeKeeperCloseDown,planNativeAerialContest}
+ keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget,planCollectiveApproaches,planCollectiveSupport,planCollectiveDefense,planNativeFootballMovement,supportsNativeOpenPlay,planNativeKeeperCloseDown,planNativeKeeperHighIntercept,planNativeAerialContest}
  from '../src/small-sided-lab-scenarios.mjs';
 import {createControlledActionLab,projectActiveLabDecisions,createNativeFullFieldSession} from '../src/action-labs.mjs';
 import {createCollectiveBallControlObserver,createNativeBallControlObserver,createDribbleTransitionObserver,chooseCollectiveDefensiveTouch,planNativeDefensiveIntervention,isNativeRecoveryLocked,applyNativeSlideRecovery} from '../src/isolated-dribble-touches.mjs';
@@ -2366,12 +2366,23 @@ test('AERIAL-07 real cross precedes native high-claim attempts and observed hand
    assert.equal(lab.snapshot().genuinePhysicalPlayerCount,3);
    assert.ok(lab.focus.includes(keeper));
    let cross=null,audit=null,handDiagnostic=null,catchAttempt=null,gripFailure=null;
+   const flight={peakZM:0,forecastTicks:0,reachTicks:0,actualHighStarts:0,firstForecast:null,firstReach:null};
    for(let tick=1;tick<=300;tick++){
     const frame=lab.step(),k=frame.nativeKeeperStates.find(x=>x.keeperId===keeper);
     if(k.highHandDiagnostic&&!handDiagnostic)handDiagnostic=k.highHandDiagnostic;
     if(k.highHandAction?.kind==='catch-attempt')catchAttempt=k.tick;
     if(catchAttempt!==null&&k.catchState?.released&&k.catchState.confirmedTick===null&&!gripFailure)gripFailure={tick:k.tick,errorM:k.catchState.errorM,relativeSpeedMps:k.catchState.relativeSpeedMps};
     if(frame.action?.action==='cross'&&!cross){cross=frame.action;assert.deepEqual(frame.starts,[cross.playerId]);assert.equal(cross.actualPhysicsImpulseApplied,true);}
+    if(cross){
+     const actor=frame.observedMovementPlayers.find(p=>p.id===keeper);
+     const ball=frame.ball;
+     flight.peakZM=Math.max(flight.peakZM,ball.position.z);
+     const forecast=planNativeKeeperHighIntercept(actor,ball.position,ball.velocity);
+     const reach=planNativeKeeperHighClaim(actor,ball);
+     if(forecast){flight.forecastTicks++;if(!flight.firstForecast)flight.firstForecast={tick,point:forecast.point,eta:forecast.eta,actor:{x:actor.x,y:actor.y}};}
+     if(reach){flight.reachTicks++;if(!flight.firstReach)flight.firstReach={tick,target:reach.target,eta:reach.eta,actor:{x:actor.x,y:actor.y}};}
+     if(k.started&&k.plan?.kind==='high-claim')flight.actualHighStarts++;
+    }
     if(frame.highClaimAudit){
      audit=frame.highClaimAudit;assert.ok(cross&&cross.tick<audit.attemptTick);
      if(audit.contactTick===tick){assert.equal(k.contactStarted,true);assert.equal(k.source,'native-rapier-solver-manifold');}
@@ -2380,7 +2391,7 @@ test('AERIAL-07 real cross precedes native high-claim attempts and observed hand
     }
     if(audit?.confirmedTick!=null)break;
    }
-   rows.push({id,side,variantIndex,cross:!!cross,attempt:!!audit,contact:audit?.contactTick??null,confirmed:audit?.confirmedTick??null,punch:audit?.punchTick??null,catchAttempt,gripFailure,handDiagnostic});
+   rows.push({id,side,variantIndex,cross:!!cross,attempt:!!audit,contact:audit?.contactTick??null,confirmed:audit?.confirmedTick??null,punch:audit?.punchTick??null,catchAttempt,gripFailure,handDiagnostic,flight});
   }finally{lab.dispose();}
  }
  process.stdout.write('ME_628_HIGH_CLAIM '+JSON.stringify(rows)+'\\n');
