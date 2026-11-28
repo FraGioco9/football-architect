@@ -658,3 +658,21 @@ html:lang(fr) .app-player-matches-table{--app-player-matches-mobile-result:"Rés
 @media(max-width:1100px){[data-player-detail-mode="preview"] .app-player-detail-heading{grid-template-columns:190px minmax(0,1fr);row-gap:10px}[data-player-detail-mode="preview"] .app-player-detail-header-panels{grid-column:1/-1;grid-row:2}[data-player-detail-mode="preview"] .app-player-detail-back{grid-column:2;grid-row:3;justify-self:end}}
 @media(max-width:620px){[data-player-detail-mode="preview"] .app-player-detail-heading{grid-template-columns:120px minmax(0,1fr);gap:10px 15px}}
 @media(max-width:460px){[data-player-detail-mode="preview"] .app-player-detail-heading{grid-template-columns:minmax(0,1fr)}[data-player-detail-mode="preview"] .app-player-detail-header-panels{grid-column:1;grid-row:3}[data-player-detail-mode="preview"] .app-player-detail-back{grid-column:1;grid-row:4;justify-self:center}}
+
+/* #822 — public signed contract detail. */
+html[data-player-detail-view="contract"] .app-player-detail-overview{display:none}
+html:not([data-player-detail-view="contract"]) .app-player-detail-contract{display:none}
+.app-player-detail-contract{margin-top:14px;min-width:0}
+.app-player-contract-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+.app-player-contract-grid>.app-panel{min-width:0}
+.app-player-detail-contract .app-player-detail-info-line{grid-template-columns:minmax(0,1fr) minmax(0,1fr);min-height:54px}
+.app-player-detail-contract .app-player-detail-info-line dd{justify-content:flex-end;text-align:right;font-variant-numeric:tabular-nums}
+.app-player-detail-contract .app-skeleton-bar{width:100px;max-width:100%}
+.app-player-contract-representation{margin-top:20px}
+.app-player-contract-club{display:flex;align-items:center;justify-content:flex-end;gap:6px;min-width:0}
+.app-player-contract-club img{flex:none;object-fit:contain}
+.app-player-contract-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:40px}
+.app-player-contract-footer p{margin:0;color:var(--muted);font-size:13px}
+.app-player-contract-footer button{background:none;border:0;color:inherit;cursor:pointer;padding:6px 0;white-space:nowrap;font:inherit}
+.app-player-contract-footer button:hover{text-decoration:underline}
+@media(max-width:760px){.app-player-contract-grid{grid-template-columns:minmax(0,1fr)}}
