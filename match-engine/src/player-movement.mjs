@@ -1706,7 +1706,7 @@ export function createPlayerMovement(options={}){
      k!=='researchSmallSidedSituation'&&k!=='researchSmallSidedSide'&&
      k!=='researchSmallSidedVariantIndex'&&k!=='researchCollectiveApproaches'&&k!=='researchShoulderStart'&&k!=='researchInterceptionStart'&&k!=='researchBlockStart'&&k!=='researchTapInStart'&&k!=='researchFirstTimeShot'&&
      k!=='researchNativeFundamentals'&&k!=='researchCarryRunwayStart'&&
-     k!=='researchNativeFixedCarry'&&
+     k!=='researchNativeFixedCarry'&&k!=='researchHistoricalCarryMotion'&&
      k!=='researchSoloSprintPursuitLeadM'&&
      k!=='researchSoloCarryLockedPhase'&&
      k!=='researchSoloCarryPlayerAttributes'&&
@@ -1870,6 +1870,7 @@ export function createPlayerMovement(options={}){
         (options.researchNativeFundamentals===undefined?0:1)+
         (options.researchCarryRunwayStart===true?1:0)+
         (options.researchNativeFixedCarry===true?1:0)+
+        (options.researchHistoricalCarryMotion===true?1:0)+
         (options.researchSoloSprintPursuitLeadM===undefined?0:1)))||
     ((options.researchSmallSidedSituation===undefined)!==
      (options.researchSmallSidedSide===undefined))||
@@ -1894,6 +1895,7 @@ export function createPlayerMovement(options={}){
     (options.researchCarryRunwayStart!==undefined&&
      (options.researchCarryRunwayStart!==true||
       options.researchSmallSidedSituation!=='carry-solo'))||
+    (options.researchHistoricalCarryMotion!==undefined&&(options.researchHistoricalCarryMotion!==true||options.researchSmallSidedSituation!=='carry-solo'))||
     (options.researchNativeFixedCarry!==undefined&&
      (options.researchNativeFixedCarry!==true||
       options.researchSoloCarryLockedPhase===undefined||
@@ -2328,7 +2330,8 @@ export function createPlayerMovement(options={}){
     ballSpeedMps:Math.hypot(realBallVelocity.x,realBallVelocity.y),
     ballGapM:Math.hypot(ball.x-actor.x,ball.y-actor.y),
     lockedPhase:options.researchSoloCarryLockedPhase??null,
-    playerAttributes:researchCarryAttributes
+    playerAttributes:researchCarryAttributes,
+    historicalKinematics:options.researchHistoricalCarryMotion===true
    });
   }
   if(options.researchGoalkeeperSaveSide!==undefined&&(
@@ -2579,7 +2582,7 @@ export function createPlayerMovement(options={}){
    // No direct player displacement, shoe event, ball impulse or ownership.
    const sprintPursuitRunner=smallSided?.id==='carry-solo'?
     players.find(p=>p.id===smallSided.side+'-10'):null;
-   const nativeFixedOffset=options.researchNativeFixedCarry===true?
+   const nativeFixedOffset=options.researchHistoricalCarryMotion===true&&options.researchNativeFixedCarry===true?
     nativeCarryPursuitOffset({phase:currentSoloCarryPhase.phase,configuration:currentSoloCarryPhase,
      player:sprintPursuitRunner,ball,velocity:realBallVelocity,sprintLeadM:options.researchSoloSprintPursuitLeadM??0}):null;
   const duelActors=directedDribble?resolveDuelActors(players,smallSided.side,duelTransition,ball):null;
@@ -2736,6 +2739,15 @@ export function createPlayerMovement(options={}){
   // Resolve carry only after higher-priority live movement decisions. Its
   // target, limits and emitted phase must all describe the same decision.
   const openCarryMotion={};
+  if(sprintPursuitRunner&&options.researchHistoricalCarryMotion!==true){
+   // Same proposal as an unopposed collective carrier. Explicit research
+   // can lock pace or vary lead; no ordinary LAB-specific movement.
+   const motion=planNativeOpenCarryMotion({player:sprintPursuitRunner,ball,velocity:realBallVelocity,
+    phase:currentSoloCarryPhase.phase,attackPolarity,
+    ...(researchCarryAttributes===null?{}:{playerAttributes:researchCarryAttributes}),
+    ...(options.researchNativeFixedCarry===true?{sprintLeadM:options.researchSoloSprintPursuitLeadM??0}:{})});
+   if(motion)openCarryMotion[sprintPursuitRunner.id]=motion;
+  }
   if(collectiveApproaches){
    const activePlayers=players.filter(p=>smallActive.has(p.id));
    for(const p of activePlayers){
@@ -3055,7 +3067,7 @@ export function createPlayerMovement(options={}){
    const gettingUp=directedDribble&&isDuelGettingUp(duelTransition,p.id,tick+1)||!!collectiveApproaches&&isDuelGettingUp(collectiveControl,p.id,tick+1);
    const balance=nativeBalance[p.id]??shoulderBalance[p.id];
    const shoulderCollection=directedDribble&&(isShoulderCollecting(duelTransition,p.id,tick+1)||isSlideCollecting(duelTransition,p.id,tick+1));
-   const limits=gettingUp?{...D01_KINEMATIC_LIMITS,braking:15}:balance?{...D01_KINEMATIC_LIMITS,maxSpeed:balance.maxSpeed,acceleration:12,braking:32}:shoulderCollection?D09_RECOVERY_KINEMATIC_LIMITS:sliding?D08_SLIDE_KINEMATIC_LIMITS:(recoveringEffective||loosePursuit)?D09_RECOVERY_KINEMATIC_LIMITS:(shoulderPursuit||blockApproach?.actorId===p.id||duelInterception?.actorId===p.id||smallSided?.interceptionStart&&p.id===smallSided.opponent+'-2')?D01_CHASE_KINEMATIC_LIMITS:smallSided?.id==='carry-solo'&&smallActive.has(p.id)?
+   const limits=gettingUp?{...D01_KINEMATIC_LIMITS,braking:15}:balance?{...D01_KINEMATIC_LIMITS,maxSpeed:balance.maxSpeed,acceleration:12,braking:32}:shoulderCollection?D09_RECOVERY_KINEMATIC_LIMITS:sliding?D08_SLIDE_KINEMATIC_LIMITS:(recoveringEffective||loosePursuit)?D09_RECOVERY_KINEMATIC_LIMITS:(shoulderPursuit||blockApproach?.actorId===p.id||duelInterception?.actorId===p.id||smallSided?.interceptionStart&&p.id===smallSided.opponent+'-2')?D01_CHASE_KINEMATIC_LIMITS:openCarryMotion[p.id]?soloKinematicLimits(openCarryMotion[p.id].configuration):smallSided?.id==='carry-solo'&&smallActive.has(p.id)?
      // The old generic 6m/s/9m/s² recovery overrides the fixed phase
      // whenever a strong Sprint push opens a >1.5m gap, making Sprint
      // look like Moderate. Fixed DEV LABs keep their own bounded phase
@@ -3064,7 +3076,6 @@ export function createPlayerMovement(options={}){
       soloKinematicLimits(currentSoloCarryPhase):
       recoveringDribbleBall?D01_CHASE_KINEMATIC_LIMITS:
        soloKinematicLimits(currentSoloCarryPhase):
-    openCarryMotion[p.id]?soloKinematicLimits(openCarryMotion[p.id].configuration):
     !collectiveApproaches&&smallSided?.id==='dribble-1v1'&&smallActive.has(p.id)?
      recoveringDribbleBall?D01_CHASE_KINEMATIC_LIMITS:D01_KINEMATIC_LIMITS:
      PLAYER_KINEMATIC_LIMITS;

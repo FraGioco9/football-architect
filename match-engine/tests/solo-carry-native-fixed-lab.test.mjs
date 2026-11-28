@@ -753,3 +753,29 @@ test('ME-01-QA U-04c: shared automatic carry transitions preserve same-tick acto
  assert.equal(selectNativeOpenCarryPhase({previousPhase:'sprint',playerSpeedMps:2.5,ballSpeedMps:1.9,ballGapM:.42}),'sprint');
  assert.equal(selectNativeOpenCarryPhase({previousPhase:null,playerSpeedMps:2.5,ballSpeedMps:1.9,ballGapM:.42}),'moderate');
 });
+
+test('ME-01-QA U-04c2: current automatic Carry uses common pursuit and kinematics, archive stays explicit',()=>{
+ for(const team of ['home','away'])for(const attackPolarity of [1,-1])
+ for(const phase of ['control','moderate','sprint']){
+  const dir=(team==='home'?1:-1)*attackPolarity;
+  for(const [speed,rolling,gap] of [[0,0,.3],[2,1.5,.42],[4,3,.65],[5,4,1.6]]){
+   const player={id:team+'-10',team,x:dir*10,y:0,vx:dir*speed,vy:0};
+   const ball={x:player.x+dir*gap,y:.2,z:.11},velocity={x:dir*rolling,y:0,z:0};
+   const observed={previousPhase:phase,tick:8,playerSpeedMps:speed,ballSpeedMps:rolling,ballGapM:Math.hypot(ball.x-player.x,ball.y-player.y)};
+   const current=advanceSoloCarryPhase(observed);
+   const motion=planNativeOpenCarryMotion({player,ball,velocity,attackPolarity,phase:current.phase});
+   const collective=planNativeOpenCarryMotion({player,ball,velocity,attackPolarity,previousPhase:phase});
+   assert.deepEqual(motion,collective);
+   for(const key of Object.keys(motion.configuration))assert.equal(current[key],motion.configuration[key]);
+   const archive=advanceSoloCarryPhase({...observed,historicalKinematics:true});
+   assert.equal(archive.phase,current.phase);
+   assert.equal(archive.maxSpeedMps,{control:3,moderate:4,sprint:4.5}[archive.phase]);
+   assert.equal(Object.hasOwn(current,'carryPlayerAttributes'),false);
+   const attrs=uniformSoloCarryAttributes(75);
+   const locked=advanceSoloCarryPhase({...observed,lockedPhase:phase,playerAttributes:attrs});
+   const research=planNativeOpenCarryMotion({player,ball,velocity,phase,attackPolarity,playerAttributes:attrs,sprintLeadM:0});
+   for(const key of Object.keys(research.configuration))assert.equal(locked[key],research.configuration[key]);
+  }
+ }
+ assert.throws(()=>advanceSoloCarryPhase({tick:1,playerSpeedMps:0,ballSpeedMps:0,ballGapM:0,historicalKinematics:'true'}),TypeError);
+});

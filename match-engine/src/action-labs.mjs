@@ -439,6 +439,7 @@ export function createControlledActionLab(RAPIER,id,{
    ...(variantIndex>0?{researchSmallSidedVariantIndex:variantIndex}:{}),
    ...(carryRunwayStart?{researchCarryRunwayStart:true}:{}),
    ...(nativeFixedCarryResearch?{researchNativeFixedCarry:true}:{}),
+   ...(id==='carry-solo'&&(historicalCarryPhysics||intentDrivenSoloCarry)?{researchHistoricalCarryMotion:true}:{}),
    ...(soloSprintPursuitLeadM!==0?{
     researchSoloSprintPursuitLeadM:soloSprintPursuitLeadM}:{}),
    ...(soloCarryLockedPhase!==null?{

@@ -27,8 +27,8 @@ export function soloCarryPhaseConfiguration(phase){
  return profiles[phase];
 }
 export function advanceSoloCarryPhase({previousPhase='control',tick,
- playerSpeedMps,ballSpeedMps,ballGapM,lockedPhase=null,playerAttributes=null}={}){
- if(!SOLO_CARRY_PHASES.includes(previousPhase)||
+ playerSpeedMps,ballSpeedMps,ballGapM,lockedPhase=null,playerAttributes=null,historicalKinematics=false}={}){
+ if(typeof historicalKinematics!=='boolean'||!SOLO_CARRY_PHASES.includes(previousPhase)||
     (lockedPhase!==null&&!SOLO_CARRY_PHASES.includes(lockedPhase))||
     (lockedPhase===null&&playerAttributes!==null)||
     !Number.isSafeInteger(tick)||tick<1||
@@ -41,7 +41,7 @@ export function advanceSoloCarryPhase({previousPhase='control',tick,
  const attributeInputs=lockedPhase===null?null:
   playerAttributes===null?uniformSoloCarryAttributes(50):
    validateSoloCarryAttributes(playerAttributes);
- const calibrated=attributeInputs===null?profiles[phase]:nativeReferenceCarryKinematics(phase,attributeInputs);
+ const calibrated=historicalKinematics&&attributeInputs===null?profiles[phase]:nativeReferenceCarryKinematics(phase,attributeInputs??uniformSoloCarryAttributes(50));
  return Object.freeze({
   tick,phase,previousPhase,changed:phase!==previousPhase,
   ...(lockedPhase!==null?{lockedPhase}:{}),
@@ -123,13 +123,13 @@ export function nearestNativeCarryOpponent(player,ball,activePlayers){
 export function nativeCarryMotionHasPriority({movementKind,restartPlacement=null,recoveryLocked=false,balance=null,slide=null,shoulder=null,deliveryPlan=null}={}){
  return movementKind==='carry-ball'&&!restartPlacement&&!recoveryLocked&&!balance&&!slide&&!shoulder&&!deliveryPlan;
 }
-export function planNativeOpenCarryMotion({player,ball,velocity,opponent=null,phase=null,previousPhase=null,attackPolarity=1}={}){
+export function planNativeOpenCarryMotion({player,ball,velocity,opponent=null,phase=null,previousPhase=null,attackPolarity=1,playerAttributes=uniformSoloCarryAttributes(50),sprintLeadM=0.25}={}){
  if(!player||!hasNativeOpenCarrySpace(ball,opponent))return null;
  const selected=phase??selectNativeOpenCarryPhase({previousPhase,playerSpeedMps:Math.hypot(player.vx,player.vy),
   ballSpeedMps:Math.hypot(velocity.x,velocity.y),ballGapM:Math.hypot(player.x-ball.x,player.y-ball.y)});
- const configuration=nativeReferenceCarryKinematics(selected);
+ const configuration=nativeReferenceCarryKinematics(selected,playerAttributes);
  const dir=attackDirection(player.team,attackPolarity);
- const offset=nativeCarryPursuitOffset({phase:selected,configuration,player,ball,velocity,attackPolarity,sprintLeadM:0.25});
+ const offset=nativeCarryPursuitOffset({phase:selected,configuration,player,ball,velocity,attackPolarity,sprintLeadM});
  return Object.freeze({phase:selected,configuration,target:Object.freeze({x:Math.max(-52.06,Math.min(52.06,ball.x+dir*offset)),y:Math.max(-33.56,Math.min(33.56,ball.y))})});
 }
 export function nativeCarryPursuitOffset({phase,configuration,player,ball,velocity,attackPolarity=1,sprintLeadM=0.25}={}){
