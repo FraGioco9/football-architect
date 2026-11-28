@@ -131,7 +131,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   }
   await send('Fetch.continueRequest',{requestId:pausedModule});
   await send('Fetch.disable');socket.removeEventListener('message',onPaused);
-  await wait("document.querySelector('#status')?.textContent==='Ready'&&document.querySelectorAll('#preset-options [role=option][data-value]').length===29&&!document.querySelector('.me-main-panel').hasAttribute('data-loading')");
+  await wait("document.querySelector('#status')?.textContent==='Ready'&&document.querySelector('#preset-options [data-value=\"action:keeper-high-intercept\"]')!==null&&!document.querySelector('.me-main-panel').hasAttribute('data-loading')");
   for(let i=0;i<sizes.length;i++){
    const [width,height]=sizes[i];
    await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
@@ -241,6 +241,53 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   }
   await delay(100);socket.removeEventListener('message',captureHeaderException);
   assert.deepEqual(headerExceptions,[],'Header LAB must not freeze Chrome');
+  // AERIAL-08D: all remaining individual aerial scenes must open,
+  // advance consecutive real ticks, and reset/replay in the live menu.
+  // Outcome certification stays in the mirrored physical core tests.
+  const aerialExceptions=[];
+  const captureAerialException=e=>{const m=JSON.parse(e.data);if(m.method==='Runtime.exceptionThrown')aerialExceptions.push(m.params.exceptionDetails.exception?.description??m.params.exceptionDetails.text);};
+  socket.addEventListener('message',captureAerialException);
+  const aerialScenes=[
+   ['chest-control','Control · Chest',2],['aerial-foot-control','Control · Aerial foot',1],
+   ['aerial-duel','Aerial duel · 1v1',2],['lofted-short','Pass · Lofted short',3],
+   ['lofted-pass','Pass · Lofted long',2],['lofted-switch','Pass · Switch of play',2],
+   ['volley-solo','Shot · Volley',2],['keeper-high-cross','Goalkeeper · High cross',3],
+   ['keeper-high-intercept','Goalkeeper · High interception',3]
+  ];
+  for(const [scene,label,playerCount] of aerialScenes){
+   const journey=await evalJs(`(()=>{
+    const el=id=>document.getElementById(id);
+    el('preset-trigger').click();
+    el('preset-options').querySelector('[data-value="action:${scene}"]').click();
+    el('reset').click();
+    const sample=()=>({tick:el('tick').textContent,summary:el('me-inline-summary').textContent,
+     position:el('position').textContent,height:el('height').textContent,
+     actions:[...el('me-performed-rows').rows].map(r=>({player:r.dataset.player,action:r.dataset.action,tick:+r.dataset.tick}))});
+    const advance=()=>{const ticks=[];for(let i=0;i<12;i++){el('step').click();ticks.push(Number(el('tick').textContent.split(' ')[1]));}return {ticks,...sample()};};
+    const initial=sample(),first=advance();el('reset').click();const reset=sample(),replay=advance();
+    return {label:el('preset-value').textContent,players:[...el('me-performed-player-options').querySelectorAll('[role=option]')].map(o=>o.dataset.value),
+     initial,first,reset,replay};
+   })()`);
+   assert.equal(journey.label,label);
+   assert.equal(new Set(journey.players.filter(Boolean)).size,playerCount,scene);
+   assert.equal(journey.initial.tick,'Tick 0 · 0.00 s',scene);
+   assert.ok(journey.initial.summary,scene);
+   assert.deepEqual(journey.initial.actions,[],scene);
+   assert.deepEqual(journey.reset,journey.initial,scene);
+   assert.deepEqual(journey.first.ticks,Array.from({length:12},(_,i)=>i+1),scene);
+   assert.deepEqual(journey.replay,journey.first,scene);
+   process.stdout.write('ME_628_AERIAL_BROWSER '+JSON.stringify({scene,...journey})+'\\n');
+  }
+  // The newly added keeper scene must also run through the actual Play loop.
+  await evalJs("document.getElementById('reset').click();document.getElementById('play').click()");
+  await wait("Number(document.getElementById('tick').textContent.split(' ')[1])>=3");
+  await evalJs("document.getElementById('pause').click()");
+  const pausedAerialTick=await evalJs("document.getElementById('tick').textContent");
+  await delay(100);
+  assert.equal(await evalJs("document.getElementById('tick').textContent"),pausedAerialTick);
+  await evalJs("document.getElementById('reset').click()");
+  socket.removeEventListener('message',captureAerialException);
+  assert.deepEqual(aerialExceptions,[],'Aerial LABs must not freeze Chrome');
   const keeperUI=await evalJs("(()=>{const el=id=>document.getElementById(id);el('preset-trigger').click();document.querySelector('#preset-options [data-value=\\\"action:keeper-1v1\\\"]').click();el('me-observation-details').open=true;return {label:el('preset-value').textContent,players:[...el('me-performed-player-options').querySelectorAll('[role=option]')].map(x=>x.dataset.value),metrics:[...el('me-active-metrics').querySelectorAll('dt')].map(x=>x.textContent),summary:el('me-inline-summary').textContent};})()");
   assert.equal(keeperUI.label,'1v1 · goalkeeper');
   assert.deepEqual(new Set(keeperUI.players),new Set(['','away-10','home-1']));
