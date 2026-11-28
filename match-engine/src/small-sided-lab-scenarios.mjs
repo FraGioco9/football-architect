@@ -64,9 +64,9 @@ const definitions=freeze([
   defenders:freeze([]),includeGoalkeeper:false,
   description:'One genuine shooter, stationary ball and empty goal. Observe actual flight and full-ball goal-line crossing; no official result.'})
 ]);
-const headerDefinition=freeze({id:'header-pair',nativeOpenPlay:true,title:'Header · aerial redirect',
+const headerDefinition=freeze({id:'header-pair',nativeOpenPlay:true,title:'Header · from cross',
  attackers:freeze([10,9]),defenders:freeze([]),includeGoalkeeper:false,
- description:'A descending original ball, two canonical teammates and genuine native head contact. Variations change field geometry; the shared policy chooses shot, pass or clearance.'});
+ description:'A grounded ball and two canonical teammates in crossing geometry. The shared policy selects a real lofted cross, then a reachable physical header; no staged airborne ball or awarded outcome.'});
 const byId=new Map([...definitions,headerDefinition].map(s=>[s.id,s]));
 // Private full-field research fixture: initial geometry only. Not in the
 // visible LAB catalog until the full native participant path is certified.
@@ -294,7 +294,7 @@ export const SMALL_SIDED_LAB_SCENARIOS=freeze(definitions.map(s=>
 // Keep grounded baseline matrix stable; aerial fixtures have their own
 // contact-source assertions while sharing the same scenario registry.
 export const AERIAL_LAB_SCENARIOS=freeze([freeze({...headerDefinition,mode:'situation',goal:'situation',
- initial:freeze({preset:'drop',seed:'me-small-header-home',x:44,y:0,z:2.89,vx:0,vy:0,vz:-2}),
+ initial:freeze({preset:'roll',seed:'me-small-header-home',x:27,y:28,z:0,vx:0,vy:0,vz:0}),
  focus:freeze(['home-9','home-10']),source:'original-rapier-selected-head-and-shoe-colliders',officialResult:false})]);
 export function getSmallSidedScenario(id){
  const d=byId.get(id);
@@ -366,15 +366,15 @@ export function smallSidedSetup(id,side,canonicalPlayers,{
  if(id==='header-pair'){
   const random=seededGeometry(id,variantIndex);
   for(let attempt=0;attempt<96;attempt++){
-   const group=variantIndex%3,bx=(group===0?44:group===1?0:-41)+(random()-.5)*2;
-   const by=(random()-.5)*4;
-   const rx=group===0?bx-8:group===1?bx+11:bx+32;
-   const ry=by+5+random()*3;
-   const staged=stage(new Map([[side+'-10',[bx,by]],[side+'-9',[rx,ry]]]));
+   const flank=variantIndex%2===0?1:-1;
+   const bx=26+random()*3,by=flank*(27+random()*3);
+   const rx=43+random()*4,ry=flank*(3+random()*3);
+   const staged=freeze(stage(new Map([[side+'-10',[bx-0.30,by]],[side+'-9',[rx,ry]]])).map(p=>p.id===side+'-9'?
+    freeze({...p,facingRad:Math.atan2(by-ry,dir*(bx-rx))}):p));
    if(!physicallySeparated(staged,1.15))continue;
    return freeze({id,side,opponent,variantIndex,activeIds,staged,
-    ball:freeze({preset:'drop',seed:'me-small-header-v'+variantIndex+'-'+side,
-     x:dir*bx,y:by,z:2.89,vx:0,vy:0,vz:-2}),genuinePhysicalPlayers:2,officialMatchResult:null});
+    ball:freeze({preset:'roll',seed:'me-small-header-v'+variantIndex+'-'+side,
+     x:dir*bx,y:by,z:0,vx:0,vy:0,vz:0}),genuinePhysicalPlayers:2,officialMatchResult:null});
   }
   throw new RangeError('No collision-free original aerial header setup');
  }

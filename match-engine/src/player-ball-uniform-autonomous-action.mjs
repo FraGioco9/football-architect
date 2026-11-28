@@ -486,6 +486,11 @@ export function selectUniformAutonomousContactAction({
    // the challenger reached the shoe gate. A feasible defensive action
    // has already been handled above.
    continue;
+  }else if(collective&&(crossInfo=chooseLiveCrossRecipient(player,ballPosition,actors,attackPolarity))){
+   // A genuine wide delivery opportunity takes precedence over the
+   // generic ground-pass fallback; use the same existing cross profile.
+   recipient=crossInfo.player;action='cross';dx=recipient.x-ballPosition.x;
+   dy=recipient.y-ballPosition.y;vertical=0.42;rule='wide-live-teammate-lofted-cross';
   }else if(contextualChoice?.selected==='pass'){
    recipientInfo=contextualRecipient;
    recipient=recipientInfo.player;

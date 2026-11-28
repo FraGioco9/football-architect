@@ -2654,6 +2654,20 @@ export function createPlayerMovement(options={}){
   if(collectiveApproaches&&collectiveControl.kind==='loose'&&delivery&&Number.isSafeInteger(delivery.tick)&&tick>=delivery.tick&&tick-delivery.tick<180){
    const attacker=players.find(p=>smallActive.has(p.id)&&p.id===delivery.playerId&&p.team===delivery.team);
    const recipient=players.find(p=>smallActive.has(p.id)&&p.id===delivery.recipientId&&p.team===delivery.team);
+   // Predict the descending crossing point from the live ball, not the
+   // fixture. The receiving player runs there using normal acceleration.
+   if(delivery.kind==='cross'&&recipient&&[ballPosition.z,realBallVelocity.z].every(Number.isFinite)){
+    const h=1.95,z=ballPosition.z,vz=realBallVelocity.z;
+    const discriminant=vz*vz+19.62*(z-h);
+    if(discriminant>=0){
+     const t=(vz+Math.sqrt(discriminant))/9.81;
+     if(t>0&&t<=3){
+      const target=Object.freeze({x:Math.max(-51.99,Math.min(51.99,ball.x+realBallVelocity.x*t)),
+       y:Math.max(-33.49,Math.min(33.49,ball.y+realBallVelocity.y*t))});
+      nativeDeliveryPlans[recipient.id]=Object.freeze({kind:'aerial-approach',plan:Object.freeze({target})});
+     }
+    }
+   }
    if(attacker)for(const defender of players.filter(p=>smallActive.has(p.id)&&p.role!=='goalkeeper'&&p.team!==attacker.team)){
     const plan=planNativeDefensiveIntervention({attacker,recipient,defender,ballPosition,ballVelocity:realBallVelocity,context:delivery.kind,attackPolarity});
     if(plan?.decision?.plan)nativeDeliveryPlans[defender.id]=plan.decision;

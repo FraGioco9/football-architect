@@ -89,8 +89,9 @@ function recordPerformedActions(frame){
  const action=frame.action;
  if(action?.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true&&
     action.tick===tick&&ids.includes(action.playerId))
-  events.push({id:action.playerId,kind:action.action,
-   label:performedActionLabels[action.action]??action.action});
+  events.push({id:action.playerId,kind:action.nativeExclusiveHeadStart===true?'header-'+action.action:action.action,
+   label:action.nativeExclusiveHeadStart===true?'Header · '+(performedActionLabels[action.action]??action.action):
+    performedActionLabels[action.action]??action.action});
  // First receiving contacts are actual native observations, not inferred
  // completed passes or successful possession. They have their own actor.
  const dive=frame.keeperDive;
@@ -741,7 +742,7 @@ function render() {
     const shot=f.shotSoloAudit, pass=f.passPairAudit, cross=f.crossPairAudit;
     const keeper=f.keeperShotAudit;
     const mixedControl=f.duelTackleProfile==='mixed'&&f.duelTransition?.ballControl;
-    const summary=f.headerAudit?'Header · '+f.headerAudit.action:activeScene.id==='header-pair'?'Waiting for header':f.blockAudit?(f.blockAudit.blocked?'Shot blocked':f.blockAudit.contactTick!==null?'Defender contact':f.blockAudit.phase==='flight'?'Shot in flight':'Waiting for shot'):f.interceptionAudit?({ready:'Waiting for pass',flight:'Pass in flight',intercepted:'Interception contact',collected:'Ball recovered',received:'Pass reached receiver'})[f.interceptionAudit.phase]:keeper?
+    const summary=f.headerAudit?'Header · '+f.headerAudit.action:activeScene.id==='header-pair'?(f.headerCrossAudit?'Waiting for header':'Waiting for cross'):f.blockAudit?(f.blockAudit.blocked?'Shot blocked':f.blockAudit.contactTick!==null?'Defender contact':f.blockAudit.phase==='flight'?'Shot in flight':'Waiting for shot'):f.interceptionAudit?({ready:'Waiting for pass',flight:'Pass in flight',intercepted:'Interception contact',collected:'Ball recovered',received:'Pass reached receiver'})[f.interceptionAudit.phase]:keeper?
       (keeper.crossing?(keeper.crossing.kind==='goal'?'Goal observed':'Ball out'):
        f.keeperDive?.catchState?.active&&f.keeperDive.catchState.confirmedTick!==null?'Ball held':
        f.keeperDive?.catchState?.active?'Securing ball':

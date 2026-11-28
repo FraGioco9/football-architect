@@ -507,7 +507,7 @@ export function createControlledActionLab(RAPIER,id,{
  const baseFootworkObserver=basicFootwork?
   createBasicReceiveDribbleObserverB04({side:selectedControlSide,kind:id}):null;
  const collectiveCounts=collectiveApproaches?{carry:0,pass:0,shot:0,tackle:0,interception:0,save:0,other:0}:null;
- let headerAudit=null;
+ let headerAudit=null,headerCrossAudit=null;
  function record(physics,playerFrame){
   const foot=engine.footContactSnapshot();
   const starts=Object.freeze([...foot.started]);
@@ -631,7 +631,10 @@ export function createControlledActionLab(RAPIER,id,{
   // actual Rapier ball action visible, but do not feed it to any observer
   // whose proofs require a genuine shoe START.
   const nativeAction=intentDrivenSoloCarry||action?.nativeExclusiveHeadStart===true?null:action;
-  if(aerialLab&&action?.nativeExclusiveHeadStart===true&&!headerAudit)headerAudit=action;
+  if(aerialLab&&action?.action==='cross'&&action.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true&&
+     starts.length===1&&starts[0]===action.playerId&&!headerCrossAudit)headerCrossAudit=action;
+  if(aerialLab&&action?.nativeExclusiveHeadStart===true&&headerCrossAudit&&
+     action.tick>headerCrossAudit.tick&&action.playerId===headerCrossAudit.recipientId&&!headerAudit)headerAudit=action;
   const evidence=classifyActionLabEvidence(spec,{
    tick:physics.tick,action:nativeAction,starts,priorPass:firstRealPass,
    opponentEarlier:firstOpposingShoe!==null,
@@ -1020,7 +1023,7 @@ export function createControlledActionLab(RAPIER,id,{
    // velocity and no authority outside the existing closed Action LAB.
    observedMovementPlayers:playerFrame.players,
    starts,action,evidence,decisionEvidence,contactContinuity,
-   ...(aerialLab?{headerAudit}:{}),
+   ...(aerialLab?{headerAudit,headerCrossAudit}:{}),
    ...(collectiveControl?{collectiveControl,collectiveCounts:Object.freeze({...collectiveCounts}),nativeKeeperStates:engine.nativeKeeperSnapshots()}:{}),
     labDynamicsVersion:currentDynamics?CURRENT_LAB_DYNAMICS_VERSION:null,
     latestOrientedReception:currentDynamics?(engine.latestLabReceptionSnapshot?.()??null):null,

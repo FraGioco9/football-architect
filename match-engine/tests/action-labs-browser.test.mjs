@@ -185,11 +185,11 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    el('preset-options').querySelector('[data-value="action:header-pair"]').click();
    const sample=()=>({tick:el('tick').textContent,summary:el('me-inline-summary').textContent,
     position:el('position').textContent,height:el('height').textContent,
-    actions:[...el('me-performed-rows').rows].map(r=>({player:r.dataset.player,action:r.dataset.action,tick:+r.dataset.tick}))});
+    actions:[...el('me-performed-rows').rows].map(r=>({player:r.dataset.player,action:r.dataset.action,label:r.cells[2].textContent,tick:+r.dataset.tick}))});
    const chooseSide=side=>{el('me-inline-side-trigger').click();el('me-inline-side-options').querySelector('[data-value="'+side+'"]').click();};
    const chooseVariant=index=>{const current=Number(el('me-inline-variant-display').textContent.split('/')[0])-1;
     for(let i=0;i<(index-current+30)%30;i++)el('me-inline-variant-next').click();};
-   const advance=()=>{const ticks=[];for(let i=0;i<75;i++){el('step').click();ticks.push(Number(el('tick').textContent.split(' ')[1]));
+   const advance=()=>{const ticks=[];for(let i=0;i<240;i++){el('step').click();ticks.push(Number(el('tick').textContent.split(' ')[1]));
     if(el('me-inline-summary').textContent.startsWith('Header · '))break;}
     return {ticks,...sample()};};
    const result=[];
@@ -210,13 +210,17 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    assert.equal(h.label,'Header · Aerial');
    assert.equal(h.variantLabel,String(h.variant+1).padStart(2,'0')+' / 30');
    assert.deepEqual(new Set(h.players),new Set(['',h.side+'-10',h.side+'-9']));
-   assert.equal(h.initial.tick,'Tick 0 · 0.00 s');assert.equal(h.initial.summary,'Waiting for header');
+   assert.equal(h.initial.tick,'Tick 0 · 0.00 s');assert.equal(h.initial.summary,'Waiting for cross');
    assert.deepEqual(h.initial.actions,[]);assert.deepEqual(h.reset,h.initial);
-   assert.ok(h.first.ticks.length>0&&h.first.ticks.length<=75);
+   assert.ok(h.first.ticks.length>0&&h.first.ticks.length<=240);
    assert.ok(h.first.ticks.every((t,i)=>t===i+1),'header must advance consecutive physical ticks');
-   const action=['shot','pass','clearance'][h.variant];
-   assert.equal(h.first.summary,'Header · '+action);
-   assert.deepEqual(h.first.actions,[{player:h.side+'-10',action,tick:h.first.ticks.at(-1)}]);
+   assert.match(h.first.summary,/^Header · (shot|pass|clearance)$/);
+   const action=h.first.summary.split(' · ')[1];
+   const header=h.first.actions.find(x=>x.action==='header-'+action);
+   const cross=h.first.actions.find(x=>x.action==='cross');
+   assert.ok(cross&&header&&cross.tick<header.tick,'cross must precede authentic header');
+   assert.equal(cross.player,h.side+'-10');assert.equal(header.player,h.side+'-9');
+   assert.equal(header.tick,h.first.ticks.at(-1));assert.match(header.label,/^Header · /);
    assert.deepEqual(h.replay,h.first,'same header must replay identically after Reset');
    assert.ok(h.pitch.left>=-1&&h.pitch.right<=h.pitch.width+1&&h.pitch.scroll<=h.pitch.width+1);
    process.stdout.write('ME_628_AERIAL02_BROWSER '+JSON.stringify(h)+'\\n');

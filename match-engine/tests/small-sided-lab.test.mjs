@@ -2071,30 +2071,36 @@ test('AERIAL-02 original full-field core consumes a descending ball head START w
  }finally{engine.dispose();}
 });
 
-test('AERIAL-02 LAB all 30 mirrored starts keep original actors and descending ball; shared policy produces actual head redirects', {timeout:120000},async()=>{
- const R=await initializeRapier(rapier),counts={shot:0,pass:0,clearance:0};
+test('AERIAL-02 LAB all 30 mirrored starts require a genuine cross before the recipient head redirect', {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier),counts={cross:0,header:0,shot:0,pass:0,clearance:0},misses=[];
  for(const side of ['home','away'])for(let variantIndex=0;variantIndex<30;variantIndex++){
   const fixture=smallSidedSetup('header-pair',side,INITIAL_PLAYERS,{variantIndex});
   const lab=createControlledActionLab(R,'header-pair',{shotSide:side,variantIndex});
   const replay=createControlledActionLab(R,'header-pair',{shotSide:side,variantIndex});
   try{
    assert.equal(lab.snapshot().genuinePhysicalPlayerCount,2);assert.deepEqual(lab.focus,fixture.activeIds);
-   assert.equal(lab.snapshot().ball.velocity.z,-2);
-   let header=null;
-   for(let tick=1;tick<=75;tick++){
+   assert.equal(fixture.ball.z,0);assert.equal(lab.snapshot().ball.velocity.z,0);
+   let cross=null,header=null,airborne=false,descending=false;
+   for(let tick=1;tick<=240;tick++){
     const a=lab.step(),b=replay.step();assert.deepEqual(a.ball,b.ball);assert.deepEqual(a.action,b.action);
     assert.equal(a.officialMatchResult,null);
-    if(a.action?.nativeExclusiveHeadStart){
-     assert.equal(a.action.playerId,side+'-10');assert.equal(a.starts.length,0);
+    if(a.action?.action==='cross'&&!cross){
+     assert.equal(a.action.playerId,side+'-10');assert.equal(a.action.recipientId,side+'-9');
+     assert.deepEqual(a.starts,[a.action.playerId]);assert.equal(a.action.actualPhysicsImpulseApplied,true);
+     cross=a.action;counts.cross++;
+    }
+    if(cross&&a.ball.position.z>1.55)airborne=true;
+    if(airborne&&a.ball.velocity.z<0)descending=true;
+    if(a.headerAudit){
+     assert.ok(cross&&airborne&&descending);assert.ok(a.headerAudit.tick>cross.tick);
+     assert.equal(a.action.playerId,side+'-9');assert.equal(a.starts.length,0);
      assert.deepEqual(a.smallSidedNativeBodyGuard.headBallStarts,[a.action.playerId]);
-     assert.equal(a.headerAudit.tick,tick);assert.equal(a.action.actualPhysicsImpulseApplied,true);
-     header=a.action;break;
+     assert.equal(a.action.actualPhysicsImpulseApplied,true);header=a.action;counts.header++;counts[header.action]++;break;
     }
    }
-   assert.ok(header,'original header required '+side+' variant '+variantIndex);
-   counts[header.action]++;
+   if(!cross||!header)misses.push({side,variantIndex,cross:cross?.tick??null,airborne,descending});
   }finally{lab.dispose();replay.dispose();}
  }
- assert.ok(counts.shot&&counts.pass&&counts.clearance);
- process.stdout.write('ME_628_HEADER_LAB '+JSON.stringify(counts)+'\n');
+ process.stdout.write('ME_628_HEADER_FROM_CROSS '+JSON.stringify({counts,misses})+'\n');
+ assert.deepEqual(misses,[],'all original cross-to-header sequences required');
 });
