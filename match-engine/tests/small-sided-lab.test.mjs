@@ -2071,6 +2071,27 @@ test('AERIAL-02 original full-field core consumes a descending ball head START w
  }finally{engine.dispose();}
 });
 
+test('AERIAL-02C empty opposing team has finite open lanes, not invalid affordances',()=>{
+ for(const side of ['home','away']){
+  const dir=side==='home'?1:-1;
+  const ids=[side+'-10',side+'-9'];
+  const players=INITIAL_PLAYERS.map(p=>p.id===ids[0]?{...p,x:dir*27,y:28}:p.id===ids[1]?{...p,x:dir*45,y:4}:p);
+  const mover=createPlayerMovement();
+  const frame={...mover.snapshot(),tick:1,players};
+  const input={tick:1,contactStarted:[ids[0]],contactActive:[ids[0]],playerFrame:frame,
+   ballPosition:{x:dir*27,y:28,z:0.11},ballVelocity:{x:0,y:0,z:0},ballRadiusM:0.11,
+   allowPhysicalCarry:true,nativeActionPolicy:true,activePlayerIds:ids,
+   collectiveControl:{tick:0,kind:'loose',officialPossession:false}};
+  const cross=selectUniformAutonomousContactAction(input);
+  assert.equal(cross.action,'cross');assert.equal(cross.recipientId,ids[1]);
+  assert.equal(cross.crossTarget.laneClearanceM,150);
+  assert.equal(selectUniformAutonomousContactAction({...input,contactStarted:[],contactActive:[]}),null);
+  assert.equal(selectUniformAutonomousContactAction({...input,contactStarted:ids,contactActive:ids}),null);
+  const blockedPlayers=players.map(q=>q.id===(side==='home'?'away-2':'home-2')?{...q,x:dir*36,y:16}:q);
+  const blocked=selectUniformAutonomousContactAction({...input,playerFrame:{...frame,players:blockedPlayers},activePlayerIds:[...ids,side==='home'?'away-2':'home-2']});
+  assert.notEqual(blocked?.action,'cross','real opposing obstruction must remain effective');
+ }
+});
 test('AERIAL-02 LAB all 30 mirrored starts require a genuine cross before the recipient head redirect', {timeout:120000},async()=>{
  const R=await initializeRapier(rapier),counts={cross:0,header:0,shot:0,pass:0,clearance:0},misses=[];
  for(const side of ['home','away'])for(let variantIndex=0;variantIndex<30;variantIndex++){

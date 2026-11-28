@@ -52,14 +52,18 @@ const ids=Object.freeze(INITIAL_PLAYERS.map(p=>p.id));
 
 // Pure geometry: opponent presence is a risk indicator, NEVER proof that
 // an interception, tackle or goal occurred. Shared for both teams.
+// No opponents means an unobstructed pitch, not invalid infinite geometry.
+// 150 m exceeds the pitch diagonal and matches the bounded scorer contract.
+// A malformed live coordinate still produces NaN and fails validation.
+const OPEN_PITCH_CLEARANCE_M=150;
 const nearOpponent=(point,team,players)=>Math.min(
- ...players.filter(p=>p.team!==team)
+ OPEN_PITCH_CLEARANCE_M,...players.filter(p=>p.team!==team)
   .map(p=>Math.hypot(p.x-point.x,p.y-point.y))
 );
 function lineClearance(from,to,team,players){
  const dx=to.x-from.x,dy=to.y-from.y,den=dx*dx+dy*dy;
  if(den<=1e-8)return 0;
- return Math.min(...players.filter(p=>p.team!==team).map(p=>{
+ return Math.min(OPEN_PITCH_CLEARANCE_M,...players.filter(p=>p.team!==team).map(p=>{
   const projection=Math.max(0,Math.min(1,
    ((p.x-from.x)*dx+(p.y-from.y)*dy)/den));
   return Math.hypot(p.x-(from.x+dx*projection),
