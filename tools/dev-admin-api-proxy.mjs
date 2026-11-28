@@ -37,7 +37,7 @@ export async function proxyAdminApi(req,res,{target=process.env.FA_ADMIN_API_TAR
  // #553: match only the canonical anonymous club-season fixtures GET.
  const clubFixtures=/^\/api\/clubs\/((?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40))\/seasons\/([1-9][0-9]*)\/fixtures$/.exec(raw);
  const clubFixturesRead=!!clubFixtures&&Number.isSafeInteger(Number(clubFixtures[2]));
- const clubRoster=/^\/api\/clubs\/((?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40))\/roster(?:\/stats(?:\?season=(?:0|[1-9][0-9]{0,8}))?)?$/.test(raw);
+ const clubRoster=/^\/api\/clubs\/((?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40))\/roster(?:\/contracts|\/stats(?:\?season=(?:0|[1-9][0-9]{0,8}))?)?$/.test(raw);
  const singlePlayer=/^\/api\/players\/[1-9][0-9]*$/.test(raw)&&Number.isSafeInteger(Number(raw.slice('/api/players/'.length)));
  // #578: allow exact numeric Player Detail Stats reads through both local
  // and shared DEV bridges. No query, suffix or encoded path is authorized.

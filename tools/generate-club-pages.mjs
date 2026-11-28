@@ -72,13 +72,14 @@ function bootstrapClubFirstPaint(rosterLabels,rosterTabs,menuMarkup,statKeys,sta
   };
   const w=words[locale],requested=params.get('view');
   const group=Object.hasOwn(keys,params.get('group'))?params.get('group'):'technical';
-  const mode=requested==='attributes'||requested==='stats'?requested:'overview';
+  const mode=requested==='attributes'||requested==='stats'||requested==='contracts'?requested:'overview';
+   const contractWords=({en:['Contracts','Expires','Salary','Season'],it:['Contratti','Scadenza','Stipendio','Stagione'],de:['Verträge','Ablauf','Gehalt','Saison'],es:['Contratos','Vence','Salario','Temporada'],fr:['Contrats','Expiration','Salaire','Saison']})[locale];
   const wordsForRoster=rosterLabels[locale];
   roster.dataset.rosterMode=mode;
   roster.querySelector('.club-roster-count-width').textContent='99 '+({en:'players',it:'giocatori',de:'Spieler',es:'jugadores',fr:'joueurs'})[locale];
   for(const button of roster.querySelectorAll('[data-club-roster-view]')){
    const key=button.dataset.clubRosterView,active=key===(mode==='overview'?'info':mode);
-   button.textContent=key==='info'?'Info':key==='stats'?rosterTabs[locale][1]:wordsForRoster[0];
+   button.textContent=key==='info'?'Info':key==='stats'?rosterTabs[locale][1]:key==='contracts'?contractWords[0]:wordsForRoster[0];
    const query=new URLSearchParams(params);
    query.set('view',key);if(key!=='stats')query.delete('competition');query.delete('sort');query.delete('order');
    if(key==='attributes')query.set('group',mode==='attributes'?group:'technical');else query.delete('group');
@@ -103,8 +104,8 @@ function bootstrapClubFirstPaint(rosterLabels,rosterTabs,menuMarkup,statKeys,sta
   roster.querySelector('.club-roster-tabs').setAttribute('aria-label',w.title);
   const table=roster.querySelector('table');
   table.dataset.playersTableMode=mode;table.dataset.rosterGroup=group;table.setAttribute('aria-label',w.title);
-  const fields=mode==='attributes'?[w.cols[0],w.cols[1],w.cols[2],...keys[group].map(key=>names[locale].split('|')[allAttrs.indexOf(key)])]:mode==='stats'?[...w.cols.slice(0,3),...wordsForRoster.slice(1,1+statKeys.length)]: [...w.cols,({en:'Market value',it:'Valore di mercato',de:'Marktwert',es:'Valor de mercado',fr:'Valeur marchande'})[locale]];
-  const columnSorts=mode==='attributes'?['nationality','name','positions',...keys[group]]:mode==='stats'?['nationality','name','positions',...statKeys]:['nationality','name','positions','age','height','foot','market_value_arc'];
+  const fields=mode==='attributes'?[w.cols[0],w.cols[1],w.cols[2],...keys[group].map(key=>names[locale].split('|')[allAttrs.indexOf(key)])]:mode==='stats'?[...w.cols.slice(0,3),...wordsForRoster.slice(1,1+statKeys.length)]:mode==='contracts'?[...w.cols.slice(0,4),contractWords[1],contractWords[2]]: [...w.cols,({en:'Market value',it:'Valore di mercato',de:'Marktwert',es:'Valor de mercado',fr:'Valeur marchande'})[locale]];
+  const columnSorts=mode==='attributes'?['nationality','name','positions',...keys[group]]:mode==='stats'?['nationality','name','positions',...statKeys]:mode==='contracts'?['nationality','name','positions','age','expiresSeason','currentSeasonalSalaryArc']:['nationality','name','positions','age','height','foot','market_value_arc'];
   const sort=columnSorts.includes(params.get('sort'))?params.get('sort'):'';
   const order=sort&&['asc','desc'].includes(params.get('order'))?params.get('order'):
    sort?['name','nationality','positions','foot'].includes(sort)?'asc':'desc':'';
