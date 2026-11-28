@@ -1,7 +1,8 @@
 // #628 solo Carry: evidence-only phase selection at fixed 60Hz.
 // No timed script, fake collision, possession, teleport or ball speed clamp.
 import {validateSoloCarryAttributes,uniformSoloCarryAttributes,
- calibrateSoloCarryKinematics} from './solo-carry-attribute-calibration.mjs';
+ calibrateSoloCarryKinematics,calibrateSoloCarryTouch} from './solo-carry-attribute-calibration.mjs';
+import {attackDirection} from './match-directions.mjs';
 export const SOLO_CARRY_PHASES=Object.freeze(['control','moderate','sprint']);
 const profiles=Object.freeze({
  control:Object.freeze({
@@ -77,4 +78,38 @@ export function advanceSoloCarryPhase({previousPhase='control',tick,
   nativeShoeEventCreated:false,ballImpulseCreated:false,
   officialPossession:false
  });
+}
+
+// The accepted reference pace profiles define intent, not a LAB identity.
+const CARRY_TOUCH_PROFILES=Object.freeze({
+ control:Object.freeze({targetSpeedMps:2.6,maxImpulseNs:1.10,
+  spacingTicks:48}),
+ moderate:Object.freeze({targetSpeedMps:3.55,maxImpulseNs:1.50,
+  spacingTicks:32}),
+ sprint:Object.freeze({targetSpeedMps:5.8,maxImpulseNs:2.55,
+  spacingTicks:82})
+});
+
+export function selectNativeOpenCarryPhase({playerSpeedMps,ballSpeedMps,ballGapM}={}){
+ if(![playerSpeedMps,ballSpeedMps,ballGapM].every(n=>Number.isFinite(n)&&n>=0))throw new TypeError('Observed carry phase geometry required');
+ if(playerSpeedMps>=2.58&&ballSpeedMps>=2.20&&ballGapM>=0.46)return 'sprint';
+ if(playerSpeedMps>=1.45&&ballSpeedMps>=0.90&&ballGapM>=0.40)return 'moderate';
+ return 'control';
+}
+// Pure physical proposal. Caller must authenticate the exclusive contact;
+// this helper neither applies an impulse nor certifies a shoe event.
+export function planNativeCarryPhaseImpulse({phase,playerAttributes=uniformSoloCarryAttributes(50),player,attackingSide,ballVelocity,attackPolarity=1,nativeFixedSprintLongStride=false}={}){
+ if(!Object.hasOwn(CARRY_TOUCH_PROFILES,phase)||player?.team!==attackingSide||
+    ![player.vx,player.vy,ballVelocity?.x,ballVelocity?.y].every(Number.isFinite)||
+    typeof nativeFixedSprintLongStride!=='boolean'||nativeFixedSprintLongStride&&phase!=='sprint')throw new TypeError('Live carry phase state required');
+ const attrs=validateSoloCarryAttributes(playerAttributes),config=calibrateSoloCarryTouch(CARRY_TOUCH_PROFILES[phase],attrs);
+ const forward=attackDirection(attackingSide,attackPolarity);
+ const playerForward=Math.max(0,forward*player.vx),ballForward=forward*ballVelocity.x;
+ const aheadAllowance=phase==='sprint'?(nativeFixedSprintLongStride?1.40:1.05):phase==='moderate'?0.85:0.48;
+ const controlledTarget=Math.min(config.targetSpeedMps,Math.max(0.8,playerForward+aheadAllowance));
+ const requiredDelta=controlledTarget-ballForward;
+ const impulseNs=requiredDelta<=0.12?null:Object.freeze({x:forward*Math.min(config.maxImpulseNs,0.43*requiredDelta),y:0,z:0});
+ return Object.freeze({phase,attributes:attrs,nativeFixedSprintLongStride,playerForwardSpeedMps:playerForward,
+  observedPreImpulseBallForwardMps:ballForward,calibratedTargetSpeedMps:config.targetSpeedMps,
+  controlledTargetSpeedMps:controlledTarget,impulseNs});
 }

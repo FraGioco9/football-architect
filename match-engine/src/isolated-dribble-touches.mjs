@@ -1,4 +1,5 @@
 import {attackDirection,validateAttackPolarity} from './match-directions.mjs';
+import {selectNativeOpenCarryPhase,planNativeCarryPhaseImpulse} from './solo-carry-phases.mjs';
 // #628 research: proposal only; actual ball impulse needs authentic Rapier START.
 import {selectDefensiveIntervention,planNativeShotBlock,observeNativeShotBlock} from './defensive-intervention-selection.mjs';
 export const ISOLATED_DRIBBLE_TOUCH_VERSION='me-628-dribble-grounded-pressure-paced-v3';
@@ -177,6 +178,19 @@ export function planNativeCarryTouch({attacker=null,attackingSide,defender=null,
  validateAttackPolarity(attackPolarity);
  if(!['home','away'].includes(attackingSide)||![b?.x,b?.y,v?.x,v?.y].every(Number.isFinite)||
     (defender!==null&&(defender.team===attackingSide||![defender.x,defender.y].every(Number.isFinite))))throw new TypeError('Live native carry geometry required');
+ // A truly unopposed canonical actor uses the same named pace response as
+ // the locked exercise. Opposed geometry remains U-01A, unchanged.
+ if(defender===null&&attacker?.team===attackingSide&&[attacker.x,attacker.y,attacker.vx,attacker.vy].every(Number.isFinite)){
+  const phase=selectNativeOpenCarryPhase({playerSpeedMps:Math.hypot(attacker.vx,attacker.vy),
+   ballSpeedMps:Math.hypot(v.x,v.y),ballGapM:Math.hypot(attacker.x-b.x,attacker.y-b.y)});
+  const proposal=planNativeCarryPhaseImpulse({phase,player:attacker,attackingSide,ballVelocity:v,attackPolarity});
+  const dir=attackDirection(attackingSide,attackPolarity);
+  return Object.freeze({version:'me-628-native-carry-geometry-v1',dx:proposal.impulseNs?.x??0,dy:0,
+   magnitudeNs:Math.abs(proposal.impulseNs?.x??0),desiredVelocity:Object.freeze({x:dir*proposal.controlledTargetSpeedMps,y:0}),
+   targetY:b.y,bypassSide:0,defenderAheadM:null,pressure:0,shieldingIntent:false,fromLiveOpponent:false,
+   soloCarry:false,fromLiveBallVelocity:true,genuineRapierShoeStartRequired:true,decisionOnly:true,officialPossession:false,officialMatchAction:false,
+   carryPhase:phase,phaseProposal:proposal});
+ }
  const tieSide=b.y>0?-1:1,maxImpulseNs=defender===null?0.42:0.30;
  const dir=attackDirection(attackingSide,attackPolarity);
  const ahead=defender?dir*(defender.x-b.x):Infinity,lateral=defender?defender.y-b.y:0;

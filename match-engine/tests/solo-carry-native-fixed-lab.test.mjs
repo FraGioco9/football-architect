@@ -4,6 +4,8 @@ import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {uniformSoloCarryAttributes} from '../src/solo-carry-attribute-calibration.mjs';
+import {planNativeCarryTouch} from '../src/isolated-dribble-touches.mjs';
+import {planNativeCarryPhaseImpulse} from '../src/solo-carry-phases.mjs';
 import {chooseNativeFixedCarryImpulse}
  from '../src/native-fixed-carry-impulse.mjs';
 
@@ -589,4 +591,29 @@ test('#628 adaptive Sprint pursuit A/B 32 seeded physical source episodes',
  }
  process.stdout.write('ME_628_NATIVE_ADAPTIVE_PURSUIT_FULL32_AB '+
   JSON.stringify(rows)+'\\n');
+});
+
+test('ME-01-QA U-01B: same selected open carry phase has the same physical impulse proposal',()=>{
+ const inputs=[['control',0.6,0.2,0.30],['moderate',2,1.2,0.42],['sprint',4,2.4,0.60]];
+ for(const attackingSide of ['home','away'])for(const [phase,speed,rolling,gap] of inputs){
+  const dir=attackingSide==='home'?1:-1;
+  const actor={id:attackingSide+'-10',team:attackingSide,x:dir*10,y:0,vx:dir*speed,vy:0};
+  const ballPosition={x:actor.x+dir*gap,y:0,z:0.11},ballVelocity={x:dir*rolling,y:0,z:0};
+  const base={phase,player:actor,attackingSide,ballVelocity};
+  const locked=chooseNativeFixedCarryImpulse({...base,playerAttributes:uniformSoloCarryAttributes(50),
+   verifiedNativeExclusiveShoeStart:true,contactActorId:actor.id});
+  const auto=planNativeCarryTouch({attacker:actor,attackingSide,ballPosition,ballVelocity});
+  assert.equal(auto.carryPhase,phase);
+  assert.deepEqual(auto.phaseProposal.impulseNs,locked.impulseNs);
+  assert.equal(auto.magnitudeNs,Math.abs(locked.impulseNs.x));
+  assert.equal(auto.dx,locked.impulseNs.x);
+  assert.equal(auto.genuineRapierShoeStartRequired,true);
+  assert.equal(auto.officialPossession,false);
+  const reversed=planNativeCarryPhaseImpulse({...base,player:{...actor,x:-actor.x,vx:-actor.vx},
+   ballVelocity:{...ballVelocity,x:-ballVelocity.x},attackPolarity:-1});
+  assert.equal(reversed.impulseNs.x,-locked.impulseNs.x);
+  assert.equal(planNativeCarryPhaseImpulse({...base,ballVelocity:{x:dir*10,y:0,z:0}}).impulseNs,null);
+  assert.throws(()=>chooseNativeFixedCarryImpulse({...base,playerAttributes:uniformSoloCarryAttributes(50),
+   verifiedNativeExclusiveShoeStart:false,contactActorId:actor.id}),/exclusive Rapier shoe/);
+ }
 });
