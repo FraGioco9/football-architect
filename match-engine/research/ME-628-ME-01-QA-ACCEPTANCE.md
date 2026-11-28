@@ -193,3 +193,20 @@ Shared receiving executor now expires pending delivery after the existing 180-ti
 
 ## U-02d6 — common referee surface arbitration and restart provenance
 Both modern referee callers now pass original guarded lower-leg evidence, validated against tick/world/source and participant identity. Shared last-touch resolver distinguishes no new contact (preserve prior evidence), unique native shoe/head/chest/raised-foot/lower-leg/glove START, and ambiguous multiple surfaces (clear attribution even for the same actor). Paired shoe exclusivity required; keeper evidence includes ongoing contacts and holds, not only STARTs. Native ground restart take now rejects concurrent lower-leg, aerial or keeper contact, including same-actor lower leg; historical unguarded comparator unchanged. No changes to crossing/goal geometry or actual impulse formula. Added mirrored synthetic tests; 42 assertions PASS in V8 with exact pure helper sources, four stripped-source syntax checks. First local extraction attempt omitted a closing brace; corrected extraction only. Real Rapier and browser NOT RUN; conservative ambiguity and stricter restart exclusivity can increase unresolved tickets or stall restarts, requiring actual positive gate validation. Keeper distribution last-touch release attribution remains separate follow-up. Candidate unpublished, CI deferred. Next grouped acceptance inventory and remaining source review. No merge/deploy/DB.
+
+## U-02d7 — keeper release and grouped acceptance inventory
+Shared keeper distribution admission checks actual applied impulse, native joint release, prior confirmed hold, same tick, allowed save and pass/clearance kinds, active canonical keeper and permitted same-team outfield recipient. Executor and control observer consume this helper; referee independently tracks prior confirmed hold and attributes a valid release, never passive detachment. Both referee callers bind actual engine permissions. 50 synthetic assertions PASS in V8; seven stripped JS syntax checks. No real runtime or positive physical acceptance.
+
+### Grouped acceptance inventory (NOT RUN)
+| Group | Required positive gate | Negative/consistency gate |
+|---|---|---|
+| Carry | fixed sprint/control/moderate phases, authentic exclusive shoe and forward motion | two-foot ambiguity, cadence, reset |
+| Delivery and reception | short ground pass, cross, short/long/switch lofted pass, authentic recipient cushion | 180-tick expiry, interruption, paired feet, no unauthorized reception |
+| Finishing | power/curled/tap-in/first-time, header redirects and volley | physical provenance, correct subtype and permitted surface |
+| Aerial control | chest/raised-foot cushion, contested header | actual delivery, descending contact, no mixed surface authorization |
+| Defense | standing/sliding/shoulder/interception/block; actual intervention/recovery | bounded subtype and recovery gates |
+| Keeper | foot/body save, glove parry/confirmed catch, high claim/punch, distribution and bounded release | competing contacts, prior hold, no passive kick |
+| Shared runtime | 25 modern factory configurations HOME/AWAY ×60 ticks; browser Play/Step/Reset and visible action labels | masks and movement parity, no official result |
+| Full field | existing eight-case 600-tick replay gate, at least one real goal and touchline, authentic restart/period evidence | no fabricated events, no weakened thresholds |
+
+All 19 capability tokens covered by the inventory, including umbrella tackle/header and three header redirects; no claim all 19 have separate positive tests. Audit exact test cases before publication; full-field missing goal remains hard blocker. No CI/merge/deploy/DB. Candidate unpublished. Next U-02e: consolidated candidate import/export and acceptance gate audit, then grouped CI only at authorized batch end.

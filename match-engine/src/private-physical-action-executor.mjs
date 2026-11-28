@@ -8,7 +8,7 @@ import {inspectPhysicalActionRejection,selectUniformAutonomousContactAction,choo
  from './player-ball-uniform-autonomous-action.mjs';
 import {FOOT_CONTACT_VERSION,footProxyTransform} from './player-foot-contact.mjs';
 import {hasExclusiveNativeShoeStart} from './rapier-foot-contact-bridge.mjs';
-import {createNativeFundamentalMask,nativeFundamentalAllowed,nativePhysicalActionAllowed,nativeSequenceDeliveryAllowed,nativeSequenceAerialAllowed,nativeSequenceGroundMask,selectNativeCrossProfile,nativeCrossTargetHeight,nativePendingDeliveryValid} from './native-fundamental-mask.mjs';
+import {createNativeFundamentalMask,nativeFundamentalAllowed,nativePhysicalActionAllowed,nativeSequenceDeliveryAllowed,nativeSequenceAerialAllowed,nativeSequenceGroundMask,selectNativeCrossProfile,nativeCrossTargetHeight,nativePendingDeliveryValid,nativeKeeperDistributionAllowed} from './native-fundamental-mask.mjs';
 import {chooseIntentSoloCarryTouch} from './intent-driven-solo-carry.mjs';
 import {chooseNativeFixedCarryImpulse}
  from './native-fixed-carry-impulse.mjs';
@@ -616,11 +616,9 @@ export function createPrivatePhysicalActionExecutor({
   }
   if(keeperDistribution!==null){
    const d=keeperDistribution;
-   const actor=playerFrame.players.find(p=>p.id===d.keeperId&&p.role==='goalkeeper'&&p.team===d.team);
-   if(!nativeActionPolicy||!suppressPhysicalBodyContact||applied||d.tick!==nextTick||d.appliedByRapier!==true||d.actualPhysicsImpulseApplied!==true||d.nativeGripReleased!==true||!actor||!activePlayerIds.includes(actor.id)||collectiveControl?.keeperHold?.keeperId!==actor.id||collectiveControl.keeperHold.confirmedTick!==d.confirmedGripTick)throw new TypeError('Current confirmed native keeper release required');
+   if(!nativeActionPolicy||!suppressPhysicalBodyContact||applied||!nativeKeeperDistributionAllowed(fundamentalMask,d,{tick:nextTick,priorHold:collectiveControl?.keeperHold,players:playerFrame.players,activeIds:activePlayerIds}))throw new TypeError('Current authorized confirmed native keeper release required');
    pendingDelivery=null;
-   if(d.kind==='pass'&&playerFrame.players.some(p=>p.id===d.recipientId&&p.team===actor.team&&activePlayerIds.includes(p.id)&&p.id!==actor.id))
-    pendingDelivery={kind:'pass',tick:nextTick,actorId:actor.id,recipientId:d.recipientId,team:actor.team,airborne:true,descending:false,source:'native-keeper-grip-release'};
+   if(d.kind==='pass')pendingDelivery={kind:'pass',tick:nextTick,actorId:d.keeperId,recipientId:d.recipientId,team:d.team,airborne:true,descending:false,source:'native-keeper-grip-release',actualPhysicsImpulseApplied:true};
   }
   if(side!==null&&!sharedDynamics){
    if(researchCandidate!==null){

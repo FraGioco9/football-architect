@@ -1,3 +1,4 @@
+import {createNativeFundamentalMask,nativeKeeperDistributionAllowed} from '../src/native-fundamental-mask.mjs';
 // #628 ACTIONS-B05 — actual original Rapier 60Hz full-ball goal / line
 // exits; provisional referee and same-world dead-ball kickoff.
 import test from 'node:test';
@@ -192,5 +193,28 @@ test('ME-01-QA U-02d6: referee distinguishes exclusive, ongoing and competing ph
   assert.equal(resolveNativeRefereeTouch({...base,keeperDive:{...glove,contactStarted:false}}),undefined);
   for(const patch of [{foot,bodyStarts:[id],bodyActive:[id]},{foot,aerialEvidence:[head]},{foot,keeperDive:glove},{aerialEvidence:[head,chest]},{aerialEvidence:[head],bodyActive:[id]},{aerialEvidence:[head],aerialConflict:true},{keeperDive:glove,bodyActive:[keeperId]},{keeperContactConflict:true}])assert.equal(resolveNativeRefereeTouch({...base,...patch}),null);
   assert.equal(nativeRefereeKeeperEvidence([glove,{keeperId:other,contact:true,contactStarted:false}]).keeperContactConflict,true);
+ }
+});
+
+test('ME-01-QA U-02d7: authorized keeper release has common provenance and is not passive detachment',()=>{
+ for(const team of ['home','away']){
+  const keeperId=team+'-1',recipientId=team+'-9',opponent=(team==='home'?'away':'home')+'-9',tick=30;
+  const players=[{id:keeperId,team,role:'goalkeeper'},{id:recipientId,team,role:'forward'},{id:opponent,team:opponent.split('-')[0],role:'forward'}],activeIds=players.map(p=>p.id);
+  const priorHold={keeperId,confirmedTick:10},ctx={tick,priorHold,players,activeIds},mask=createNativeFundamentalMask(['save','pass','clearance']);
+  const d={tick,keeperId,team,kind:'pass',recipientId,confirmedGripTick:10,appliedByRapier:true,actualPhysicsImpulseApplied:true,nativeGripReleased:true};
+  assert.equal(nativeKeeperDistributionAllowed(mask,d,ctx),true);
+  assert.equal(nativeKeeperDistributionAllowed(mask,{...d,kind:'clearance',recipientId:null},ctx),true);
+  for(const patch of [{tick:29},{kind:'shot'},{recipientId:keeperId},{recipientId:opponent},{recipientId:null},{confirmedGripTick:30},{confirmedGripTick:9},{actualPhysicsImpulseApplied:false},{appliedByRapier:false},{nativeGripReleased:false},{kind:'clearance'}])assert.equal(nativeKeeperDistributionAllowed(mask,{...d,...patch},ctx),false);
+  for(const m of [[],['pass'],['save'],['save','clearance']])assert.equal(nativeKeeperDistributionAllowed(m,d,ctx),false);
+  assert.equal(nativeKeeperDistributionAllowed(mask,d,{...ctx,priorHold:null}),false);
+  assert.equal(nativeKeeperDistributionAllowed(mask,d,{...ctx,activeIds:[keeperId]}),false);
+  const keeperDive={keeperId,distribution:d,catchState:{active:false,released:true}},foot={started:[],active:[]},base={tick,foot,keeperDive};
+  assert.equal(nativeRefereeKeeperEvidence([keeperDive]).keeperDive,keeperDive);
+  assert.equal(resolveNativeRefereeTouch({...base,keeperRelease:d}).nativeKeeperDistribution,true);
+  assert.equal(resolveNativeRefereeTouch(base),undefined);
+  assert.equal(resolveNativeRefereeTouch({...base,keeperRelease:d,foot:{started:[recipientId],active:[recipientId]}}),null);
+  const passive={keeperId,boundedRelease:{tick,actualPhysicsImpulseApplied:false},catchState:{active:false,released:true}};
+  assert.equal(nativeRefereeKeeperEvidence([passive]).keeperDive,passive);
+  assert.equal(resolveNativeRefereeTouch({tick,foot,keeperDive:passive}),undefined);
  }
 });

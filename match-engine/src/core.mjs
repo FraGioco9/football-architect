@@ -844,7 +844,7 @@ export function createEngine(RAPIER, input = {}, {
   let basicRestartTick = -1;
   // Only the private full-field native session exposes its own original
   // referee ticket; an externally assembled boundary object is not authority.
-  const nativeMatchReferee=smallSided?.fullField&&diagnosticCollectiveActions?createBasicMatchRefereeB05():null;
+  const nativeMatchReferee=smallSided?.fullField&&diagnosticCollectiveActions?createBasicMatchRefereeB05({allowedFundamentals:nativeFundamentals}):null;
   const restartMask=createNativeRestartMask({fullField:!!nativeMatchReferee,boundaryEnabled:diagnosticBasicRestartEnabled,boundaryType:diagnosticBasicRestartSource,kickoffEnabled:diagnosticB06bHalftimeTick!==null});
   let nativeRestartPending=null,nativeRestartTake=null,nativeMatchFrame=null,nativeThrowHands=null;
   let nativePlayedTicks=0,nativeHalfPlacement=null,nativeHalfTake=null,nativeAttackPolarity=1;

@@ -2,7 +2,7 @@ import {attackDirection,validateAttackPolarity} from './match-directions.mjs';
 import {selectNativeOpenCarryPhase,planNativeCarryPhaseImpulse,hasNativeOpenCarrySpace} from './solo-carry-phases.mjs';
 // #628 research: proposal only; actual ball impulse needs authentic Rapier START.
 import {selectDefensiveIntervention,planNativeShotBlock,observeNativeShotBlock,selectPermittedDefensiveTouch} from './defensive-intervention-selection.mjs';
-import {createNativeFundamentalMask,createNativeDuelFundamentalMask,nativeDefensiveInterventionAllowed,nativePhysicalActionAllowed,nativeObservedActionAllowed} from './native-fundamental-mask.mjs';
+import {createNativeFundamentalMask,createNativeDuelFundamentalMask,nativeDefensiveInterventionAllowed,nativePhysicalActionAllowed,nativeObservedActionAllowed,nativeKeeperDistributionAllowed} from './native-fundamental-mask.mjs';
 export const ISOLATED_DRIBBLE_TOUCH_VERSION='me-628-dribble-grounded-pressure-paced-v3';
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const opposite=side=>side==='home'?'away':'home';
@@ -84,10 +84,9 @@ export function createNativeBallControlObserver(activeIds,outfieldIds,allowedFun
   const currentKeepers=keeperStates.filter(k=>k.tick===tick&&activeIds.includes(k.keeperId)&&players.some(p=>p.id===k.keeperId&&p.role==='goalkeeper'));
   const holding=(mask.includes('save')?currentKeepers:[]).filter(k=>k.catchState?.active&&Number.isSafeInteger(k.catchState.confirmedTick)&&k.catchState.confirmedTick<=tick);
   const keeperHold=holding.length===1?Object.freeze({keeperId:holding[0].keeperId,confirmedTick:holding[0].catchState.confirmedTick}):null;
-  const released=currentKeepers.filter(k=>k.distribution?.tick===tick&&k.distribution.keeperId===k.keeperId&&k.distribution.appliedByRapier===true&&k.distribution.actualPhysicsImpulseApplied===true&&k.distribution.nativeGripReleased===true&&k.catchState?.active===false&&k.catchState.released===true&&latest.keeperHold?.keeperId===k.keeperId&&latest.keeperHold.confirmedTick===k.distribution.confirmedGripTick);
+  const released=currentKeepers.filter(k=>k.distribution?.keeperId===k.keeperId&&k.catchState?.active===false&&k.catchState.released===true);
   const candidate=released.length===1?released[0].distribution:null;
-  const keeperDistribution=candidate&&mask.includes('save')&&mask.includes(candidate.kind)&&players.some(p=>p.id===candidate.keeperId&&p.team===candidate.team)&&['pass','clearance'].includes(candidate.kind)&&
-   (candidate.kind==='clearance'?candidate.recipientId===null:participants.some(p=>p.id===candidate.recipientId&&p.team===candidate.team))&&!real?candidate:null;
+  const keeperDistribution=!real&&nativeKeeperDistributionAllowed(mask,candidate,{tick,priorHold:latest.keeperHold,players,activeIds})?candidate:null;
   if(keeperHold){witness=null;delivery=null;}
   if(keeperDistribution){witness=null;delivery=keeperDistribution.kind==='pass'?Object.freeze({tick,playerId:keeperDistribution.keeperId,team:keeperDistribution.team,kind:'pass',recipientId:keeperDistribution.recipientId,source:'native-keeper-grip-release'}):null;}
   const control=observeNativeBallControl({players:participants,ball,carryWitness:witness,tick});

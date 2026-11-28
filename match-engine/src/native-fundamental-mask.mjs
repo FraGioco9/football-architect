@@ -153,3 +153,16 @@ export function nativePendingDeliveryValid(delivery,tick,{shoeStarts=[],shoeActi
  // Without a START, only the original launch actor may remain in contact.
  return shoeStarts.length>0||shoeActive.every(id=>id===delivery.actorId);
 }
+
+// A hand release is a distinct physical source, not a ground shoe action.
+// A previous confirmed hold and an authorized recipient/kind are mandatory.
+export function nativeKeeperDistributionAllowed(mask,d,{tick,priorHold,players=[],activeIds=[]}={}){
+ if(!d||!Number.isSafeInteger(tick)||d.tick!==tick||!nativeFundamentalAllowed(mask,'save')||
+    !['pass','clearance'].includes(d.kind)||!nativeFundamentalAllowed(mask,d.kind)||
+    d.appliedByRapier!==true||d.actualPhysicsImpulseApplied!==true||d.nativeGripReleased!==true||
+    !Number.isSafeInteger(d.confirmedGripTick)||d.confirmedGripTick<1||d.confirmedGripTick>=tick||
+    priorHold?.keeperId!==d.keeperId||priorHold.confirmedTick!==d.confirmedGripTick||
+    !activeIds.includes(d.keeperId)||!players.some(p=>p.id===d.keeperId&&p.team===d.team&&p.role==='goalkeeper'))return false;
+ return d.kind==='clearance'?d.recipientId===null:activeIds.includes(d.recipientId)&&d.recipientId!==d.keeperId&&
+    players.some(p=>p.id===d.recipientId&&p.team===d.team&&p.role!=='goalkeeper');
+}

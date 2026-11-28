@@ -522,7 +522,7 @@ export function createControlledActionLab(RAPIER,id,{
  const shieldObserver=directedDribble?createDribbleShieldObserver(shotSide):null;
  const effectiveAerialSurfaces=smallSided?engine.nativeAerialSurfacesSnapshot():Object.freeze([]);
  const refereeObserver=(refereeMode||smallSided)?
-  createBasicMatchRefereeB05():null;
+  createBasicMatchRefereeB05({allowedFundamentals:smallSided?engine.nativeFundamentalsSnapshot():null}):null;
  const matchTimelineObserver=(refereeMode||smallSided)?
   createBasicMatchTimelineB06():null;
  const isolatedDribbleAudit=(!collectiveApproaches&&!intentDrivenSoloCarry&&
