@@ -175,6 +175,26 @@ export function chooseRecipient(actor,ball,players,attackPolarity=1){
 // AERIAL-02: shared live shot lane and recipient decisions, with a
 // provisional bounded redirect after a genuine native head contact.
 // No scripted heading outcome, no LAB-specific action selection.
+// AERIAL-06: a real raised-foot receiving contact may become a first-time
+// shot if live geometry permits. This is only a decision; the private
+// executor is the sole authority for the same-tick physical impulse.
+export function chooseNativeVolleyIntent(actor,ball,incoming,players,attackPolarity=1){
+ validateAttackPolarity(attackPolarity);
+ if(!actor||actor.role==='goalkeeper'||!Array.isArray(players)||!players.some(p=>p.id===actor.id&&p.team===actor.team)||
+    ![actor.x,actor.y,ball?.x,ball?.y,ball?.z,incoming?.x,incoming?.y,incoming?.z].every(finite)||
+    ball.z<0.55||ball.z>1.15||incoming.z>=-0.15||Math.hypot(incoming.x,incoming.y,incoming.z)>27)return null;
+ const dir=attackDirection(actor.team,attackPolarity),goalX=dir*52.5;
+ const distance=Math.hypot(goalX-ball.x,ball.y);
+ if(dir*(goalX-ball.x)<3||distance>22||nearOpponent(ball,actor.team,players)<1.25)return null;
+ const lane=chooseLiveShotLane(ball,goalX,actor.team,players);
+ if(!lane)return null;
+ const dx=goalX-ball.x,dy=lane.target.y-ball.y;
+ const flightS=Math.max(0.25,Math.min(1.05,distance/23));
+ const targetZ=0.95;
+ return Object.freeze({action:'shot',target:Object.freeze({...lane.target,z:targetZ}),
+  desiredVelocity:Object.freeze({x:dx/flightS,y:dy/flightS,z:(targetZ-ball.z)/flightS+4.905*flightS}),
+  distanceM:distance,decisionOnly:true});
+}
 export function chooseNativeHeaderIntent(actor,ball,velocity,players,attackPolarity=1){
  validateAttackPolarity(attackPolarity);
  if(!actor||actor.role==='goalkeeper'||!Array.isArray(players)||!players.some(p=>p.id===actor.id&&p.team===actor.team)||

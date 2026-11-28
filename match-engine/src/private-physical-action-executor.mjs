@@ -3,7 +3,7 @@ import {planNativeAerialCushion,NATIVE_AERIAL_CONTROL_VERSION,exclusiveNativeAer
 // Extracted #481 A4.2b.1 physical impulse boundary.
 // A private, opt-in adapter for the SAME Rapier ball body and canonical
 // 22-shoe event source. No world, policy/mover override or official results.
-import {inspectPhysicalActionRejection,selectUniformAutonomousContactAction,chooseNativeHeaderIntent,
+import {inspectPhysicalActionRejection,selectUniformAutonomousContactAction,chooseNativeHeaderIntent,chooseNativeVolleyIntent,
  UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS}
  from './player-ball-uniform-autonomous-action.mjs';
 import {FOOT_CONTACT_VERSION,footProxyTransform} from './player-foot-contact.mjs';
@@ -262,7 +262,19 @@ export function createPrivatePhysicalActionExecutor({
      const plan=control?null:chooseNativeHeaderIntent(actor,origin,before,playerFrame.players.filter(p=>activePlayerIds.includes(p.id)),attackPolarity);
      const mass=ballBody.mass();
      if(control){
-      const cushion=planNativeAerialCushion({surface:head.surface,incoming:head.incomingVelocity,velocity:before,massKg:mass,actor});
+      const volley=head.surface==='foot'?chooseNativeVolleyIntent(actor,origin,head.incomingVelocity,playerFrame.players.filter(p=>activePlayerIds.includes(p.id)),attackPolarity):null;
+      const raw=volley&&Number.isFinite(mass)&&mass>0?{x:mass*(volley.desiredVelocity.x-before.x),y:mass*(volley.desiredVelocity.y-before.y),z:mass*(volley.desiredVelocity.z-before.z)}:null;
+      const norm=raw?Math.hypot(raw.x,raw.y,raw.z):0;
+      if(volley&&norm>0.025){
+       const scale=Math.min(1,12/norm),impulseNs=Object.freeze({x:raw.x*scale,y:raw.y*scale,z:raw.z*scale});
+       ballBody.applyImpulse(impulseNs,true);
+       result=Object.freeze({version:NATIVE_AERIAL_CONTROL_VERSION,tick:nextTick,playerId:actor.id,team:actor.team,
+        action:'shot',shotProfile:'volley',surface:'foot',recipientId:null,origin,before,after:Object.freeze({...ballBody.linvel()}),
+        target:volley.target,impulseNs,nativeExclusiveAerialControlStart:true,nativeVolley:true,actualNativeSolverContact:true,sameOriginalRapierWorld:true,
+        appliedByRapier:true,actualPhysicsImpulseApplied:true,officialMatchAction:false,officialPossession:false});
+       lastActionTick=nextTick;
+      }
+      const cushion=result?null:planNativeAerialCushion({surface:head.surface,incoming:head.incomingVelocity,velocity:before,massKg:mass,actor});
       if(cushion){
        ballBody.applyImpulse(cushion.impulseNs,true);
        result=Object.freeze({version:NATIVE_AERIAL_CONTROL_VERSION,tick:nextTick,playerId:actor.id,team:actor.team,

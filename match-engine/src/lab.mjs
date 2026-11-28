@@ -90,8 +90,8 @@ function recordPerformedActions(frame){
  const action=frame.action;
  if(action?.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true&&
     action.tick===tick&&ids.includes(action.playerId))
-  events.push({id:action.playerId,kind:action.passTarget?.deliveryProfile==='lofted'?'lofted-pass':action.nativeExclusiveHeadStart===true?'header-'+action.action:action.nativeExclusiveAerialControlStart===true?action.surface+'-control':action.action,
-   label:action.passTarget?.deliveryProfile==='lofted'?'Lofted pass':action.nativeExclusiveHeadStart===true?'Header · '+(performedActionLabels[action.action]??action.action):
+  events.push({id:action.playerId,kind:action.nativeVolley===true?'volley':action.passTarget?.deliveryProfile==='lofted'?'lofted-pass':action.nativeExclusiveHeadStart===true?'header-'+action.action:action.nativeExclusiveAerialControlStart===true?action.surface+'-control':action.action,
+   label:action.nativeVolley===true?'Volley':action.passTarget?.deliveryProfile==='lofted'?'Lofted pass':action.nativeExclusiveHeadStart===true?'Header · '+(performedActionLabels[action.action]??action.action):
     action.nativeExclusiveAerialControlStart===true?(action.surface==='chest'?'Chest control':'Aerial foot control'):performedActionLabels[action.action]??action.action});
  // First receiving contacts are actual native observations, not inferred
  // completed passes or successful possession. They have their own actor.
@@ -750,7 +750,7 @@ function render() {
     const shot=f.shotSoloAudit, pass=f.passPairAudit, cross=f.crossPairAudit;
     const keeper=f.keeperShotAudit;
     const mixedControl=f.duelTackleProfile==='mixed'&&f.duelTransition?.ballControl;
-    const summary=activeScene.id==='lofted-pass'?(f.loftedPassAudit?.receiverContact?'Receiver contact':f.loftedPassAudit?'Lofted pass in flight':'Waiting for lofted pass'):activeScene.id==='aerial-duel'?(f.aerialDuelAudit?(f.aerialDuelAudit.kind==='exclusive-header'?(f.aerialDuelAudit.team==='home'?'HOME':'AWAY')+' · Header':f.aerialDuelAudit.kind==='ambiguous-contact'?'Simultaneous contact':'Contested contact'):'Waiting for aerial duel'):f.aerialControlAudit?(f.aerialControlAudit.surface==='chest'?'Chest control':'Aerial foot control'):activeScene.id==='chest-control'?(f.headerCrossAudit?'Waiting for chest control':'Waiting for cross'):activeScene.id==='aerial-foot-control'?'Waiting for aerial foot control':f.headerAudit?'Header · '+f.headerAudit.action:activeScene.id==='header-pair'?(f.headerCrossAudit?'Waiting for header':'Waiting for cross'):f.blockAudit?(f.blockAudit.blocked?'Shot blocked':f.blockAudit.contactTick!==null?'Defender contact':f.blockAudit.phase==='flight'?'Shot in flight':'Waiting for shot'):f.interceptionAudit?({ready:'Waiting for pass',flight:'Pass in flight',intercepted:'Interception contact',collected:'Ball recovered',received:'Pass reached receiver'})[f.interceptionAudit.phase]:keeper?
+    const summary=activeScene.id==='volley-solo'?(f.volleyAudit?'Volley observed':'Waiting for volley'):activeScene.id==='lofted-pass'?(f.loftedPassAudit?.receiverContact?'Receiver contact':f.loftedPassAudit?'Lofted pass in flight':'Waiting for lofted pass'):activeScene.id==='aerial-duel'?(f.aerialDuelAudit?(f.aerialDuelAudit.kind==='exclusive-header'?(f.aerialDuelAudit.team==='home'?'HOME':'AWAY')+' · Header':f.aerialDuelAudit.kind==='ambiguous-contact'?'Simultaneous contact':'Contested contact'):'Waiting for aerial duel'):f.aerialControlAudit?(f.aerialControlAudit.surface==='chest'?'Chest control':'Aerial foot control'):activeScene.id==='chest-control'?(f.headerCrossAudit?'Waiting for chest control':'Waiting for cross'):activeScene.id==='aerial-foot-control'?'Waiting for aerial foot control':f.headerAudit?'Header · '+f.headerAudit.action:activeScene.id==='header-pair'?(f.headerCrossAudit?'Waiting for header':'Waiting for cross'):f.blockAudit?(f.blockAudit.blocked?'Shot blocked':f.blockAudit.contactTick!==null?'Defender contact':f.blockAudit.phase==='flight'?'Shot in flight':'Waiting for shot'):f.interceptionAudit?({ready:'Waiting for pass',flight:'Pass in flight',intercepted:'Interception contact',collected:'Ball recovered',received:'Pass reached receiver'})[f.interceptionAudit.phase]:keeper?
       (keeper.crossing?(keeper.crossing.kind==='goal'?'Goal observed':'Ball out'):
        f.keeperDive?.catchState?.active&&f.keeperDive.catchState.confirmedTick!==null?'Ball held':
        f.keeperDive?.catchState?.active?'Securing ball':
@@ -785,7 +785,10 @@ function renderActiveMetrics(f){
  const shot=f.shotSoloAudit,pass=f.passPairAudit,cross=f.crossPairAudit;
  let entries;
  const keeper=f.keeperShotAudit;
- if(activeScene.id==='lofted-pass'){
+ if(activeScene.id==='volley-solo'){
+  const a=f.volleyAudit?.launch;
+  entries=[['Strike height',n(a?.origin.z,' m')],['Shot speed',speed(a?Math.hypot(a.after.x,a.after.y,a.after.z):null)],['Action',a?'Volley observed':'—']];
+ }else if(activeScene.id==='lofted-pass'){
   const a=f.loftedPassAudit;
   entries=[['Distance',n(a?.launch.passTarget.distanceM,' m')],['Peak height',n(a?.peakZM,' m')],['Receiver contact',a?.receiverContact?n((a.receiverContact.tick-a.launch.tick)*FIXED_DT,' s'):'—'],['Result',a?.receiverContact?'Contact observed':a?'Pass launched':'—']];
  }else if(activeScene.id==='aerial-duel'){
@@ -2370,7 +2373,7 @@ function setupUnifiedScenarioMenu(){
   ['Shooting',[
    ...LAB_SHOT_PROFILES.map(profile=>[profile==='power'?'action:shot-solo':'action:shot-solo:'+profile,'Shot · '+LAB_SHOT_LABELS[profile]]),
    ...LAB_SHOT_PROFILES.map(profile=>['action:shot-solo:'+profile+':first-time','First-time · '+LAB_SHOT_LABELS[profile]]),
-   ...(!archiveMode?[['action:header-pair','Header · Aerial']]:[])
+   ...(!archiveMode?[['action:header-pair','Header · Aerial'],['action:volley-solo','Shot · Volley']]:[])
   ]],
   ...(archiveMode?[['Small-sided situations',[
    ['action:keeper-1v1','1v1 · goalkeeper'],

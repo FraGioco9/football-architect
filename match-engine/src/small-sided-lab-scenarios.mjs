@@ -72,7 +72,8 @@ const footDefinition=freeze({...headerDefinition,id:'aerial-foot-control',title:
 const aerialDuelDefinition=freeze({...headerDefinition,id:'aerial-duel',title:'Aerial duel · 1v1',attackers:freeze([10]),defenders:freeze([2]),
  description:'Two opposing canonical outfield players contest one descending physical ball. Neither side is assigned a winner.'});
 const loftedPassDefinition=freeze({...headerDefinition,id:'lofted-pass',title:'Pass · Lofted',description:'Two separated teammates, a genuine long lofted pass and physical receiving opportunity.'});
-const byId=new Map([...definitions,headerDefinition,chestDefinition,footDefinition,aerialDuelDefinition,loftedPassDefinition].map(s=>[s.id,s]));
+const volleyDefinition=freeze({...footDefinition,id:'volley-solo',title:'Shot · Volley',description:'One outfielder and a descending ball in shooting range. A real exclusive raised-foot contact may select a first-time shot.'});
+const byId=new Map([...definitions,headerDefinition,chestDefinition,footDefinition,aerialDuelDefinition,loftedPassDefinition,volleyDefinition].map(s=>[s.id,s]));
 // Private full-field research fixture: initial geometry only. Not in the
 // visible LAB catalog until the full native participant path is certified.
 byId.set('full-field-native',freeze({id:'full-field-native',nativeOpenPlay:true,fullField:true}));
@@ -318,7 +319,7 @@ export const SMALL_SIDED_LAB_SCENARIOS=freeze(definitions.map(s=>
 ));
 // Keep grounded baseline matrix stable; aerial fixtures have their own
 // contact-source assertions while sharing the same scenario registry.
-export const AERIAL_LAB_SCENARIOS=freeze([headerDefinition,chestDefinition,footDefinition,aerialDuelDefinition,loftedPassDefinition].map(d=>freeze({...d,mode:'situation',goal:'situation',
+export const AERIAL_LAB_SCENARIOS=freeze([headerDefinition,chestDefinition,footDefinition,aerialDuelDefinition,loftedPassDefinition,volleyDefinition].map(d=>freeze({...d,mode:'situation',goal:'situation',
  initial:freeze({preset:d.id==='aerial-foot-control'?'drop':'roll',seed:'me-small-'+d.id+'-home',x:27,y:26,z:d.id==='aerial-foot-control'?1.6:0,vx:0,vy:0,vz:d.id==='aerial-foot-control'?-2:0}),
  focus:freeze([...d.attackers.slice().sort((a,b)=>a-b).map(n=>'home-'+n),...d.defenders.map(n=>'away-'+n)]),source:'original-rapier-selected-aerial-and-shoe-colliders',officialResult:false})));
 export function getSmallSidedScenario(id){
@@ -441,6 +442,18 @@ export function smallSidedSetup(id,side,canonicalPlayers,{
     genuinePhysicalPlayers:2,officialMatchResult:null});
   }
   throw new RangeError('No collision-free original lofted pass setup');
+ }
+ if(id==='volley-solo'){
+  const random=seededGeometry(id,variantIndex);
+  for(let attempt=0;attempt<96;attempt++){
+   const x=36+random()*9,y=-6+random()*12,gap=0.30+random()*0.10;
+   const staged=stage(new Map([[side+'-10',[x-gap,y]]]));
+   if(!physicallySeparated(staged,1.15))continue;
+   return freeze({id,side,opponent,variantIndex,activeIds,staged,aerialSurface:'foot',
+    ball:freeze({preset:'drop',seed:'me-small-volley-v'+variantIndex+'-'+side,x:dir*x,y,z:1.50+random()*0.2,vx:-dir*0.25,vy:0,vz:-2}),
+    genuinePhysicalPlayers:1,officialMatchResult:null});
+  }
+  throw new RangeError('No collision-free original volley setup');
  }
  // PASS-01: before-tick-zero geometry only. No opponent or keeper.
  if(id==='pass-pair'){

@@ -12,7 +12,7 @@ import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT,
 import {createControlledActionLab,projectActiveLabDecisions,createNativeFullFieldSession} from '../src/action-labs.mjs';
 import {createCollectiveBallControlObserver,createNativeBallControlObserver,createDribbleTransitionObserver,chooseCollectiveDefensiveTouch,planNativeDefensiveIntervention,isNativeRecoveryLocked,applyNativeSlideRecovery} from '../src/isolated-dribble-touches.mjs';
 import {observeNativeShotBlock,planNativeShotBlock} from '../src/defensive-intervention-selection.mjs';
-import {selectUniformAutonomousContactAction,chooseRecipient,eligibleLiveKeeperSave,chooseNativeHeaderIntent,chooseNativeLoftedRecipient} from '../src/player-ball-uniform-autonomous-action.mjs';
+import {selectUniformAutonomousContactAction,chooseRecipient,eligibleLiveKeeperSave,chooseNativeHeaderIntent,chooseNativeLoftedRecipient,chooseNativeVolleyIntent} from '../src/player-ball-uniform-autonomous-action.mjs';
 import {planNativeCarryTouch,chooseNativePassInterceptionTouch} from '../src/isolated-dribble-touches.mjs';
 import {planNativeKeeperDive,planNativeKeeperChallenge,eligibleKeeperGrip,planNativeKeeperDistribution,createNativeAerialHead,planNativeAerialJump,aerialHeadHeight,AERIAL_JUMP_TICKS,planNativeAerialControl,planNativeAerialCushion,createNativeAerialControl,exclusiveNativeAerialStart,observeNativeAerialDuel} from '../src/small-sided-native-body-guard.mjs';
 import {planSlidingTackle} from '../src/sliding-tackle.mjs';
@@ -2254,4 +2254,44 @@ test('AERIAL-05 physical mirrored long pass journeys launch once from a real sho
  }
  process.stdout.write('ME_628_LOFTED_PASS '+JSON.stringify(rows)+'\\n');
  assert.ok(rows.every(r=>r.launch&&r.peak>2&&r.receipt),JSON.stringify(rows.filter(r=>!r.receipt)));
+});
+
+test('AERIAL-06 live volley intent is mirrored and rejects rising, low, distant and blocked balls',()=>{
+ for(const side of ['home','away']){
+  const dir=side==='home'?1:-1,actor={id:side+'-10',team:side,role:'forward',x:dir*39.7,y:0};
+  const ball={x:dir*40,y:0,z:0.85},v={x:0,y:0,z:-3};
+  const plan=chooseNativeVolleyIntent(actor,ball,v,[actor]);
+  assert.ok(plan);assert.equal(plan.action,'shot');assert.equal(plan.target.x,dir*52.5);assert.ok(dir*plan.desiredVelocity.x>0);
+  assert.equal(chooseNativeVolleyIntent(actor,ball,{...v,z:1},[actor]),null);
+  assert.equal(chooseNativeVolleyIntent(actor,{...ball,z:0.11},v,[actor]),null);
+  assert.equal(chooseNativeVolleyIntent(actor,{...ball,x:0},v,[actor]),null);
+  const defender={id:(side==='home'?'away':'home')+'-2',team:side==='home'?'away':'home',role:'defender',x:dir*40.5,y:0};
+  assert.equal(chooseNativeVolleyIntent(actor,ball,v,[actor,defender]),null);
+ }
+});
+test('AERIAL-06 mirrored physical volley LAB requires real raised foot contact before strike',{timeout:120000},async()=>{
+ const R=await initializeRapier(rapier),rows=[];
+ for(const side of ['home','away'])for(let variantIndex=0;variantIndex<30;variantIndex++){
+  const lab=createControlledActionLab(R,'volley-solo',{shotSide:side,variantIndex});
+  try{
+   let hit=null;
+   for(let tick=1;tick<=180;tick++){
+    const frame=lab.step();
+    if(frame.volleyAudit){
+     hit=frame.volleyAudit.launch;
+     assert.equal(hit.action,'shot');assert.equal(hit.nativeVolley,true);
+     assert.equal(hit.playerId,side+'-10');assert.equal(hit.surface,'foot');
+     assert.equal(hit.actualPhysicsImpulseApplied,true);assert.equal(hit.officialPossession,false);
+     assert.deepEqual(frame.starts,[]);
+     assert.deepEqual(frame.smallSidedNativeBodyGuard.aerialControlStarts,[hit.playerId]);
+     assert.ok(Math.hypot(...Object.values(hit.impulseNs))<=12+1e-8);
+     assert.ok((side==='home'?1:-1)*hit.after.x>0);
+     break;
+    }
+   }
+   rows.push({side,variantIndex,tick:hit?.tick??null});
+  }finally{lab.dispose();}
+ }
+ process.stdout.write('ME_628_VOLLEY '+JSON.stringify(rows)+'\\n');
+ assert.ok(rows.every(r=>r.tick!==null),JSON.stringify(rows.filter(r=>r.tick===null)));
 });
