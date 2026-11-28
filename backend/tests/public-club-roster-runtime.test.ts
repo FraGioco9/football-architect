@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {test} from 'vitest';
-import {readPublicClubRoster} from '../src/public-club-roster-read.ts';
+import {readPublicClubRoster,readPublicClubRosterContracts} from '../src/public-club-roster-read.ts';
 import worker from '../src/index.ts';
 import {PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS} from '../src/footballer-public-projection.ts';
 import type {Database} from '../src/database.ts';
@@ -18,7 +18,7 @@ function fixture(count:number,clubKey='IT-1'){
  const queries:{sql:string;args:unknown[]}[]=[];
  let worldGeneration=generation,advanceDuringRead=false;
  const rows=Array.from({length:count},(_,i)=>({
-  id:i+1,club_key:clubKey,payload_json:JSON.stringify(footballer(i+1))
+  id:i+1,club_key:clubKey,payload_json:JSON.stringify(footballer(i+1)),start_tick:0,end_tick:112,effective_salary_arc:125
  }));
  const db={
   prepare(sql:string){
@@ -130,4 +130,32 @@ test('Stats defaults to the canonical season, retains every current member and d
  assert.equal(future.players.length,73);
  assert.equal(future.players[0].stats,null);
  assert.equal((await get('?season=2&season=1')).status,422);
+});
+
+test('public Contracts roster adds only actual seasonal wage and expiry to canonical rows',async()=>{
+ const {db,queries,rows}=fixture(3);
+ rows[1].end_tick=56;rows[1].effective_salary_arc=300;
+ const result=await readPublicClubRosterContracts(db,'IT-1');
+ assert.equal(result.count,3);
+ assert.deepEqual(result.players.map(p=>p.contract),[
+  {expiresSeason:2,currentSeasonalSalaryArc:125},
+  {expiresSeason:1,currentSeasonalSalaryArc:300},
+  {expiresSeason:2,currentSeasonalSalaryArc:125}
+ ]);
+ const sql=queries.find(q=>q.sql.includes('FROM player_signed_contracts'))!.sql;
+ assert.match(sql,/c.id=a.contract_id/);assert.match(sql,/player_contract_promotion_salary/);
+ assert.doesNotMatch(sql,/player_club_affiliations|payroll_claim|player_agent_mandates/);
+ assert.doesNotMatch(JSON.stringify(result),/effective_salary_arc|start_tick|end_tick|private-seed/);
+ rows[0].effective_salary_arc=0;
+ await assert.rejects(readPublicClubRosterContracts(db,'IT-1'),/roster_unavailable/);
+});
+test('Contracts route is anonymous read-only, strict and fails closed on stale world',async()=>{
+ const {db,mutateWorld}=fixture(1);
+ const call=(path:string,method='GET')=>worker.fetch(new Request('https://example.invalid'+path,{method}),{DB:db} as Env);
+ const path='/api/clubs/IT-1/roster/contracts';
+ const ok=await call(path);assert.equal(ok.status,200);assert.match(ok.headers.get('cache-control')??'',/no-store/);
+ assert.equal((await call(path+'?season=2')).status,422);
+ assert.equal((await call(path,'POST')).status,405);
+ assert.equal((await call('/api/clubs/IT-41/roster/contracts')).status,404);
+ mutateWorld();assert.equal((await call(path)).status,409);
 });
