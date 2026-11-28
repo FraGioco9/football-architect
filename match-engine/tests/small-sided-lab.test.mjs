@@ -293,15 +293,15 @@ function assertNativeReplayActionSource({tick,starts,action,body,keepers,contact
   if(action.nativeExclusiveHeadStart===true){
    assert.equal(hit.version,'me-628-native-aerial-head-v1');
    assert.deepEqual(body.headBallStarts,[action.playerId]);assert.deepEqual(body.headBallContacts,[action.playerId]);
-   assert.deepEqual(body.aerialControlContacts,[]);
+   assert.deepEqual(body.aerialControlContacts??[],[]);
   }else{
    assert.equal(hit.version,'me-628-native-aerial-control-v1');assert.equal(hit.surface,action.surface);
    assert.deepEqual(body.aerialControlStarts,[action.playerId]);assert.deepEqual(body.aerialControlContacts,[action.playerId]);
-   assert.deepEqual(body.headBallContacts,[]);
+   assert.deepEqual(body.headBallContacts??[],[]);
   }
  }else{
   assert.deepEqual(starts,[action.playerId]);assert.equal(hasExclusiveNativeShoeStart(foot,action.playerId),true);
-  assert.deepEqual(body.headBallContacts,[]);assert.deepEqual(body.aerialControlContacts,[]);
+  assert.deepEqual(body.headBallContacts??[],[]);assert.deepEqual(body.aerialControlContacts??[],[]);
   assert.ok(solver.pairs.some(p=>p.id===action.playerId&&p.beganThisTick&&p.collisionActive&&p.manifolds.some(m=>m.geometricContacts>0)));
  }
 }
@@ -610,13 +610,13 @@ test('UME-06A same guarded native replay matrix for 1v1 through 3v3 plus goalkee
     for(let k=1;k<=360;k++){
      const f=lab.step(),g=replay.step();ticks=k;
      assert.equal(f.physicsTick,k);assert.equal(f.genuinePhysicalPlayerCount,n);
-     for(const key of ['ball','observedMovementPlayers','starts','action','collectiveControl','nativeKeeperStates','latestOrientedReception','refereeEvidence'])assert.deepEqual(f[key],g[key],id+' '+side+' '+key+' tick '+k);
+     for(const key of ['ball','observedMovementPlayers','starts','action','collectiveControl','nativeKeeperStates','latestOrientedReception','refereeEvidence','contactEvidence'])assert.deepEqual(f[key],g[key],id+' '+side+' '+key+' tick '+k);
      assert.deepEqual(f.smallSidedNativeBodyGuard.selectedColliderIds,active);
      assert.equal(f.smallSidedNativeBodyGuard.oneOriginalRapierWorld,true);
      assert.deepEqual(f.nativeKeeperStates.map(x=>x.keeperId),keeperIds);
      assert.equal(projectActiveLabDecisions(f,active).length,n);
      assert.equal(f.officialMatchResult,null);assert.equal(f.officialMatchPossession,false);
-     audit.observe({tick:k,ball:f.ball,players:f.observedMovementPlayers,starts:f.starts,action:f.action,control:f.collectiveControl,keepers:f.nativeKeeperStates,reception:f.latestOrientedReception});
+     audit.observe({tick:k,ball:f.ball,players:f.observedMovementPlayers,starts:f.starts,action:f.action,control:f.collectiveControl,keepers:f.nativeKeeperStates,reception:f.latestOrientedReception,body:f.smallSidedNativeBodyGuard,contactEvidence:f.contactEvidence,allowedFundamentals:f.allowedFundamentals});
      if(f.refereeEvidence?.lastEvent){boundary=f.refereeEvidence.lastEvent.kind;break;}
     }
     const report=audit.report();assert.ok(report.contacts>0,'native contact must occur in each selected replay');
@@ -2082,8 +2082,8 @@ test('AERIAL-01 core integration enables native heads only on guarded collective
    assert.equal(samples.length,20);
    assert.deepEqual(new Set(samples.map(s=>s.actorId)),new Set(head.map(s=>s.actorId)));
   }
-  assert.deepEqual(body.headBallContacts,[]);assert.deepEqual(body.headBallStarts,[]);
-  assert.deepEqual(body.aerialControlContacts,[]);assert.deepEqual(body.aerialControlStarts,[]);
+  assert.deepEqual(body.headBallContacts??[],[]);assert.deepEqual(body.headBallStarts,[]);
+  assert.deepEqual(body.aerialControlContacts??[],[]);assert.deepEqual(body.aerialControlStarts,[]);
   assert.ok(body.aerial.every(s=>s.tick===1&&!s.jumping&&!s.contact&&s.sameOriginalRapierWorld));
   mover.reconcileSmallSidedNativeBodyResponse(body);engine.acknowledgeSmallSidedBodyFeedback(mover.snapshot());
  }finally{engine.dispose();}
