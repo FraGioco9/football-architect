@@ -168,6 +168,7 @@ export function createNativeAerialControl(R,world,ballCollider,actor,surface){
   if(contactStarted)recoverUntil=tick+18;
   const result=freeze({version:NATIVE_AERIAL_CONTROL_VERSION,surface,tick,actorId:actor.id,team:actor.team,
    contact,contactStarted,actualNativeSolverContact:contact,incomingVelocity:prepared.incomingVelocity,
+   reachPlanned:prepared.plan!==null,
    sameOriginalRapierWorld:true,officialPossession:false});
   previousContact=contact;lastTick=tick;prepared=null;return result;
  }
@@ -182,7 +183,9 @@ export function planNativeAerialCushion({surface,incoming,velocity,massKg,actor}
  // has already removed most speed, do not accelerate the ball to a preset.
  const relativeSpeed=Math.hypot(velocity.x-actor.vx,velocity.y-actor.vy,velocity.z);
  const down=surface==='chest'?1.4:Math.min(0.65,relativeSpeed*0.45);
- const blend=surface==='chest'?0.65:Math.max(0.65,1-relativeSpeed/Math.max(0.1,Math.hypot(actor.vx,actor.vy))*0.35);
+ // Preserve the original chest response. A foot cushion instead follows
+ // the receiver horizontally and reduces relative motion in every axis.
+ const blend=surface==='chest'?0.65:1;
  const desired={x:actor.vx*blend,y:actor.vy*blend,z:-down};
  const raw={x:massKg*(desired.x-velocity.x),y:massKg*(desired.y-velocity.y),z:massKg*(desired.z-velocity.z)};
  const magnitude=Math.hypot(raw.x,raw.y,raw.z),scale=Math.min(1,5/Math.max(magnitude,1e-9));

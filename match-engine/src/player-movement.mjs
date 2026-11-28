@@ -2681,7 +2681,21 @@ export function createPlayerMovement(options={}){
   if(collectiveApproaches&&collectiveControl?.kind==='loose'&&(smallSided.aerialSurface||options.researchNativeAerialEnabled===true)){
    const height=smallSided.aerialSurface==='chest'?1.35:smallSided.aerialSurface==='foot'?0.85:1.95;
    const aerial=planNativeAerialContest(players.filter(p=>smallActive.has(p.id)&&!isNativeRecoveryLocked(collectiveControl,p.id,tick+1)),ballPosition,realBallVelocity,height);
-   for(const [id,plan] of Object.entries(aerial))if(!nativeDeliveryPlans[id])nativeDeliveryPlans[id]=Object.freeze({kind:plan.kind,plan});
+   for(const [id,plan] of Object.entries(aerial))if(!nativeDeliveryPlans[id]){
+    let receivePlan=plan;
+    // A slow, descending loose ball is received in front of the body,
+    // not by running underneath its centre. The direction comes from
+    // the original player-to-ball geometry, not the LAB or team.
+    if(height===0.85&&Math.hypot(realBallVelocity.x,realBallVelocity.y)<2){
+     const actor=players.find(p=>p.id===id);
+     const dx=plan.target.x-actor.x,dy=plan.target.y-actor.y,gap=Math.hypot(dx,dy);
+     if(gap>0.05){
+      const offset=Math.min(0.42,gap);
+      receivePlan=Object.freeze({...plan,target:Object.freeze({x:plan.target.x-dx/gap*offset,y:plan.target.y-dy/gap*offset})});
+     }
+    }
+    nativeDeliveryPlans[id]=Object.freeze({kind:receivePlan.kind,plan:receivePlan});
+   }
   }
   const nextNativeSlides={},nextNativeShoulders={},nativeBalance={};
   if(collectiveApproaches){

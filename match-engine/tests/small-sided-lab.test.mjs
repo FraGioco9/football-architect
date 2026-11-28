@@ -2162,8 +2162,19 @@ test('AERIAL-03 LABs use actual mirrored cross/chest and descending foot contact
   const lab=createControlledActionLab(R,id,{shotSide:side,variantIndex});
   try{
    let hit=null;
+   const trace={reachTicks:0,solverStarts:0,ambiguousStarts:0,exclusiveWithoutImpulse:0,firstStart:null};
    for(let tick=1;tick<=300;tick++){
-    const a=lab.step();
+    const a=lab.step(),body=a.smallSidedNativeBodyGuard;
+    const actorId=side+(id==='chest-control'?'-9':'-10');
+    const sample=body.aerial.find(s=>s.actorId===actorId&&s.surface===(id==='chest-control'?'chest':'foot'));
+    if(sample?.reachPlanned)trace.reachTicks++;
+    if(sample?.contactStarted){
+     trace.solverStarts++;
+     const ambiguous=body.aerial.filter(s=>s.contact).length!==1||a.starts.length>0||body.lowerLegBallContacts.length>0;
+     if(ambiguous)trace.ambiguousStarts++;
+     else if(!a.action?.nativeExclusiveAerialControlStart)trace.exclusiveWithoutImpulse++;
+     if(!trace.firstStart)trace.firstStart={tick,incoming:sample.incomingVelocity,ball:a.ball.position,velocity:a.ball.velocity,ambiguous,action:a.action?.action??null};
+    }
     if(a.aerialControlAudit){
      hit=a.aerialControlAudit;
      assert.equal(hit.surface,id==='chest-control'?'chest':'foot');
@@ -2176,7 +2187,7 @@ test('AERIAL-03 LABs use actual mirrored cross/chest and descending foot contact
      break;
     }
    }
-   rows.push({id,side,variantIndex,tick:hit?.tick??null});
+   rows.push({id,side,variantIndex,tick:hit?.tick??null,...(hit?{}:{trace})});
   }finally{lab.dispose();}
  }
  process.stdout.write('ME_628_AERIAL_CONTROL '+JSON.stringify(rows)+'\\n');
