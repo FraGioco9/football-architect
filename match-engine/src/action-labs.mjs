@@ -632,8 +632,9 @@ export function createControlledActionLab(RAPIER,id,{
   // actual Rapier ball action visible, but do not feed it to any observer
   // whose proofs require a genuine shoe START.
   const nativeAction=intentDrivenSoloCarry||action?.nativeExclusiveHeadStart===true||action?.nativeExclusiveAerialControlStart===true?null:action;
-  if(id==='volley-solo'&&!volleyAudit&&action?.nativeVolley===true&&action.nativeExclusiveAerialControlStart===true&&action.actualPhysicsImpulseApplied===true)
-   volleyAudit=Object.freeze({launch:action,crossing:null});
+  if(id==='volley-solo'&&!volleyAudit&&headerCrossAudit&&action?.nativeVolley===true&&action.nativeExclusiveAerialControlStart===true&&action.actualPhysicsImpulseApplied===true&&
+     action.playerId===headerCrossAudit.recipientId&&action.tick>headerCrossAudit.tick)
+   volleyAudit=Object.freeze({cross:headerCrossAudit,launch:action,crossing:null});
   if(id==='lofted-pass'){
    if(!loftedPassAudit&&action?.action==='pass'&&action.passTarget?.deliveryProfile==='lofted'&&action.actualPhysicsImpulseApplied===true&&starts.length===1&&starts[0]===action.playerId)
     loftedPassAudit=Object.freeze({launch:action,peakZM:physics.ball.position.z,receiverContact:null});
@@ -646,7 +647,7 @@ export function createControlledActionLab(RAPIER,id,{
    }
   }
   if(id==='aerial-duel'&&physics.tick>0&&!aerialDuelAudit)aerialDuelAudit=observeNativeAerialDuel({tick:physics.tick,evidence:engine.smallSidedBodyGuardSnapshot().aerial,players:playerFrame.players.filter(p=>focus.includes(p.id)),action});
-  if(aerialLab&&action?.nativeExclusiveAerialControlStart===true&&!aerialControlAudit&&
+  if(aerialLab&&action?.action==='aerial-control'&&action.nativeExclusiveAerialControlStart===true&&!aerialControlAudit&&
      (id==='aerial-foot-control'||headerCrossAudit&&action.playerId===headerCrossAudit.recipientId&&action.tick>headerCrossAudit.tick))aerialControlAudit=action;
   if(aerialLab&&action?.action==='cross'&&action.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true&&
      starts.length===1&&starts[0]===action.playerId&&!headerCrossAudit)headerCrossAudit=action;

@@ -2269,18 +2269,28 @@ test('AERIAL-06 live volley intent is mirrored and rejects rising, low, distant 
   assert.equal(chooseNativeVolleyIntent(actor,ball,v,[actor,defender]),null);
  }
 });
-test('AERIAL-06 mirrored physical volley LAB requires real raised foot contact before strike',{timeout:120000},async()=>{
+test('AERIAL-06 mirrored physical volley LAB requires a real cross before exclusive raised foot strike',{timeout:120000},async()=>{
  const R=await initializeRapier(rapier),rows=[];
  for(const side of ['home','away'])for(let variantIndex=0;variantIndex<30;variantIndex++){
   const lab=createControlledActionLab(R,'volley-solo',{shotSide:side,variantIndex});
   try{
-   let hit=null;
-   for(let tick=1;tick<=180;tick++){
+   assert.equal(lab.snapshot().genuinePhysicalPlayerCount,2);
+   assert.deepEqual(new Set(lab.focus),new Set([side+'-10',side+'-9']));
+   const fixture=smallSidedSetup('volley-solo',side,INITIAL_PLAYERS,{variantIndex});
+   assert.equal(fixture.ball.z,0);assert.equal(fixture.ball.vz,0);
+   let hit=null,cross=null,airborne=false;
+   for(let tick=1;tick<=300;tick++){
     const frame=lab.step();
+    if(frame.action?.action==='cross'&&!cross){
+     cross=frame.action;assert.equal(cross.playerId,side+'-10');assert.equal(cross.recipientId,side+'-9');
+     assert.deepEqual(frame.starts,[cross.playerId]);assert.equal(cross.actualPhysicsImpulseApplied,true);
+    }
+    if(cross&&frame.ball.position.z>1.15)airborne=true;
     if(frame.volleyAudit){
      hit=frame.volleyAudit.launch;
      assert.equal(hit.action,'shot');assert.equal(hit.nativeVolley,true);
-     assert.equal(hit.playerId,side+'-10');assert.equal(hit.surface,'foot');
+     assert.ok(cross&&airborne&&cross.tick<hit.tick);assert.equal(frame.volleyAudit.cross.tick,cross.tick);
+     assert.equal(hit.playerId,side+'-9');assert.equal(hit.surface,'foot');assert.ok(hit.incomingVelocity.z<0);
      assert.equal(hit.actualPhysicsImpulseApplied,true);assert.equal(hit.officialPossession,false);
      assert.deepEqual(frame.starts,[]);
      assert.deepEqual(frame.smallSidedNativeBodyGuard.aerialControlStarts,[hit.playerId]);

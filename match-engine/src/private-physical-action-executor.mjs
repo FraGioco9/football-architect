@@ -269,7 +269,7 @@ export function createPrivatePhysicalActionExecutor({
        const scale=Math.min(1,12/norm),impulseNs=Object.freeze({x:raw.x*scale,y:raw.y*scale,z:raw.z*scale});
        ballBody.applyImpulse(impulseNs,true);
        result=Object.freeze({version:NATIVE_AERIAL_CONTROL_VERSION,tick:nextTick,playerId:actor.id,team:actor.team,
-        action:'shot',shotProfile:'volley',surface:'foot',recipientId:null,origin,before,after:Object.freeze({...ballBody.linvel()}),
+        action:'shot',shotProfile:'volley',surface:'foot',recipientId:null,origin,incomingVelocity:head.incomingVelocity,before,after:Object.freeze({...ballBody.linvel()}),
         target:volley.target,impulseNs,nativeExclusiveAerialControlStart:true,nativeVolley:true,actualNativeSolverContact:true,sameOriginalRapierWorld:true,
         appliedByRapier:true,actualPhysicsImpulseApplied:true,officialMatchAction:false,officialPossession:false});
        lastActionTick=nextTick;
