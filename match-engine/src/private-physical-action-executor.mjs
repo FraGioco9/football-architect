@@ -335,7 +335,7 @@ export function createPrivatePhysicalActionExecutor({
   const pairedSourceValid=contact.nativePairedFeet===undefined||hasExclusiveNativeShoeStart(contact,contact.started[0]);
   const originalChoice=suppressOriginalAction||suppressPhysicalBodyContact||
    !isolatedNativeShoeSourceValid||!pairedSourceValid?null:
-   selectUniformAutonomousContactAction({...input,activePlayerIds,
+   selectUniformAutonomousContactAction({...input,activePlayerIds,allowedFundamentals:fundamentalMask,
     smallSidedDecisionContext,isolatedDribbleContext,keeperSingleShotSide,duelTransition,collectiveControl,nativeActionPolicy,attackPolarity,
     interceptionContext:interceptionPassSide===null?null:{side:interceptionPassSide,phase:interceptionPhase},
     blockContext:blockShotSide===null?null:{side:blockShotSide,shotTaken:blockShotTaken}});

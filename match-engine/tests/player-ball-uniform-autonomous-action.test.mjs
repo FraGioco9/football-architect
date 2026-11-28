@@ -655,3 +655,13 @@ test('UME-05L identical witnessed pass interception in free play and isolated ex
   }
  }
 });
+
+test('ME-01-QA U-01F2: forbidden shot leaves an actually available pass, not invented contact',()=>{
+ const where={x:40,y:0,z:.11};
+ const players=mover({...distantTeammates(),'home-10':{x:40,y:0},'home-9':{x:45,y:7},'away-1':{x:48,y:20},'away-9':{x:46,y:20}});
+ const input={tick:1,contactStarted:['home-10'],contactActive:['home-10'],playerFrame:players,ballPosition:where,ballVelocity:quiet,ballRadiusM:.11,activePlayerIds:['home-10','home-9']};
+ assert.equal(selectUniformAutonomousContactAction(input)?.action,'shot');
+ assert.equal(selectUniformAutonomousContactAction({...input,allowedFundamentals:['pass']})?.action,'pass');
+ assert.equal(selectUniformAutonomousContactAction({...input,allowedFundamentals:[]}),null);
+ assert.equal(selectUniformAutonomousContactAction({...input,allowedFundamentals:['pass'],contactStarted:[],contactActive:[]}),null);
+});
