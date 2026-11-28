@@ -497,26 +497,32 @@ test('UME-06D3 bounded native two halves with authentic second-half kickoff and 
    const placed=session.placeSecondHalf();
    assert.equal(placed.playedTicks,120);assert.equal(placed.tick,120);
    assert.equal(placed.physicalRestart.periodRestart,'second-half');
+   assert.equal(placed.attackPolarity,-1);assert.equal(placed.referee.attackPolarity,-1);assert.equal(placed.timeline.attackPolarity,-1);
    assert.equal(placed.physicalRestart.sameOriginalRapierWorld,true);
    assert.deepEqual(placed.players,stopped.players);
    assert.throws(()=>session.placeSecondHalf(),/exact half-time/);
    let taken=null;
-   for(let n=1;n<=1800;n++){
+   for(let n=1;n<=3600;n++){
     const f=session.advanceRestart();
     assert.equal(f.playedTicks,120);assert.equal(f.tick,120+n);
     if(f.restartTake?.tick===f.tick){taken=f;break;}
     assert.equal(f.phase,'dead-ball-placed-awaiting-native-take');
     assert.equal(Math.hypot(...Object.values(f.ball.velocity)),0);
    }
+   if(!taken)process.stdout.write('ME_628_UME06_HALF_STALLED '+JSON.stringify({side,players:session.snapshot().players,ball:session.snapshot().ball,decisions:session.snapshot().decisions})+'\n');
    assert.ok(taken,'actual second-half kickoff required');
    assert.equal(taken.phase,'second-half');assert.equal(taken.restartTake.actorId,'away-10');
+   assert.equal(taken.directionSwitchVerified,true);assert.equal(taken.restartTake.formationReady,true);
+   assert.ok(taken.restartTake.impulseNs.x>0);
+   assert.ok(taken.players.every(p=>p.id==='away-10'||(p.team==='home'?p.x>=1:p.x<=-1)));
+   assert.ok(taken.players.filter(p=>p.role==='goalkeeper').every(p=>Math.abs(p.x)>=36));
    assert.deepEqual(taken.starts,['away-10']);assert.equal(taken.clock.halfTimeRestartVerified,true);
    assert.equal(taken.timeline.nativeHalfTake.tick,taken.tick);
    for(let k=121;k<=240;k++)assert.equal(session.step().playedTicks,k);
    const end=session.snapshot();
    assert.equal(end.phase,'full-time');assert.equal(end.clock.label,'00:04');
    assert.equal(end.boundedTwoPeriodsVerified,true);assert.equal(end.timeline.fullTimeVerified,true);
-   assert.equal(end.directionSwitchVerified,false);assert.equal(end.realFull90MinutesVerified,false);
+   assert.equal(end.directionSwitchVerified,true);assert.equal(end.realFull90MinutesVerified,false);
    assert.equal(end.officialMatchResult,null);
    assert.throws(()=>session.step(),/full-time/);
    assert.throws(()=>session.advanceRestart(),/Native restart requires/);

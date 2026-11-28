@@ -1,4 +1,4 @@
-import {attackDirection,validateAttackPolarity} from './match-directions.mjs';
+import {attackDirection,validateAttackPolarity,nativeHalfFormationReady} from './match-directions.mjs';
 import {directedDribbleApproachTarget,planDribbleDefender,resolveDuelActors,isDuelGettingUp,planDuelShoulderApproach,chooseDribbleDefensiveTouch,planDuelInterception,planNativePassInterception,planShoulderBalanceRecovery,isShoulderCollecting,isSlideCollecting,routeDuelAroundOpponent,planDuelRecoveryApproach,planLooseDuelApproaches,planDuelPostContactAlignment,planDribbleContactRelease,dribbleReleaseApproach,planNativeDefensiveIntervention,isNativeRecoveryLocked} from './isolated-dribble-touches.mjs';
 import {selectDefensiveIntervention} from './defensive-intervention-selection.mjs';
 import {advanceSlidingTackle,planSlidingTackle,SLIDE_MAX_SPEED_MPS,SLIDE_ACCEL_MPS2,SLIDE_BRAKE_MPS2} from './sliding-tackle.mjs';
@@ -1958,7 +1958,7 @@ export function createPlayerMovement(options={}){
  let lastSmallSidedMovementDecisions=Object.freeze([]);
  let currentSoloCarryPhase=null;
  let duelSlide=null,duelShoulder=null,duelInterception=null,blockApproach=null,defensiveDecision=null;
- let nativeSlides=Object.freeze({}),nativeShoulders=Object.freeze({});
+ let nativeSlides=Object.freeze({}),nativeShoulders=Object.freeze({}),nativeAttackPolarity=1,nativePeriodSwitched=false;
  const players=initial.map(p=>({...p}));
  let b06bGoalKickoffTarget=null;
  function queueB06bOriginalGoalKickoff(event){
@@ -2077,7 +2077,7 @@ export function createPlayerMovement(options={}){
    // choice. The target remains original; velocity is the final observed value.
    ...(smallSided?.id==='carry-solo'?{soloCarryPhase:currentSoloCarryPhase}:{}),
    ...(duelSlide?{duelSlide}:{}),
-   ...(options.researchCollectiveApproaches===true?{nativeSlides,nativeShoulders}:{}),
+   ...(options.researchCollectiveApproaches===true?{nativeSlides,nativeShoulders,...(smallSided?.fullField?{attackPolarity:nativeAttackPolarity}:{})}:{}),
    ...(duelShoulder?{duelShoulder}:{}),
    ...(duelInterception?{duelInterception}:{}),
    ...(blockApproach?{blockApproach}:{}),
@@ -2246,11 +2246,10 @@ export function createPlayerMovement(options={}){
  function step(ballPosition={x:0,y:0},priorRealPass=null,
   priorRealTap=null,realBallVelocity=null,priorKeeperRebound=null,keeperCloseDown=false,directedDribble=false,duelTransition=null,interceptionState=null,blockState=null,collectiveControl=null,restartPlacement=null,attackPolarity=1){
   validateAttackPolarity(attackPolarity);
-  // D4B is a movement-only direction candidate. Do not enable reversed
-  // live contact policy before the remaining action/defence/hand gates.
   if(attackPolarity!==1&&(!smallSided?.fullField||options.researchCollectiveApproaches!==true||
-     (!restartPlacement&&(collectiveControl?.kind!=='loose'||collectiveControl.delivery||collectiveControl.keeperHold))))
-   throw new TypeError('Reversed movement requires full-field placement or loose ball without pending action');
+     (!restartPlacement&&!nativePeriodSwitched)))
+   throw new TypeError('Reversed movement requires full-field placement or authenticated period transition');
+  if(nativePeriodSwitched&&attackPolarity!==-1)throw new TypeError('Native second-half direction cannot revert');
   if(options.researchUnstagedNativeBodyFeedback===true&&
      lastFeedbackReconciledTick!==tick)
    throw new TypeError('M13 requires previous same-world Rapier feedback acknowledgment');
@@ -2264,6 +2263,11 @@ export function createPlayerMovement(options={}){
    ![restartPlacement.spot?.x,restartPlacement.spot?.y].every(finite)||
    !Number.isSafeInteger(restartPlacement.tick)||restartPlacement.tick>tick))
    throw new TypeError('Original full-field restart placement required');
+  if(restartPlacement?.periodRestart==='second-half'&&attackPolarity===-1){
+   if(restartPlacement.attackPolarity!==-1||restartPlacement.assignedTeam!=='away'||restartPlacement.takerId!=='away-10')
+    throw new TypeError('Native period transition requires original away kickoff placement');
+   if(!nativePeriodSwitched){nativeSlides=Object.freeze({});nativeShoulders=Object.freeze({});nativePeriodSwitched=true;}
+  }
   if(collectiveControl!==null&&(options.researchCollectiveApproaches!==true||collectiveControl.tick!==tick||!['controlled','loose'].includes(collectiveControl.kind)||collectiveControl.officialPossession!==false))throw new TypeError('Previous native collective control required');
   if(blockState!==null&&(!smallSided?.blockStart||!realBallVelocity||!['ready','flight','blocked'].includes(blockState.phase)))throw new TypeError('Original shot-block state required');
   if(interceptionState!==null&&(!smallSided?.interceptionStart||!realBallVelocity||!['ready','flight','intercepted','collected','received'].includes(interceptionState.phase)))throw new TypeError('Original pass interception state required');
@@ -2666,13 +2670,20 @@ export function createPlayerMovement(options={}){
    }
   }
   nativeSlides=Object.freeze(nextNativeSlides);nativeShoulders=Object.freeze(nextNativeShoulders);
+  nativeAttackPolarity=attackPolarity;
+  const halfPreparation=restartPlacement?.periodRestart==='second-half';
+  const halfReady=halfPreparation&&nativeHalfFormationReady(players);
   const targets=players.map(p=>{
    if(restartPlacement){
     const at=restartPlacement.spot,dir=attackDirection(restartPlacement.assignedTeam,attackPolarity);
     if(p.id===restartPlacement.takerId&&restartPlacement.kind==='throw-in')return Object.freeze({x:clamp(at.x,-PLAYER_KINEMATIC_LIMITS.maxX,PLAYER_KINEMATIC_LIMITS.maxX),y:at.y-Math.sign(at.y)*0.85});
-    if(p.id===restartPlacement.takerId)return Object.freeze({x:clamp(at.x+dir*0.10,-PLAYER_KINEMATIC_LIMITS.maxX,PLAYER_KINEMATIC_LIMITS.maxX),y:clamp(at.y,-PLAYER_KINEMATIC_LIMITS.maxY,PLAYER_KINEMATIC_LIMITS.maxY)});
-    // Restore ordinary formation by physical movement, not staged LAB bases.
+    if(p.id===restartPlacement.takerId&&(!halfPreparation||halfReady))return Object.freeze({x:clamp(at.x+dir*0.10,-PLAYER_KINEMATIC_LIMITS.maxX,PLAYER_KINEMATIC_LIMITS.maxX),y:clamp(at.y,-PLAYER_KINEMATIC_LIMITS.maxY,PLAYER_KINEMATIC_LIMITS.maxY)});
+    // Separate opposing crossing lanes while changing halves; converge
+    // towards the canonical mirrored formation after crossing midfield.
     const base=INITIAL_PLAYERS.find(q=>q.id===p.id);
+    if(halfPreparation&&p.x*attackDirection(p.team,-1)>-2){
+     return Object.freeze({x:attackPolarity*base.x,y:clamp(base.y+(p.team==='home'?2:-2),-PLAYER_KINEMATIC_LIMITS.maxY,PLAYER_KINEMATIC_LIMITS.maxY)});
+    }
     return Object.freeze({x:attackPolarity*base.x,y:base.y});
    }
    if(smallSided){

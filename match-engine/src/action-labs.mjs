@@ -91,7 +91,8 @@ export function createNativeFullFieldSession(RAPIER,{side='home',variantIndex=0,
     physicalRestart:placement,restartTake:restartTake??latest?.restartTake??null,throwHands:engine.nativeThrowHandsSnapshot(),
     matchAuthority:false,officialMatchResult:null,officialPossession:false,
     completeFootballGameplayVerified:false,realFull90MinutesVerified:false,
-    boundedTwoPeriodsVerified:phase==='full-time',directionSwitchVerified:false
+    boundedTwoPeriodsVerified:phase==='full-time',attackPolarity:engine.nativeAttackPolaritySnapshot(),
+    directionSwitchVerified:secondHalfStarted&&engine.nativeAttackPolaritySnapshot()===-1
    });
    return latest;
   }
@@ -101,7 +102,7 @@ export function createNativeFullFieldSession(RAPIER,{side='home',variantIndex=0,
    if(disposed)throw new Error('Native full-field session disposed');
    if(!['first-half','second-half'].includes(phase))throw new Error('Native full-field live play paused pending authenticated restart or full-time');
    const prior=engine.snapshot(),control=engine.collectiveControlSnapshot();
-   let frame=mover.step(prior.ball.position,null,null,prior.ball.velocity,null,false,false,null,null,null,control);
+   let frame=mover.step(prior.ball.position,null,null,prior.ball.velocity,null,false,false,null,null,null,control,null,engine.nativeAttackPolaritySnapshot());
    const physics=engine.step(frame);
    mover.reconcileSmallSidedNativeBodyResponse(engine.smallSidedBodyGuardSnapshot());
    frame=mover.snapshot();engine.acknowledgeSmallSidedBodyFeedback(frame);
@@ -134,7 +135,7 @@ export function createNativeFullFieldSession(RAPIER,{side='home',variantIndex=0,
     control:engine.collectiveControlSnapshot(),keepers:engine.nativeKeeperSnapshots(),
     action:null,starts:Object.freeze([]),reception:null,phase,
     clock:Object.freeze({...latest.clock,phase}),referee:engine.nativeMatchRefereeSnapshot(),timeline,
-    physicalRestart:placement,pendingRestart:null});
+    physicalRestart:placement,pendingRestart:null,attackPolarity:engine.nativeAttackPolaritySnapshot()});
    return latest;
   }
   function advanceRestart(){
@@ -142,7 +143,7 @@ export function createNativeFullFieldSession(RAPIER,{side='home',variantIndex=0,
    if(phase!=='dead-ball-placed-awaiting-native-take'||!latest.physicalRestart)
     throw new Error('Native restart requires a placed ready ticket');
    const placement=latest.physicalRestart,prior=engine.snapshot(),control=engine.collectiveControlSnapshot();
-   let frame=mover.step(prior.ball.position,null,null,prior.ball.velocity,null,false,false,null,null,null,control,placement);
+   let frame=mover.step(prior.ball.position,null,null,prior.ball.velocity,null,false,false,null,null,null,control,placement,engine.nativeAttackPolaritySnapshot());
    const physics=engine.step(frame,placement);
    mover.reconcileSmallSidedNativeBodyResponse(engine.smallSidedBodyGuardSnapshot());
    frame=mover.snapshot();engine.acknowledgeSmallSidedBodyFeedback(frame);

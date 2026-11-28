@@ -86,7 +86,7 @@ export function detectFirstFullyOutBallB05(previous,current){
 }
 export function createBasicMatchRefereeB05({attackPolarity=1}={}){
  validateAttackPolarity(attackPolarity);
- let tick=-1,last=null,previous=null,lastTouch=null,
+ let periodSwitched=false,tick=-1,last=null,previous=null,lastTouch=null,
   event=null,restarted=false,score={home:0,away:0};
  function snapshot(){
   return freeze({version:B05_REFEREE_VERSION,tick,
@@ -181,10 +181,11 @@ export function createBasicMatchRefereeB05({attackPolarity=1}={}){
   lastTouch=null;
   return snapshot();
  }
- function clearTouchForPeriod(currentTick){
-  if(currentTick!==tick||tick<1||event&&!restarted)
-   throw new TypeError('B05 period reset requires current resolved boundary');
-  lastTouch=null;
+ function clearTouchForPeriod(currentTick,nextPolarity,centre){
+  if(currentTick!==tick||tick<1||event&&!restarted||periodSwitched||attackPolarity!==1||
+     nextPolarity!==-1||!centre||Math.hypot(centre.x,centre.y)>1e-8||Math.abs(centre.z-BALL_RADIUS)>1e-6)
+   throw new TypeError('B05 period reset requires current resolved boundary and original centre placement');
+  lastTouch=null;previous=freeze({...centre});attackPolarity=nextPolarity;periodSwitched=true;
   return snapshot();
  }
  function recordNativeThrowIn(take){

@@ -1,3 +1,4 @@
+import {attackDirection,nativeHalfFormationReady} from './match-directions.mjs';
 // ME-01: isolated, deterministic 3D physics core. No browser, HTTP, D1 or football-world dependencies.
 import {speedDependentDragCd} from './aerodynamics.mjs';
 import {magnusLift,MAGNUS_SPIN_LIMIT_RAD_S} from './magnus.mjs';
@@ -814,7 +815,7 @@ export function createEngine(RAPIER, input = {}, {
   // referee ticket; an externally assembled boundary object is not authority.
   const nativeMatchReferee=smallSided?.fullField&&diagnosticCollectiveActions?createBasicMatchRefereeB05():null;
   let nativeRestartPending=null,nativeRestartTake=null,nativeMatchFrame=null,nativeThrowHands=null;
-  let nativePlayedTicks=0,nativeHalfPlacement=null,nativeHalfTake=null;
+  let nativePlayedTicks=0,nativeHalfPlacement=null,nativeHalfTake=null,nativeAttackPolarity=1;
   let b06bOpeningKickoff=null,b06bHalftimePlacement=null,b06bKickoff=null;
   let b06bGoalPending=null,b06bGoalLastTick=-1,b06bGoalPausedTicks=0;
   let b05bOutboundAction=null,b05bTake=null,b05bRestartTicket=null;
@@ -877,6 +878,8 @@ export function createEngine(RAPIER, input = {}, {
   function step(playerFrame,restartPlacement=null) {
     if (disposed) throw new Error('Engine has been disposed');
     const restarting=nativeRestartPending!==null;
+    if(nativeMatchReferee&&(playerFrame?.attackPolarity??1)!==nativeAttackPolarity)
+     throw new TypeError('Native movement and core attack directions must agree');
     if(restarting?restartPlacement!==nativeRestartPending:restartPlacement!==null)
      throw new Error('Native dead ball placed; authenticated restart take required');
     if(diagnosticNativeHalfTicks!==null&&!restarting&&(
@@ -899,7 +902,7 @@ export function createEngine(RAPIER, input = {}, {
      previousStrike?.firstTimeShotEvidence?previousStrike:null);
     if(bodyBridge)bodyBridge.prepare(playerFrame,tick+1);
     if(smallBodyGuard)smallBodyGuard.prepare(playerFrame,tick+1);
-    for(const controller of keeperDives)controller.prepare(playerFrame,tick+1,preStepBall,actionExecutor?.actionSnapshot(),restarting);
+    for(const controller of keeperDives)controller.prepare(playerFrame,tick+1,preStepBall,actionExecutor?.actionSnapshot(),restarting,nativeAttackPolarity);
     if(restarting&&nativeThrowHands)nativeThrowHands.prepare(playerFrame,tick+1);
     // User forces are persistent in Rapier. Clear the previous tick's drag
     // BEFORE computing this tick's force, and never apply it on the grass.
@@ -998,7 +1001,7 @@ export function createEngine(RAPIER, input = {}, {
     // START. The ordinary physics and contact-only modes never kick.
     if(actionExecutor)actionExecutor.apply(tick,playerFrame,{
       duelTransition:duelTransition?.snapshot()??null,
-      collectiveControl:collectiveObserver?.snapshot()??null,keeperDistribution:distribution,
+      collectiveControl:collectiveObserver?.snapshot()??null,keeperDistribution:distribution,attackPolarity:nativeAttackPolarity,
       ...(diagnosticFirstTimeShot?{priorNativeBallVelocity:preStepBall.velocity}:{}),
       suppressOriginalAction:restarting||(diagnosticB06bNativeShotSide!==null&&(
        b06bGoalPending!==null||
@@ -1014,7 +1017,7 @@ export function createEngine(RAPIER, input = {}, {
      const handContacts=hands.filter(x=>x.contact||x.catchState?.active).map(x=>x.keeperId);
      collectiveObserver.observe({tick,players:playerFrame.players,ball:{position:body.translation(),velocity:body.linvel()},starts:shoe.started,active:shoe.active,
       bodyStarts:[...physical.lowerLegBallStarts,...handStarts],bodyActive:[...physical.lowerLegBallContacts,...handContacts],
-      action:actionExecutor?.actionSnapshot()??null,shoulderPlans:Object.values(playerFrame.nativeShoulders??{}),torsoPairs:physical.nativeOpposingTorsoPairs,bodies:physical.bodies,beforeBallVelocity:preStepBall.velocity,afterSolverVelocity:collectiveSolverVelocity,keeperStates:hands});
+      action:actionExecutor?.actionSnapshot()??null,shoulderPlans:Object.values(playerFrame.nativeShoulders??{}),torsoPairs:physical.nativeOpposingTorsoPairs,bodies:physical.bodies,beforeBallVelocity:preStepBall.velocity,afterSolverVelocity:collectiveSolverVelocity,keeperStates:hands,attackPolarity:nativeAttackPolarity});
     }
     if(duelTransition){
      const shoe=shoeBridge.snapshot(),physical=smallBodyGuard.snapshot();
@@ -1049,14 +1052,15 @@ export function createEngine(RAPIER, input = {}, {
        body.setTranslation(at,true);body.setLinvel({x:0,y:0,z:0},true);body.setAngvel({x:0,y:0,z:0},true);
        body.resetForces(true);body.resetTorques(true);
       }
-     }else if(exclusive&&!otherBody&&Math.hypot(p.x-at.x,p.y-at.y)<=0.65&&Math.abs(p.z-BALL_RADIUS)<=0.35){
-      const dir=placement.assignedTeam==='home'?1:-1;
+     }else if(exclusive&&!otherBody&&Math.hypot(p.x-at.x,p.y-at.y)<=0.65&&Math.abs(p.z-BALL_RADIUS)<=0.35&&
+       (placement.periodRestart!=='second-half'||nativeHalfFormationReady(playerFrame.players))){
+      const dir=attackDirection(placement.assignedTeam,nativeAttackPolarity);
       const impulse=Object.freeze(placement.kind==='kickoff'?{x:dir*0.65,y:0,z:0.04}:
        placement.kind==='corner'?{x:-dir*1.85,y:-Math.sign(at.y)*1.15,z:0.42}:{x:dir*2.5,y:0,z:0.30});
       body.applyImpulse(impulse,true);
       nativeRestartTake=Object.freeze({tick,type:placement.kind,team:placement.assignedTeam,actorId:id,
        sourceEventTick:placement.sourceEventTick,impulseNs:impulse,singleOriginalRapierBall:true,
-       ...(placement.periodRestart==='second-half'?{periodRestart:'second-half',playedTicks:nativePlayedTicks}:{}),
+       ...(placement.periodRestart==='second-half'?{periodRestart:'second-half',playedTicks:nativePlayedTicks,attackPolarity:nativeAttackPolarity,formationReady:true}:{}),
        sameOriginalRapierWorld:true,physicalImpulseApplied:true,originalNativeShoeStart:true,
        currentRapierContactManifold:true,provisionalHandReleaseWithoutHandCollider:false,
        officialMatchAction:false,officialPossession:false,officialMatchResult:null,ball:snapshot().ball});
@@ -1202,8 +1206,8 @@ export function createEngine(RAPIER, input = {}, {
    curledShotFlight=false;
   }
   // Exact physical half boundary, not a fabricated B05 goal/out event.
-  // Reuse the identical native kickoff approach/take path. Direction
-  // inversion is deliberately not claimed by this bounded lifecycle.
+  // Reuse the identical native kickoff approach/take path; switch the
+  // orientation once at the cleared dead-ball period boundary.
   function placeNativeSecondHalf(){
    if(disposed||diagnosticNativeHalfTicks===null||nativePlayedTicks!==diagnosticNativeHalfTicks||
       nativeRestartPending||nativeHalfPlacement||!nativeMatchFrame||
@@ -1214,10 +1218,11 @@ export function createEngine(RAPIER, input = {}, {
    body.setTranslation(at,true);body.setLinvel({x:0,y:0,z:0},true);body.setAngvel({x:0,y:0,z:0},true);
    body.resetForces(true);body.resetTorques(true);
    const placement=Object.freeze({tick,kind:'kickoff',periodRestart:'second-half',playedTicks:nativePlayedTicks,
-    assignedTeam:'away',takerId:'away-10',spot:at,sourceEventTick:null,
+    assignedTeam:'away',takerId:'away-10',spot:at,sourceEventTick:null,attackPolarity:-1,
     originalRapierBallRepositioned:true,realShoeContact:false,officialMatchResult:null,
     sameOriginalRapierWorld:true,playerTeleports:false,deadBallPlacementOnly:true,ball:snapshot().ball});
-   nativeMatchReferee.clearTouchForPeriod(tick);
+   nativeMatchReferee.clearTouchForPeriod(tick,-1,placement.ball.position);
+   nativeAttackPolarity=-1;
    nativeRestartPending=placement;nativeRestartTake=null;nativeHalfPlacement=placement;
    return placement;
   }
@@ -1479,7 +1484,7 @@ export function createEngine(RAPIER, input = {}, {
   }
   return Object.freeze({scenario, ballProperties, snapshot, angularVelocity, step, dispose,
     ...(diagnosticNativeHalfTicks!==null?{placeNativeSecondHalf,
-      nativePlayedTicksSnapshot:()=>nativePlayedTicks}:{}),
+      nativePlayedTicksSnapshot:()=>nativePlayedTicks,nativeAttackPolaritySnapshot:()=>nativeAttackPolarity}:{}),
     ...(diagnosticBasicRestartEnabled||nativeMatchReferee?{applyBasicRestartAtBoundary}:{}),
     ...(nativeMatchReferee?{nativeMatchRefereeSnapshot:()=>nativeMatchReferee.snapshot(),nativeRestartTakeSnapshot:()=>nativeRestartTake,nativeThrowHandsSnapshot:()=>nativeThrowHands?.snapshot()??null}:{}),
     ...(b05bSource?{attemptB05bNativeOutboundKick,attemptB05bOriginalSetPiece}:{}),

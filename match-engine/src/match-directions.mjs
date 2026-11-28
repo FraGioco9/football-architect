@@ -19,3 +19,12 @@ export function teamAttackingEnd(end,polarity=1){
  if(end!==1&&end!==-1)throw new TypeError('Physical goal end must be +1 or -1');
  return end===attackDirection('home',polarity)?'home':'away';
 }
+
+// Bounded kickoff readiness: original players in their new own half,
+// original keepers in the correct penalty areas. No formation teleport.
+export function nativeHalfFormationReady(players){
+ return Array.isArray(players)&&players.length===22&&new Set(players.map(p=>p.id)).size===22&&
+ players.every(p=>['home','away'].includes(p.team)&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&
+  (p.id==='away-10'||(p.x*attackDirection(p.team,-1)<=-1&&
+   (p.role!=='goalkeeper'||Math.abs(p.x)>=36&&Math.abs(p.y)<=20.16))));
+}

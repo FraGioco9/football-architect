@@ -372,6 +372,7 @@ export function createBasicMatchTimelineB06({b06bRealHalftimePause=false,nativeH
      lastEvent&&lastRestart?.sourceEventTick!==lastEvent.tick||
      placement?.tick!==tick||placement.playedTicks!==playedTicks||placement.periodRestart!=='second-half'||
      placement.kind!=='kickoff'||placement.assignedTeam!=='away'||placement.takerId!=='away-10'||
+     attackPolarity!==1||placement.attackPolarity!==-1||
      placement.originalRapierBallRepositioned!==true||placement.sameOriginalRapierWorld!==true||
      placement.realShoeContact!==false||placement.playerTeleports!==false||
      placement.officialMatchResult!==null||placement.sourceEventTick!==null||
@@ -379,7 +380,7 @@ export function createBasicMatchTimelineB06({b06bRealHalftimePause=false,nativeH
      Math.abs(placement.ball.position.z-BALL_RADIUS)>1e-6||
      !ballXYZ(placement.ball?.velocity)||Math.hypot(...Object.values(placement.ball.velocity))!==0)
    throw new TypeError('B06 refuses second-half placement without exact native period source');
-  nativeHalfPlacement=placement;
+  nativeHalfPlacement=placement;attackPolarity=-1;lastBall=freeze({...placement.ball.position});
   add(freeze({type:'half-time-placement',tick,playedTicks,team:'away',sameOriginalRapierBall:true,officialMatchEvent:false}));
   return snapshot();
  }
@@ -388,6 +389,7 @@ export function createBasicMatchTimelineB06({b06bRealHalftimePause=false,nativeH
      playedTicks!==nativeHalfTicks||take?.tick!==tick||tick<=nativeHalfPlacement.tick||
      take.periodRestart!=='second-half'||take.playedTicks!==playedTicks||take.sourceEventTick!==null||
      take.type!=='kickoff'||take.actorId!=='away-10'||take.team!=='away'||
+     attackPolarity!==-1||take.attackPolarity!==-1||take.formationReady!==true||!(take.impulseNs?.x>0)||
      take.originalNativeShoeStart!==true||take.currentRapierContactManifold!==true||
      take.physicalImpulseApplied!==true||take.sameOriginalRapierWorld!==true||
      take.officialMatchResult!==null||take.officialPossession!==false||
