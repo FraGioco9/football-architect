@@ -448,9 +448,16 @@ export function createPrivatePhysicalActionExecutor({
    // only the initial impulse. Never steer or teleport the live ball.
    const crossCalibration=sharedDynamics&&chosen.action==='cross'&&chosen.crossTarget?(()=>{
     const i=chosen.impulseNs,horizontal=Math.hypot(i.x,i.y);
-    const desiredHorizontal=Math.sqrt(9.81*chosen.crossTarget.distanceM/(2*i.z/horizontal));
+    const distance=chosen.crossTarget.distanceM,loft=i.z/horizontal;
+    // In native open play, aim to reach the live receiver while descending
+    // at playable heading height rather than landing at their feet.
+    // The isolated low-arrival cross exercise retains its existing profile.
+    const originZ=ballBody.translation().z;
+    const targetZ=nativeActionPolicy?1.95:originZ;
+    const rise=Math.max(0,targetZ-originZ);
+    const desiredHorizontal=Math.sqrt(9.81*distance*distance/(2*Math.max(loft*distance-rise,loft*distance*0.5)));
     return Object.freeze({source:'isolated-cross-range-candidate-v1',
-     distanceM:chosen.crossTarget.distanceM,originalImpulseNs:i,
+     distanceM:distance,targetZ,originalImpulseNs:i,
      scale:Math.max(1,Math.min(3.8,ballBody.mass()*desiredHorizontal/horizontal)),
      officialMatchAction:false});
    })():null;

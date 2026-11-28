@@ -367,8 +367,9 @@ export function smallSidedSetup(id,side,canonicalPlayers,{
   const random=seededGeometry(id,variantIndex);
   for(let attempt=0;attempt<96;attempt++){
    const flank=variantIndex%2===0?1:-1;
-   const bx=26+random()*3,by=flank*(27+random()*3);
-   const rx=43+random()*4,ry=flank*(3+random()*3);
+   const bx=27+random()*2,by=flank*(25+random()*2);
+   // Deeper delivery across the goal area towards the far-post runner.
+   const rx=46+random()*2,ry=-flank*(4+random()*2);
    const staged=freeze(stage(new Map([[side+'-10',[bx-0.30,by]],[side+'-9',[rx,ry]]])).map(p=>p.id===side+'-9'?
     freeze({...p,facingRad:Math.atan2(by-ry,dir*(bx-rx))}):p));
    if(!physicallySeparated(staged,1.15))continue;

@@ -2101,6 +2101,10 @@ test('AERIAL-02 LAB all 30 mirrored starts require a genuine cross before the re
   try{
    assert.equal(lab.snapshot().genuinePhysicalPlayerCount,2);assert.deepEqual(lab.focus,fixture.activeIds);
    assert.equal(fixture.ball.z,0);assert.equal(lab.snapshot().ball.velocity.z,0);
+   const target=fixture.staged.find(p=>p.id===side+'-9'),dir=side==='home'?1:-1;
+   assert.ok(dir*(target.x-fixture.ball.x)>=17,'deeper goalward delivery');
+   assert.ok(target.y*fixture.ball.y<0,'cross towards opposite side of goal');
+   assert.ok(Math.hypot(target.x-fixture.ball.x,target.y-fixture.ball.y)>=33);
    let cross=null,header=null,airborne=false,descending=false;
    for(let tick=1;tick<=240;tick++){
     const a=lab.step(),b=replay.step();assert.deepEqual(a.ball,b.ball);assert.deepEqual(a.action,b.action);
@@ -2108,6 +2112,7 @@ test('AERIAL-02 LAB all 30 mirrored starts require a genuine cross before the re
     if(a.action?.action==='cross'&&!cross){
      assert.equal(a.action.playerId,side+'-10');assert.equal(a.action.recipientId,side+'-9');
      assert.deepEqual(a.starts,[a.action.playerId]);assert.equal(a.action.actualPhysicsImpulseApplied,true);
+     assert.equal(a.action.isolatedCrossCalibration.targetZ,1.95);
      cross=a.action;counts.cross++;
     }
     if(cross&&a.ball.position.z>1.55)airborne=true;
