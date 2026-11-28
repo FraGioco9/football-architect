@@ -546,7 +546,8 @@ export function createPrivatePhysicalActionExecutor({
       source:'first-time-native-shoe-v1',priorNativeBallVelocity:Object.freeze({...priorNativeBallVelocity}),
       postSolverVelocity:shotCalibration.preImpulseVelocity,
       appliedImpulseNs:impulse,postStrikeVelocity:Object.freeze({...ballBody.linvel()}),
-      ballMassKg:ballBody.mass(),nativeExclusiveShoeStart:true,officialGoal:false
+      ballMassKg:ballBody.mass(),nativeExclusiveShoeStart:true,officialGoal:false,
+      ...(contact.nativePairedFeet?{contactFoot:contact.nativePairedFeet[chosen.playerId].started[0],contactFootPosition:contact.nativePairedFeet[chosen.playerId].exclusiveFootPosition}:{})
      })}:{}),
     ...(nativeTune?{
      nativeShoeContactVerified:true,

@@ -712,7 +712,7 @@ export function createEngine(RAPIER, input = {}, {
   const shoeBridge=diagnosticPlayerFootContactsEnabled?
     createPrivateRapierFootContactBridge(RAPIER,world,ballCollider,stagedShoes,
      {...(sharedContactQueue?{sharedQueue:sharedContactQueue}:{}),
-      ...(usesNativePairedShoeBridge({activePlayerIds:smallSided?.activeIds,legacyGroundCarry:isolatedCarry,firstTimeShot:diagnosticFirstTimeShot})?{nativeCarryStride:true}:{}),
+      ...(usesNativePairedShoeBridge({activePlayerIds:smallSided?.activeIds,legacyGroundCarry:isolatedCarry})?{nativeCarryStride:true}:{}),
       ...(smallSided?{activePlayerIds:smallSided.activeIds,fullFieldNative:smallSided.fullField===true}:{}),
       ...(diagnosticFirstTimeShot&&diagnosticIsolatedShotProfile!=='tap-in'?
        {firstTimeShotReleaseId:smallSided.side+'-10'}:{}),

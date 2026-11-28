@@ -212,11 +212,25 @@ export function hasExclusiveNativeShoeStart(contact,id){
  }
  return true;
 }
-// Ordinary selected-participant LABs share the paired physical bridge.
-// Historical carry and first-time release still need migration of their
-// dedicated contact/readout contracts; do not silently change them here.
-export function usesNativePairedShoeBridge({activePlayerIds,legacyGroundCarry=false,firstTimeShot=false}={}){
- return Array.isArray(activePlayerIds)&&activePlayerIds.length>0&&!legacyGroundCarry&&!firstTimeShot;
+// All selected-participant scenarios except legacy ground carry use the
+// paired native physical source, including first-time strikes.
+export function usesNativePairedShoeBridge({activePlayerIds,legacyGroundCarry=false}={}){
+ return Array.isArray(activePlayerIds)&&activePlayerIds.length>0&&!legacyGroundCarry;
+}
+// Recover only the physical foot that actually struck. The six-tick
+// offset is an existing target profile, never a contact or ball impulse.
+export function planNativeFirstTimeFootRecovery({contact,actorId,ballPosition,legacyPose=null}={}){
+ if(!hasExclusiveNativeShoeStart(contact,actorId)||![ballPosition?.x,ballPosition?.y].every(Number.isFinite))return null;
+ const paired=contact.nativePairedFeet!==undefined;
+ const evidence=paired?contact.nativePairedFeet[actorId]:null;
+ const pose=paired?evidence.exclusiveFootPosition:legacyPose;
+ if(![pose?.x,pose?.y,pose?.z].every(Number.isFinite))return null;
+ return Object.freeze({foot:paired?evidence.started[0]:null,direction:Math.sign(pose.y-ballPosition.y)});
+}
+export function nativeFirstTimeRecoveryTarget(pose,foot,release,age){
+ if(!release||release.foot!==foot||!Number.isSafeInteger(age)||age<1||age>6)return pose;
+ const offset=[0,0.10,0.20,0.20,0.10,0,0][age]*release.direction;
+ return Object.freeze({...pose,y:pose.y+offset});
 }
 export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  initialPlayers=INITIAL_PLAYERS,{sharedQueue=null,activePlayerIds=null,
@@ -226,7 +240,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  soloSprintCadenceScale=1,soloSprintLateralTrackScale=1,
  soloSprintActiveFootReleaseM=0,intentDrivenSoloCarry=false,
  firstTimeShotReleaseId=null,sharedDuelStride=false,fullFieldNative=false,nativeCarryStride=false}={}){
- if(typeof nativeCarryStride!=='boolean'||nativeCarryStride&&(activePlayerIds===null||dribbleAttackerId!==null||firstTimeShotReleaseId!==null||sharedQueue!==null))throw new TypeError('Paired native stride requires selected physical participants without legacy overrides');
+ if(typeof nativeCarryStride!=='boolean'||nativeCarryStride&&(activePlayerIds===null||dribbleAttackerId!==null||sharedQueue!==null))throw new TypeError('Paired native stride requires selected physical participants without legacy overrides');
  if(typeof fullFieldNative!=='boolean'||fullFieldNative&&(activePlayerIds?.length!==22||!isolatedPhysicalBodies||isolatedGroundDribbleBallCentreZ!==null||sharedQueue!==null))throw new TypeError('Full field requires all 22 guarded physical shoe identities');
  if(firstTimeShotReleaseId!==null&&(
     activePlayerIds?.length!==1||activePlayerIds[0]!==firstTimeShotReleaseId||
@@ -387,6 +401,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  const shotReleaseIndex=firstTimeShotReleaseId===null?-1:
   initialPlayers.findIndex(p=>p.id===firstTimeShotReleaseId);
  let shotRelease=null,releasePreviousNativePose=null;
+ const releaseBody=()=>shotRelease?.foot==='right'?nativePairs.get(firstTimeShotReleaseId).body:bodies[shotReleaseIndex];
  let active=new Set(),activeSoloFeet=new Set(),solver=null;
  let current=Object.freeze({
   version:FOOT_CONTACT_VERSION,tick:0,
@@ -407,14 +422,16 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
       previousStrike.tick!==tick||previousStrike.playerId!==firstTimeShotReleaseId||
       previousStrike.action!=='shot'||previousStrike.actualPhysicsImpulseApplied!==true||
       previousStrike.firstTimeShotEvidence?.nativeExclusiveShoeStart!==true||
-      current.started.length!==1||current.started[0]!==firstTimeShotReleaseId||
-      current.active.length!==1||current.active[0]!==firstTimeShotReleaseId)
+      !hasExclusiveNativeShoeStart(current,firstTimeShotReleaseId))
     throw new TypeError('First-time recovery needs the immediately preceding real strike');
-   const pose=bodies[shotReleaseIndex].translation();
-   shotRelease=Object.freeze({strikeTick:tick,direction:Math.sign(pose.y-preStepBall.position.y)});
+   const plan=planNativeFirstTimeFootRecovery({contact:current,actorId:firstTimeShotReleaseId,
+    ballPosition:preStepBall.position,legacyPose:bodies[shotReleaseIndex].translation()});
+   if(!plan||nativeCarryStride&&previousStrike.firstTimeShotEvidence.contactFoot!==plan.foot)
+    throw new TypeError('First-time recovery needs the actual exclusive striking shoe');
+   shotRelease=Object.freeze({strikeTick:tick,...plan});
   }
   releasePreviousNativePose=shotRelease&&nextTick<=shotRelease.strikeTick+6?
-   vector(bodies[shotReleaseIndex].translation()):null;
+   vector(releaseBody().translation()):null;
   const actor=dribbleAttackerId===null?null:
    playerFrame.players.find(p=>p.id===dribbleAttackerId);
   const gait=actor?advanceD01LiveShoeGait({
@@ -452,13 +469,9 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
    Object.freeze(shoeFeet(next,nextTick,gait).map((p,i)=>
     initialPlayers[i].id===dribbleAttackerId?experimentalFeet.left:p)):
    shoeFeet(next,nextTick,gait,duelGaits);
-  if(releasePreviousNativePose!==null){
-   const age=nextTick-shotRelease.strikeTick;
-   // Continuous lateral recovery at 6 m/s, one hold step, then return.
-   // Collider remains enabled; no teleport or ball velocity correction.
-   const offset=[0,0.10,0.20,0.20,0.10,0,0][age]*shotRelease.direction;
+  if(releasePreviousNativePose!==null&&!nativeCarryStride){
    proposed=Object.freeze(proposed.map((p,i)=>i===shotReleaseIndex?
-    Object.freeze({...p,y:p.y+offset}):p));
+    nativeFirstTimeRecoveryTarget(p,null,shotRelease,nextTick-shotRelease.strikeTick):p));
   }
   const rightDesired=soloCarry?
    limitSoloFootLateralMotion((experimentalFeet??
@@ -516,12 +529,18 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
      nativeStridePhases.set(p.id,gait.phaseRad);
     }else nativeStridePhases.delete(p.id);
     const desired=soloCarryTwoFootPositions(p,gait);
-    const right=clampActualFoot(limitSoloFootLateralMotion(desired.right,pair.actual),pair.actual);
+    const recovering=releasePreviousNativePose!==null&&p.id===firstTimeShotReleaseId;
+    const age=recovering?nextTick-shotRelease.strikeTick:0;
+    const leftTarget=recovering?nativeFirstTimeRecoveryTarget(desired.left,'left',shotRelease,age):desired.left;
+    const rightTarget=recovering?nativeFirstTimeRecoveryTarget(desired.right,'right',shotRelease,age):desired.right;
+    // Preserve the existing first-time release profile's 6 m/s lateral
+    // intent, but retain the 7 m/s total native shoe continuity limit.
+    const right=clampActualFoot(recovering&&shotRelease.foot==='right'?rightTarget:limitSoloFootLateralMotion(rightTarget,pair.actual),pair.actual);
     const pose=footProxyTransform(right);
     pair.body.setNextKinematicTranslation({x:pose.x,y:pose.y,z:pose.z});
     pair.body.setNextKinematicRotation(pose.rotation);
     pair.actual=right;
-    return clampActualFoot(limitSoloFootLateralMotion(desired.left,actualShoeFeet[i]),actualShoeFeet[i]);
+    return clampActualFoot(recovering&&shotRelease.foot==='left'?leftTarget:limitSoloFootLateralMotion(leftTarget,actualShoeFeet[i]),actualShoeFeet[i]);
    }));
   }
   const rightFoot=rightDesired?
@@ -752,12 +771,13 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   }):null;
   tick=nextTick;active=next;activeSoloFeet=nextSoloFeet;
   const nativeShotRelease=releasePreviousNativePose===null?null:(()=>{
-   const position=vector(bodies[shotReleaseIndex].translation());
+   const position=vector(releaseBody().translation());
    const speedMps=60*Math.hypot(position.x-releasePreviousNativePose.x,
     position.y-releasePreviousNativePose.y,position.z-releasePreviousNativePose.z);
    if(speedMps>7+1e-3)throw new Error('Native first-time shoe recovery exceeded continuity');
    return Object.freeze({source:'native-shoe-recovery-v1',strikeTick:shotRelease.strikeTick,
     tick:nextTick,actorId:firstTimeShotReleaseId,position,speedMps,
+    ...(shotRelease.foot!==null?{contactFoot:shotRelease.foot}:{}),
     colliderRetained:true,officialGoal:false});
   })();
   current=footDynamics?Object.freeze({...collision,

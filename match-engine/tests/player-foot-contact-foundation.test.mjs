@@ -14,7 +14,7 @@ import {FOOT_CONTACT_VERSION,FOOT_CONTACT_HALF_LENGTH_M,
  FOOT_CONTACT_ROUNDING_M,FOOT_CONTACT_FRICTION,
  FOOT_CONTACT_RESTITUTION,initialFootPositions,footProxyTransform,
  validateFootContactFrame} from '../src/player-foot-contact.mjs';
-import {createPrivateRapierFootContactBridge,usesNativePairedShoeBridge,hasExclusiveNativeShoeStart,soloCarryTwoFootPositions} from '../src/rapier-foot-contact-bridge.mjs';
+import {createPrivateRapierFootContactBridge,usesNativePairedShoeBridge,hasExclusiveNativeShoeStart,soloCarryTwoFootPositions,planNativeFirstTimeFootRecovery,nativeFirstTimeRecoveryTarget} from '../src/rapier-foot-contact-bridge.mjs';
 import {createFootContactTimeline,FOOT_CONTACT_TIMELINE_VERSION}
  from '../src/player-foot-contact-timeline.mjs';
 import {summarizeFootSolverEvidence,FOOT_SOLVER_EVIDENCE_VERSION}
@@ -231,7 +231,7 @@ test('ME-01-QA U-01E3: paired bridge eligibility and physical foot authorization
   const id=team+'-10',ids=[id],pair={actorId:id,independentColliders:2,exclusivePhysicalStart:true,started:['right'],active:['right']};
   assert.equal(usesNativePairedShoeBridge({activePlayerIds:ids}),true);
   assert.equal(usesNativePairedShoeBridge({activePlayerIds:ids,legacyGroundCarry:true}),false);
-  assert.equal(usesNativePairedShoeBridge({activePlayerIds:ids,firstTimeShot:true}),false);
+  assert.equal(usesNativePairedShoeBridge({activePlayerIds:ids,firstTimeShot:true}),true);
   assert.equal(usesNativePairedShoeBridge({activePlayerIds:[]}),false);
   assert.equal(usesNativePairedShoeBridge({}),false);
   const c={started:ids,active:ids,nativePairedFeet:{[id]:pair}};
@@ -259,5 +259,27 @@ test('ME-01-QA U-01E3: selected native actors have exactly two physical shoe col
     assert.equal(world.colliders.len(),2*count+1);
    }finally{bridge?.dispose();world.free();}
   }
+ }
+});
+
+test('ME-01-QA U-01E4: first-time recovery follows only the authenticated physical striking foot',()=>{
+ for(const team of ['home','away'])for(const foot of ['left','right'])for(const direction of [-1,1]){
+  const actorId=team+'-10',pose={x:team==='home'?30:-30,y:direction*.1,z:.09},ballPosition={x:pose.x,y:0,z:.11};
+  const pair={actorId,independentColliders:2,exclusivePhysicalStart:true,started:[foot],active:[foot],exclusiveFootPosition:pose};
+  const contact={started:[actorId],active:[actorId],nativePairedFeet:{[actorId]:pair}};
+  const plan=planNativeFirstTimeFootRecovery({contact,actorId,ballPosition});
+  assert.deepEqual(plan,{foot,direction});
+  assert.equal(planNativeFirstTimeFootRecovery({contact:{...contact,nativePairedFeet:{[actorId]:{...pair,active:['left','right']}}},actorId,ballPosition}),null);
+  assert.equal(planNativeFirstTimeFootRecovery({contact:{...contact,nativePairedFeet:{[actorId]:{...pair,exclusiveFootPosition:null}}},actorId,ballPosition}),null);
+  let prev=pose;
+  for(let age=1;age<=6;age++){
+   const target=nativeFirstTimeRecoveryTarget(pose,foot,plan,age);
+   assert.equal(target.x,pose.x);assert.equal(target.z,pose.z);
+   assert.ok(Math.abs(target.y-prev.y)<=.100000001);
+   assert.equal(nativeFirstTimeRecoveryTarget(pose,foot==='left'?'right':'left',plan,age),pose);
+   prev=target;
+  }
+  assert.deepEqual(prev,pose);
+  assert.equal(nativeFirstTimeRecoveryTarget(pose,foot,plan,7),pose);
  }
 });
