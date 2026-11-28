@@ -24,6 +24,15 @@ export function selectDefensiveIntervention({actorId,context='duel',unavailable=
  return result('none','hold-defensive-position');
 }
 
+// A contact proposal cannot bypass the same subtype permissions used
+// during planning. This does not authenticate a contact or apply a kick.
+export function selectPermittedDefensiveTouch(touch,allowedFundamentals=null,{sliding=false}={}){
+ const mask=createNativeFundamentalMask(allowedFundamentals);
+ if(!touch)return null;
+ const kind=touch.kind==='tackle'?(sliding?'sliding-tackle':'standing-tackle'):touch.kind;
+ return nativeDefensiveInterventionAllowed(mask,kind)?touch:null;
+}
+
 // UME-04: a shot trajectory is an opportunity to block, never an observed
 // block. Use the actual defending player, not a selected fixture shirt.
 export function planNativeShotBlock({player,ball,velocity,attackPolarity=1}={}){

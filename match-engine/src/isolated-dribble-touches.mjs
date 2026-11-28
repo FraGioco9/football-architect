@@ -1,7 +1,7 @@
 import {attackDirection,validateAttackPolarity} from './match-directions.mjs';
 import {selectNativeOpenCarryPhase,planNativeCarryPhaseImpulse,hasNativeOpenCarrySpace} from './solo-carry-phases.mjs';
 // #628 research: proposal only; actual ball impulse needs authentic Rapier START.
-import {selectDefensiveIntervention,planNativeShotBlock,observeNativeShotBlock} from './defensive-intervention-selection.mjs';
+import {selectDefensiveIntervention,planNativeShotBlock,observeNativeShotBlock,selectPermittedDefensiveTouch} from './defensive-intervention-selection.mjs';
 import {createNativeFundamentalMask,createNativeDuelFundamentalMask,nativeDefensiveInterventionAllowed,nativePhysicalActionAllowed} from './native-fundamental-mask.mjs';
 export const ISOLATED_DRIBBLE_TOUCH_VERSION='me-628-dribble-grounded-pressure-paced-v3';
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -662,11 +662,11 @@ export function chooseCollectiveDefensiveTouch({player,players,ballPosition,ball
  if(slide?.phase==='slide'&&slide.actorId===player.id){
   if(!nativeDefensiveInterventionAllowed(mask,'sliding-tackle'))return null;
   const rival=players.find(p=>p.id===slide.opponentId&&p.team!==player.team);
-  return rival?chooseDribbleDefensiveTouch({attackingSide:rival.team,attacker:rival,defender:player,ballPosition,ballVelocity,sliding:true,attackPolarity}):null;
+  return rival?selectPermittedDefensiveTouch(chooseDribbleDefensiveTouch({attackingSide:rival.team,attacker:rival,defender:player,ballPosition,ballVelocity,sliding:true,attackPolarity}),mask,{sliding:true}):null;
  }
  if(owner&&owner.team!==player.team&&Math.hypot(owner.x-ballPosition.x,owner.y-ballPosition.y)<=1.15){
   const plan=planNativeDefensiveIntervention({attacker:owner,defender:player,ballPosition,ballVelocity,allowShoulder:false,allowInterception:false,attackPolarity,allowedFundamentals:mask});
-  return plan?.decision?.kind==='standing-tackle'||plan?.decision?.kind==='interception'?plan.standing:null;
+  return plan?.decision?.kind==='standing-tackle'||plan?.decision?.kind==='interception'?selectPermittedDefensiveTouch(plan.standing,mask):null;
  }
  const delivery=control.delivery;
  if(control.kind!=='loose'||delivery?.kind!=='pass'||delivery.team===player.team||
@@ -676,7 +676,7 @@ export function chooseCollectiveDefensiveTouch({player,players,ballPosition,ball
  if(!passer||!recipient)return null;
  const touch=chooseNativePassInterceptionTouch({passer,recipient,defender:player,ballPosition,ballVelocity,ballRadiusM,attackPolarity});
  const decision=selectDefensiveIntervention({actorId:player.id,context:'pass',interception:touch,allowedFundamentals:mask});
- return decision.kind==='interception'?touch:null;
+ return decision.kind==='interception'?selectPermittedDefensiveTouch(touch,mask):null;
 }
 export const DUEL_TACKLE_PROFILES=Object.freeze(['mixed','standing','sliding','shoulder','interception']);
 export const SLIDING_GET_UP_TACKLER_TICKS=30;
@@ -768,7 +768,8 @@ export function createDribbleTransitionObserver(side,profile='mixed'){
  return Object.freeze({observe,snapshot:()=>latest});
 }
 // Same contact decision for both actors. Loose ball may be collected.
-export function chooseSharedDuelTouch({player,opponent,ballPosition:b,ballVelocity:v,transition,slide,defensiveDecision=null,variantIndex,tick}){
+export function chooseSharedDuelTouch({player,opponent,ballPosition:b,ballVelocity:v,transition,slide,defensiveDecision=null,variantIndex,tick,allowedFundamentals=null}){
+ const mask=allowedFundamentals===null?createNativeDuelFundamentalMask(transition?.profile??'mixed'):createNativeFundamentalMask(allowedFundamentals);
  if(!isOpposingDuelPair(player?.team,player,opponent))throw new TypeError('Opposing physical actors required');
  if(slide?.phase==='recovery'||isDuelGettingUp(transition,player.id,tick)||planShoulderBalanceRecovery(player,transition,tick))return null;
  const opponentGap=Math.hypot(opponent.x-b.x,opponent.y-b.y);
@@ -780,7 +781,7 @@ export function chooseSharedDuelTouch({player,opponent,ballPosition:b,ballVeloci
  const shoulderCollection=isShoulderCollecting(transition,player.id,tick);
  const slideCollection=isSlideCollecting(transition,player.id,tick);
  const canCarry=!shielded&&Math.hypot(v.x,v.y)<=(collectingRelease||shoulderCollection||slideCollection?7.5:5);
- const defensive=(sliding=false)=>chooseDribbleDefensiveTouch({attackingSide:opponent.team,attacker:opponent,defender:player,ballPosition:b,ballVelocity:v,sliding});
+ const defensive=(sliding=false)=>selectPermittedDefensiveTouch(chooseDribbleDefensiveTouch({attackingSide:opponent.team,attacker:opponent,defender:player,ballPosition:b,ballVelocity:v,sliding}),mask,{sliding});
  const carry=()=>chooseDirectedDribbleTouch({attackingSide:player.team,attacker:player,defender:opponent,
   ballPosition:b,ballVelocity:v,variantIndex,tick});
  // D-16: the current control witness determines which contact actions
@@ -799,14 +800,14 @@ export function chooseSharedDuelTouch({player,opponent,ballPosition:b,ballVeloci
   // action, never offensive carry through a stale recovery candidate.
   const touch=defensive();
   const shoulder=defensiveDecision?.kind==='shoulder-challenge'?planDuelShoulderApproach({attackingSide:opponent.team,attacker:opponent,defender:player,ballPosition:b,ballVelocity:v}):null;
-  const chosen=selectDefensiveIntervention({actorId:player.id,shoulder,standing:touch,ballGapM:Math.hypot(player.x-b.x,player.y-b.y)});
+  const chosen=selectDefensiveIntervention({actorId:player.id,shoulder,standing:touch,ballGapM:Math.hypot(player.x-b.x,player.y-b.y),allowedFundamentals:mask});
   return touch&&['standing-tackle','interception'].includes(chosen.kind)?{defensive:touch,carry:null}:null;
  }
  // Legacy isolated fixture behavior remains unchanged.
  if(transition?.profile==='interception'&&!current){
   const previous=transition.lastIntervention;
   if(!(collecting&&previous?.actorId===player.id&&previous.intervention==='interception'&&tick-previous.tick<=90)){
-   const touch=chooseDuelInterceptionTouch({attackingSide:opponent.team,attacker:opponent,defender:player,ballPosition:b,ballVelocity:v});
+   const touch=selectPermittedDefensiveTouch(chooseDuelInterceptionTouch({attackingSide:opponent.team,attacker:opponent,defender:player,ballPosition:b,ballVelocity:v}),mask);
    if(touch)return {defensive:touch,carry:null};
   }
  }
