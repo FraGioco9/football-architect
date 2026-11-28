@@ -6,6 +6,7 @@ import {attackDirection,validateAttackPolarity} from './match-directions.mjs';
 import {INITIAL_PLAYERS,PLAYER_VERSION,PLAYER_DT,PLAYER_MAX_SPEED_MPS}
  from './player-movement.mjs';
 import {chooseRecipient} from './player-ball-uniform-autonomous-action.mjs';
+import {planNativeKeeperHighIntercept} from './small-sided-lab-scenarios.mjs';
 
 export const SMALL_SIDED_BODY_VERSION='me-628-native-physical-body-guard-v1';
 const TORSO_CATEGORY=0x0020,LEG_CATEGORY=0x0040,BALL_CATEGORY=0x0001;
@@ -367,6 +368,22 @@ export function planNativeKeeperDive(keeper,ball,attackPolarity=1){
  return freeze({start:freeze(start),target:freeze(target),intended:freeze(intended),
   eta,reachTicks,limited:travel<gap-1e-8});
 }
+// The high reach uses the original kinematic glove and grip controller.
+// No new hand ownership or collision source is introduced.
+export function planNativeKeeperHighClaim(keeper,ball,attackPolarity=1){
+ const forecast=planNativeKeeperHighIntercept(keeper,ball?.position,ball?.velocity,attackPolarity);
+ if(!forecast||forecast.eta>0.85)return null;
+ const dir=attackDirection(keeper.team,attackPolarity);
+ const start={x:keeper.x+dir*0.35,y:keeper.y,z:0.85},intended=forecast.point;
+ const dx=intended.x-start.x,dy=intended.y-start.y,dz=intended.z-start.z;
+ const distance=Math.hypot(dx,dy,dz);
+ const reachTicks=Math.max(6,Math.min(51,Math.round(forecast.eta/PLAYER_DT)));
+ const travel=Math.min(DIVE_REACH_M,DIVE_SPEED_MPS*reachTicks*PLAYER_DT);
+ if(distance<0.1||distance>travel+0.30)return null;
+ const scale=Math.min(1,travel/distance);
+ return freeze({kind:'high-claim',start:freeze(start),target:freeze({x:start.x+dx*scale,y:start.y+dy*scale,z:start.z+dz*scale}),
+  intended,eta:forecast.eta,reachTicks,limited:scale<1});
+}
 // GK-05: a provisional grip only after a native solver contact. No
 // setTranslation/setLinvel on the ball. The constraint joins at the ball's
 // CURRENT centre and is verified over subsequent real world steps.
@@ -482,7 +499,7 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
  const glove=world.createCollider(R.ColliderDesc.ball(DIVE_GLOVE_RADIUS_M)
   .setFriction(0.35).setRestitution(0.05).setCollisionGroups(0),body);
  const grip=ballBody?createNativeKeeperGrip(R,world,body,ballBody,keeper.team):null;
- let plan=null,shotTick=null,usedShot=null,startTick=null,active=false,priorHit=false,lastChallengeTick=-60;
+ let plan=null,shotTick=null,usedShot=null,crossTick=null,usedCross=null,startTick=null,active=false,priorHit=false,lastChallengeTick=-60;
  let latest=freeze({version:KEEPER_DIVE_VERSION,tick:0,keeperId:keeper.id,
   phase:'ready',glove:null,started:false,contact:false,contactStarted:false,
   officialSave:false});
@@ -500,6 +517,9 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
      lastAction.team!==keeper.team&&lastAction.appliedByRapier===true&&
      lastAction.actualPhysicsImpulseApplied===true)shotTick=lastAction.tick;
   if(nativeOpenPlay&&shotTick!==null&&(tick-shotTick>180||lastAction?.tick===tick-1&&lastAction.action!=='shot'))shotTick=null;
+  if(nativeOpenPlay&&lastAction?.tick===tick-1&&lastAction.team!==keeper.team&&
+     (lastAction.action==='cross'||lastAction.passTarget?.deliveryProfile==='lofted')&&lastAction.appliedByRapier===true&&lastAction.actualPhysicsImpulseApplied===true)crossTick=lastAction.tick;
+  else if(deadBall||crossTick!==null&&(tick-crossTick>180||lastAction?.tick===tick-1))crossTick=null;
   const physicalPlayers=nativeOpenPlay?frame.players.filter(p=>nativeOpenPlayIds.includes(p.id)):null;
   let started=false,phase='ready',target=rest(actor);
   if(!deadBall&&!grip?.active()&&!plan){
@@ -507,10 +527,12 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
    const attacker=nativeOpenPlay?physicalPlayers.filter(p=>p.team!==keeper.team).sort((a,b)=>Math.hypot(a.x-ball.position.x,a.y-ball.position.y)-Math.hypot(b.x-ball.position.x,b.y-ball.position.y)||a.id.localeCompare(b.id))[0]:frame.players.find(p=>p.team!==keeper.team&&p.id.endsWith('-10'));
    const challenge=(closeChallengeEnabled||nativeOpenPlay)&&shotTick===null&&tick-lastChallengeTick>=60?
     planNativeKeeperChallenge(actor,attacker,ball,attackPolarity):null;
-   const candidate=shotCandidate?freeze({...shotCandidate,kind:'shot'}):challenge;
+   const highCandidate=crossTick!==null&&crossTick!==usedCross?planNativeKeeperHighClaim(actor,ball,attackPolarity):null;
+   const candidate=shotCandidate?freeze({...shotCandidate,kind:'shot'}):highCandidate??challenge;
    if(candidate){
     plan=candidate;startTick=tick;started=true;
     if(candidate.kind==='challenge')lastChallengeTick=tick;
+    else if(candidate.kind==='high-claim')usedCross=crossTick;
     else usedShot=shotTick;
     // Inactive glove is brought to the original player's actual ready hand
     // before enabling collision. Every active extension is kinematic.
@@ -526,7 +548,7 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
   }else if(plan){
    const elapsed=tick-startTick+1,holdTicks=4,recoveryTicks=24;
    if(elapsed<=plan.reachTicks){
-    phase=plan.kind==='challenge'?'challenging':'diving';target=lerp(plan.start,plan.target,elapsed/plan.reachTicks);
+    phase=plan.kind==='challenge'?'challenging':plan.kind==='high-claim'?'high-claiming':'diving';target=lerp(plan.start,plan.target,elapsed/plan.reachTicks);
    }else if(elapsed<=plan.reachTicks+holdTicks){
     phase='extended';target=plan.target;
    }else if(elapsed<=plan.reachTicks+holdTicks+recoveryTicks){
@@ -569,7 +591,7 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
  function clearForDeadBall(tick){
   if(!nativeOpenPlay||latest.tick!==tick||tick<1||prepared!==null)throw new TypeError('Current native keeper tick required for dead ball');
   grip?.release();const catchState=grip?.observe(tick)??null;
-  plan=null;shotTick=null;usedShot=null;startTick=null;active=false;priorHit=false;lastChallengeTick=tick;
+  plan=null;shotTick=null;usedShot=null;crossTick=null;usedCross=null;startTick=null;active=false;priorHit=false;lastChallengeTick=tick;
   glove.setCollisionGroups(0);
   latest=freeze({version:KEEPER_DIVE_VERSION,tick,keeperId:keeper.id,phase:'ready',
    glove:null,started:false,contact:false,contactStarted:false,catchState,

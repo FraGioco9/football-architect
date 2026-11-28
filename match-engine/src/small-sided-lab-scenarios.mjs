@@ -73,7 +73,8 @@ const aerialDuelDefinition=freeze({...headerDefinition,id:'aerial-duel',title:'A
  description:'Two opposing canonical outfield players contest one descending physical ball. Neither side is assigned a winner.'});
 const loftedPassDefinition=freeze({...headerDefinition,id:'lofted-pass',title:'Pass · Lofted',description:'Two separated teammates, a genuine long lofted pass and physical receiving opportunity.'});
 const volleyDefinition=freeze({...headerDefinition,id:'volley-solo',title:'Shot · Volley from cross',description:'Two teammates with a grounded ball and open crossing geometry. A real cross precedes an exclusive raised-foot first-time shot.'});
-const byId=new Map([...definitions,headerDefinition,chestDefinition,footDefinition,aerialDuelDefinition,loftedPassDefinition,volleyDefinition].map(s=>[s.id,s]));
+const highClaimDefinition=freeze({...headerDefinition,id:'keeper-high-cross',title:'Goalkeeper · High cross',includeGoalkeeper:true,description:'Two attacking teammates and an opposing goalkeeper. A real cross offers a high interception, grip or deflection opportunity.'});
+const byId=new Map([...definitions,headerDefinition,chestDefinition,footDefinition,aerialDuelDefinition,loftedPassDefinition,volleyDefinition,highClaimDefinition].map(s=>[s.id,s]));
 // Private full-field research fixture: initial geometry only. Not in the
 // visible LAB catalog until the full native participant path is certified.
 byId.set('full-field-native',freeze({id:'full-field-native',nativeOpenPlay:true,fullField:true}));
@@ -274,6 +275,21 @@ export function keeperDuelCloseDownTarget(side,keeper,attacker,ball,velocity){
  return planNativeKeeperCloseDown({...keeper,team:side==='home'?'away':'home'},{...attacker,team:side},ball,velocity);
 }
 // Open play and the isolated keeper experiment share this geometry.
+// AERIAL-07: same live ballistic prediction for keeper movement and
+// hand reach. Only descending points inside the keeper's own box qualify.
+export function planNativeKeeperHighIntercept(keeper,ball,velocity,attackPolarity=1){
+ if(!keeper||keeper.role!=='goalkeeper'||![keeper.x,keeper.y,ball?.x,ball?.y,ball?.z,velocity?.x,velocity?.y,velocity?.z].every(Number.isFinite))return null;
+ const dir=attackDirection(keeper.team,attackPolarity),height=2.05;
+ const disc=velocity.z*velocity.z+19.62*(ball.z-height);
+ if(disc<0||ball.z<0.30)return null;
+ const eta=(velocity.z+Math.sqrt(disc))/9.81;
+ if(!(eta>=0.08&&eta<=2.6))return null;
+ const x=ball.x+velocity.x*eta,y=ball.y+velocity.y*eta;
+ if(-dir*x<36.2||-dir*x>52.1||Math.abs(y)>19.8)return null;
+ const gap=Math.hypot(x-keeper.x,y-keeper.y);
+ if(gap>1.4+Math.min(7*eta,Math.hypot(keeper.vx??0,keeper.vy??0)*eta+4.5*eta*eta))return null;
+ return freeze({point:freeze({x,y,z:height}),target:freeze({x:bounded(x-dir*0.35,-51.99,51.99),y}),eta,decisionOnly:true,officialPossession:false});
+}
 export function planNativeKeeperCloseDown(keeper,attacker,ball,velocity,attackPolarity=1){
  validateAttackPolarity(attackPolarity);
  if(!keeper||!attacker||!['home','away'].includes(keeper.team)||!['home','away'].includes(attacker.team)||attacker.team===keeper.team||
@@ -319,9 +335,9 @@ export const SMALL_SIDED_LAB_SCENARIOS=freeze(definitions.map(s=>
 ));
 // Keep grounded baseline matrix stable; aerial fixtures have their own
 // contact-source assertions while sharing the same scenario registry.
-export const AERIAL_LAB_SCENARIOS=freeze([headerDefinition,chestDefinition,footDefinition,aerialDuelDefinition,loftedPassDefinition,volleyDefinition].map(d=>freeze({...d,mode:'situation',goal:'situation',
+export const AERIAL_LAB_SCENARIOS=freeze([headerDefinition,chestDefinition,footDefinition,aerialDuelDefinition,loftedPassDefinition,volleyDefinition,highClaimDefinition].map(d=>freeze({...d,mode:'situation',goal:'situation',
  initial:freeze({preset:d.id==='aerial-foot-control'?'drop':'roll',seed:'me-small-'+d.id+'-home',x:27,y:26,z:d.id==='aerial-foot-control'?1.6:0,vx:0,vy:0,vz:d.id==='aerial-foot-control'?-2:0}),
- focus:freeze([...d.attackers.slice().sort((a,b)=>a-b).map(n=>'home-'+n),...d.defenders.map(n=>'away-'+n)]),source:'original-rapier-selected-aerial-and-shoe-colliders',officialResult:false})));
+ focus:freeze([...d.attackers.slice().sort((a,b)=>a-b).map(n=>'home-'+n),...(d.includeGoalkeeper?['away-1']:[]),...d.defenders.map(n=>'away-'+n)]),source:'original-rapier-selected-aerial-and-shoe-colliders',officialResult:false})));
 export function getSmallSidedScenario(id){
  const d=byId.get(id);
  if(!d)throw new RangeError('Unknown private small-sided situation');
@@ -444,6 +460,21 @@ export function smallSidedSetup(id,side,canonicalPlayers,{
     genuinePhysicalPlayers:2,officialMatchResult:null});
   }
   throw new RangeError('No collision-free original lofted pass setup');
+ }
+ if(id==='keeper-high-cross'){
+  const random=seededGeometry(id,variantIndex);
+  for(let attempt=0;attempt<96;attempt++){
+   const flank=variantIndex%2===0?1:-1;
+   const bx=29+random()*2,by=flank*(25+random()*2);
+   const rx=41+random()*2,ry=-flank*(2+random()*3);
+   const gx=49+random()*1.2,gy=flank*(random()*1.2);
+   const staged=stage(new Map([[side+'-10',[bx-0.30,by]],[side+'-9',[rx,ry]],[opponent+'-1',[gx,gy]]]));
+   if(!physicallySeparated(staged,1.15))continue;
+   return freeze({id,side,opponent,variantIndex,activeIds,staged,aerialSurface:'head',
+    ball:freeze({preset:'roll',seed:'me-small-keeper-high-v'+variantIndex+'-'+side,x:dir*bx,y:by,z:0,vx:0,vy:0,vz:0}),
+    genuinePhysicalPlayers:3,officialMatchResult:null});
+  }
+  throw new RangeError('No collision-free original keeper high cross setup');
  }
  // PASS-01: before-tick-zero geometry only. No opponent or keeper.
  if(id==='pass-pair'){

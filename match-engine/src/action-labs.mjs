@@ -171,7 +171,7 @@ export function createControlledActionLab(RAPIER,id,{
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
- const aerialLab=['header-pair','chest-control','aerial-foot-control','aerial-duel','lofted-pass','volley-solo'].includes(id);
+ const aerialLab=['header-pair','chest-control','aerial-foot-control','aerial-duel','lofted-pass','volley-solo','keeper-high-cross'].includes(id);
  if(aerialLab){bodyGuardEnabled=true;collectiveApproaches=true;}
  if(typeof collectiveApproaches!=='boolean'||(collectiveApproaches&&(!supportsNativeOpenPlay(id)||!bodyGuardEnabled||keeperSingleShot||directedDribble||duelTackleProfile!=='mixed')))
   throw new TypeError('Native open play requires guarded participants without isolated overrides');
@@ -508,7 +508,7 @@ export function createControlledActionLab(RAPIER,id,{
  const baseFootworkObserver=basicFootwork?
   createBasicReceiveDribbleObserverB04({side:selectedControlSide,kind:id}):null;
  const collectiveCounts=collectiveApproaches?{carry:0,pass:0,shot:0,tackle:0,interception:0,save:0,other:0}:null;
- let headerAudit=null,headerCrossAudit=null,aerialControlAudit=null,aerialDuelAudit=null,loftedPassAudit=null,volleyAudit=null;
+ let headerAudit=null,headerCrossAudit=null,aerialControlAudit=null,aerialDuelAudit=null,loftedPassAudit=null,volleyAudit=null,highClaimAudit=null;
  function record(physics,playerFrame){
   const foot=engine.footContactSnapshot();
   const starts=Object.freeze([...foot.started]);
@@ -651,6 +651,14 @@ export function createControlledActionLab(RAPIER,id,{
      (id==='aerial-foot-control'||headerCrossAudit&&action.playerId===headerCrossAudit.recipientId&&action.tick>headerCrossAudit.tick))aerialControlAudit=action;
   if(aerialLab&&action?.action==='cross'&&action.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true&&
      starts.length===1&&starts[0]===action.playerId&&!headerCrossAudit)headerCrossAudit=action;
+  if(id==='keeper-high-cross'&&headerCrossAudit){
+   const k=engine.nativeKeeperSnapshots().find(k=>k.keeperId===smallSided.opponent+'-1');
+   if(k?.plan?.kind==='high-claim'&&k.started&&!highClaimAudit)highClaimAudit=Object.freeze({cross:headerCrossAudit,attemptTick:k.tick,keeperId:k.keeperId,contactTick:null,confirmedTick:null,gripReleased:false});
+   if(highClaimAudit&&k){
+    const contactTick=highClaimAudit.contactTick??(k.contactStarted&&k.plan?.kind==='high-claim'?k.tick:null);
+    highClaimAudit=Object.freeze({...highClaimAudit,contactTick,confirmedTick:highClaimAudit.confirmedTick??(contactTick!==null?k.catchState?.confirmedTick??null:null),gripReleased:highClaimAudit.gripReleased||k.catchState?.released===true});
+   }
+  }
   if(aerialLab&&action?.nativeExclusiveHeadStart===true&&headerCrossAudit&&
      action.tick>headerCrossAudit.tick&&action.playerId===headerCrossAudit.recipientId&&!headerAudit)headerAudit=action;
   const evidence=classifyActionLabEvidence(spec,{
@@ -962,7 +970,7 @@ export function createControlledActionLab(RAPIER,id,{
     tick:physics.tick,kind:id,actorId:baseFootworkAudit.actorId
    })].slice(-12));
   }
-  const keeperDive=engine.keeperDiveSnapshot?.()??null;
+  const keeperDive=engine.keeperDiveSnapshot?.()??(id==='keeper-high-cross'?engine.nativeKeeperSnapshots()[0]??null:null);
   const refereeEvidence=refereeObserver?.observe({
    physics,playerFrame,foot,solver:engine.footContactSolverSnapshot(),
    action:aerialLab?action:nativeAction,...(keeperDive?{keeperDive}: {}),
@@ -1041,7 +1049,7 @@ export function createControlledActionLab(RAPIER,id,{
    // velocity and no authority outside the existing closed Action LAB.
    observedMovementPlayers:playerFrame.players,
    starts,action,evidence,decisionEvidence,contactContinuity,
-   ...(aerialLab?{headerAudit,headerCrossAudit,aerialControlAudit,aerialDuelAudit,loftedPassAudit,volleyAudit}:{}),
+   ...(aerialLab?{headerAudit,headerCrossAudit,aerialControlAudit,aerialDuelAudit,loftedPassAudit,volleyAudit,highClaimAudit}:{}),
    ...(collectiveControl?{collectiveControl,collectiveCounts:Object.freeze({...collectiveCounts}),nativeKeeperStates:engine.nativeKeeperSnapshots()}:{}),
     labDynamicsVersion:currentDynamics?CURRENT_LAB_DYNAMICS_VERSION:null,
     latestOrientedReception:currentDynamics?(engine.latestLabReceptionSnapshot?.()??null):null,

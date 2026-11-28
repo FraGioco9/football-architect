@@ -96,7 +96,7 @@ function recordPerformedActions(frame){
  // First receiving contacts are actual native observations, not inferred
  // completed passes or successful possession. They have their own actor.
  const dive=frame.keeperDive;
- if(dive?.tick===tick&&dive.started)events.push({id:dive.keeperId,kind:dive.plan?.kind==='challenge'?'challenge':'dive',label:dive.plan?.kind==='challenge'?'Challenge':'Dive'});
+ if(dive?.tick===tick&&dive.started)events.push({id:dive.keeperId,kind:dive.plan?.kind==='high-claim'?'high-claim':dive.plan?.kind==='challenge'?'challenge':'dive',label:dive.plan?.kind==='high-claim'?'High claim':dive.plan?.kind==='challenge'?'Challenge':'Dive'});
  if(dive?.tick===tick&&dive.contactStarted)events.push({id:dive.keeperId,kind:'glove-contact',label:'Glove contact'});
  const keeper=frame.keeperShotAudit;
  if(keeper?.deflection?.tick===tick)events.push({id:keeper.keeperId,kind:'deflection',label:'Deflection'});
@@ -750,7 +750,7 @@ function render() {
     const shot=f.shotSoloAudit, pass=f.passPairAudit, cross=f.crossPairAudit;
     const keeper=f.keeperShotAudit;
     const mixedControl=f.duelTackleProfile==='mixed'&&f.duelTransition?.ballControl;
-    const summary=activeScene.id==='volley-solo'?(f.volleyAudit?'Volley observed':f.headerCrossAudit?'Waiting for volley':'Waiting for cross'):activeScene.id==='lofted-pass'?(f.loftedPassAudit?.receiverContact?'Receiver contact':f.loftedPassAudit?'Lofted pass in flight':'Waiting for lofted pass'):activeScene.id==='aerial-duel'?(f.aerialDuelAudit?(f.aerialDuelAudit.kind==='exclusive-header'?(f.aerialDuelAudit.team==='home'?'HOME':'AWAY')+' · Header':f.aerialDuelAudit.kind==='ambiguous-contact'?'Simultaneous contact':'Contested contact'):'Waiting for aerial duel'):f.aerialControlAudit?(f.aerialControlAudit.surface==='chest'?'Chest control':'Aerial foot control'):activeScene.id==='chest-control'?(f.headerCrossAudit?'Waiting for chest control':'Waiting for cross'):activeScene.id==='aerial-foot-control'?'Waiting for aerial foot control':f.headerAudit?'Header · '+f.headerAudit.action:activeScene.id==='header-pair'?(f.headerCrossAudit?'Waiting for header':'Waiting for cross'):f.blockAudit?(f.blockAudit.blocked?'Shot blocked':f.blockAudit.contactTick!==null?'Defender contact':f.blockAudit.phase==='flight'?'Shot in flight':'Waiting for shot'):f.interceptionAudit?({ready:'Waiting for pass',flight:'Pass in flight',intercepted:'Interception contact',collected:'Ball recovered',received:'Pass reached receiver'})[f.interceptionAudit.phase]:keeper?
+    const summary=activeScene.id==='keeper-high-cross'?(f.highClaimAudit?.confirmedTick!==null&&f.highClaimAudit?.confirmedTick!==undefined?'Catch confirmed':f.highClaimAudit?.contactTick!=null?(f.keeperDive?.catchState?.active?'Securing ball':'Hand contact'):f.highClaimAudit?'High claim attempt':f.headerCrossAudit?'Cross in flight':'Waiting for cross'):activeScene.id==='volley-solo'?(f.volleyAudit?'Volley observed':f.headerCrossAudit?'Waiting for volley':'Waiting for cross'):activeScene.id==='lofted-pass'?(f.loftedPassAudit?.receiverContact?'Receiver contact':f.loftedPassAudit?'Lofted pass in flight':'Waiting for lofted pass'):activeScene.id==='aerial-duel'?(f.aerialDuelAudit?(f.aerialDuelAudit.kind==='exclusive-header'?(f.aerialDuelAudit.team==='home'?'HOME':'AWAY')+' · Header':f.aerialDuelAudit.kind==='ambiguous-contact'?'Simultaneous contact':'Contested contact'):'Waiting for aerial duel'):f.aerialControlAudit?(f.aerialControlAudit.surface==='chest'?'Chest control':'Aerial foot control'):activeScene.id==='chest-control'?(f.headerCrossAudit?'Waiting for chest control':'Waiting for cross'):activeScene.id==='aerial-foot-control'?'Waiting for aerial foot control':f.headerAudit?'Header · '+f.headerAudit.action:activeScene.id==='header-pair'?(f.headerCrossAudit?'Waiting for header':'Waiting for cross'):f.blockAudit?(f.blockAudit.blocked?'Shot blocked':f.blockAudit.contactTick!==null?'Defender contact':f.blockAudit.phase==='flight'?'Shot in flight':'Waiting for shot'):f.interceptionAudit?({ready:'Waiting for pass',flight:'Pass in flight',intercepted:'Interception contact',collected:'Ball recovered',received:'Pass reached receiver'})[f.interceptionAudit.phase]:keeper?
       (keeper.crossing?(keeper.crossing.kind==='goal'?'Goal observed':'Ball out'):
        f.keeperDive?.catchState?.active&&f.keeperDive.catchState.confirmedTick!==null?'Ball held':
        f.keeperDive?.catchState?.active?'Securing ball':
@@ -785,7 +785,10 @@ function renderActiveMetrics(f){
  const shot=f.shotSoloAudit,pass=f.passPairAudit,cross=f.crossPairAudit;
  let entries;
  const keeper=f.keeperShotAudit;
- if(activeScene.id==='volley-solo'){
+ if(activeScene.id==='keeper-high-cross'){
+  const a=f.highClaimAudit;
+  entries=[['Cross',f.headerCrossAudit?'Observed':'—'],['High claim',a?'Attempted':'—'],['Hand contact',a?.contactTick!=null?'Observed':'—'],['Grip',a?.confirmedTick!=null?'Confirmed':f.keeperDive?.catchState?.active?'Pending':a?.contactTick!=null?'Not secured':'—']];
+ }else if(activeScene.id==='volley-solo'){
   const a=f.volleyAudit?.launch;
   entries=[['Strike height',n(a?.origin.z,' m')],['Shot speed',speed(a?Math.hypot(a.after.x,a.after.y,a.after.z):null)],['Action',a?'Volley observed':'—']];
  }else if(activeScene.id==='lofted-pass'){
@@ -2380,7 +2383,8 @@ function setupUnifiedScenarioMenu(){
    ['action:overload-2v1','2v1 · attack and defend'],
    ['action:duel-3v3','3v3 · team decisions']
   ]]]:[['Goalkeeping',[
-   ['action:keeper-1v1','1v1 · goalkeeper']
+   ['action:keeper-1v1','1v1 · goalkeeper'],
+   ['action:keeper-high-cross','Goalkeeper · High cross']
   ]],['Dribbling & defending',[
    ['action:dribble-1v1','1v1 · autonomous duel'],
    ['action:dribble-1v1:standing','Standing tackle'],

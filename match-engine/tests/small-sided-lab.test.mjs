@@ -14,7 +14,7 @@ import {createCollectiveBallControlObserver,createNativeBallControlObserver,crea
 import {observeNativeShotBlock,planNativeShotBlock} from '../src/defensive-intervention-selection.mjs';
 import {selectUniformAutonomousContactAction,chooseRecipient,eligibleLiveKeeperSave,chooseNativeHeaderIntent,chooseNativeLoftedRecipient,chooseNativeVolleyIntent} from '../src/player-ball-uniform-autonomous-action.mjs';
 import {planNativeCarryTouch,chooseNativePassInterceptionTouch} from '../src/isolated-dribble-touches.mjs';
-import {planNativeKeeperDive,planNativeKeeperChallenge,eligibleKeeperGrip,planNativeKeeperDistribution,createNativeAerialHead,planNativeAerialJump,aerialHeadHeight,AERIAL_JUMP_TICKS,planNativeAerialControl,planNativeAerialCushion,createNativeAerialControl,exclusiveNativeAerialStart,observeNativeAerialDuel} from '../src/small-sided-native-body-guard.mjs';
+import {planNativeKeeperDive,planNativeKeeperHighClaim,planNativeKeeperChallenge,eligibleKeeperGrip,planNativeKeeperDistribution,createNativeAerialHead,planNativeAerialJump,aerialHeadHeight,AERIAL_JUMP_TICKS,planNativeAerialControl,planNativeAerialCushion,createNativeAerialControl,exclusiveNativeAerialStart,observeNativeAerialDuel} from '../src/small-sided-native-body-guard.mjs';
 import {planSlidingTackle} from '../src/sliding-tackle.mjs';
 import {detectFirstFullyOutBallB05} from '../src/basic-match-referee-b05.mjs';
 import {SOLO_CARRY_PHASES,advanceSoloCarryPhase} from '../src/solo-carry-phases.mjs';
@@ -2304,4 +2304,44 @@ test('AERIAL-06 mirrored physical volley LAB requires a real cross before exclus
  }
  process.stdout.write('ME_628_VOLLEY '+JSON.stringify(rows)+'\\n');
  assert.ok(rows.every(r=>r.tick!==null),JSON.stringify(rows.filter(r=>r.tick===null)));
+});
+
+test('AERIAL-07 high claim prediction is mirrored and rejects unreachable or outside-box balls',()=>{
+ for(const team of ['home','away']){
+  const dir=team==='home'?1:-1,keeper={id:team+'-1',team,role:'goalkeeper',x:-dir*46,y:0,vx:0,vy:0};
+  const ball={position:{x:-dir*45.65,y:0.2,z:3.0},velocity:{x:0,y:0,z:-2}};
+  const plan=planNativeKeeperHighClaim(keeper,ball);
+  assert.ok(plan);assert.equal(plan.kind,'high-claim');assert.ok(plan.target.z<=2.05+1e-8);
+  assert.equal(planNativeKeeperHighClaim(keeper,{...ball,position:{...ball.position,x:0}}),null);
+  assert.equal(planNativeKeeperHighClaim(keeper,{...ball,position:{...ball.position,y:21}}),null);
+ }
+});
+test('AERIAL-07 real cross precedes native high-claim attempts and observed hand contacts',{timeout:120000},async()=>{
+ const R=await initializeRapier(rapier),rows=[];
+ for(const side of ['home','away'])for(let variantIndex=0;variantIndex<30;variantIndex++){
+  const lab=createControlledActionLab(R,'keeper-high-cross',{shotSide:side,variantIndex});
+  try{
+   const keeper=(side==='home'?'away':'home')+'-1';
+   assert.equal(lab.snapshot().genuinePhysicalPlayerCount,3);
+   assert.ok(lab.focus.includes(keeper));
+   let cross=null,audit=null;
+   for(let tick=1;tick<=300;tick++){
+    const frame=lab.step(),k=frame.nativeKeeperStates.find(x=>x.keeperId===keeper);
+    if(frame.action?.action==='cross'&&!cross){cross=frame.action;assert.deepEqual(frame.starts,[cross.playerId]);assert.equal(cross.actualPhysicsImpulseApplied,true);}
+    if(frame.highClaimAudit){
+     audit=frame.highClaimAudit;assert.ok(cross&&cross.tick<audit.attemptTick);
+     if(audit.contactTick===tick){assert.equal(k.contactStarted,true);assert.equal(k.source,'native-rapier-solver-manifold');}
+     if(audit.confirmedTick===tick){assert.equal(k.catchState.active,true);assert.equal(k.catchState.confirmedTick,tick);}
+    }
+    if(audit?.confirmedTick!=null)break;
+   }
+   rows.push({side,variantIndex,cross:!!cross,attempt:!!audit,contact:audit?.contactTick??null,confirmed:audit?.confirmedTick??null});
+  }finally{lab.dispose();}
+ }
+ process.stdout.write('ME_628_HIGH_CLAIM '+JSON.stringify(rows)+'\\n');
+ for(const side of ['home','away']){
+  const group=rows.filter(r=>r.side===side);
+  assert.ok(group.every(r=>r.cross),JSON.stringify(group));
+  assert.ok(group.some(r=>r.attempt&&r.contact!==null),JSON.stringify(group));
+ }
 });
