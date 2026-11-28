@@ -55,6 +55,10 @@ export function eligibleLiveKeeperSave(player,ballPosition,ballVelocity,attackPo
 export function usesNativeLiveActionRanking({nativeActionPolicy=false,pairedPhysicalSource=false}={}){
  return nativeActionPolicy||pairedPhysicalSource;
 }
+// Availability is decided before ranking; contact authority stays native.
+export function nativeCarryImpulseAvailable(proposal){
+ return proposal!==null&&Number.isFinite(proposal?.magnitudeNs)&&proposal.magnitudeNs>=0.025;
+}
 export const UNIFORM_ACTION_CONTEXT_VERSION='me-pb-55-contextual-lane-observation-v1';
 const finite=n=>typeof n==='number'&&Number.isFinite(n);
 const ids=Object.freeze(INITIAL_PLAYERS.map(p=>p.id));
@@ -486,11 +490,16 @@ export function selectUniformAutonomousContactAction({
    player.role!=='goalkeeper'&&!defensiveAttempt&&!collectiveTouch;
   const contextualRecipient=contextualAttacker&&permits('pass')&&requiredLoftedProfile===null?
    chooseRecipient(player,ballPosition,actors,attackPolarity):null;
-  const carryPossible=contextualAttacker&&permits('carry')&&allowPhysicalCarry&&
+  const carryGeometryPossible=contextualAttacker&&permits('carry')&&allowPhysicalCarry&&
    Math.abs(ballPosition.y)<=20&&
    (collective||attack*ballPosition.x>=-30)&&attack*ballPosition.x<=45&&
    Math.abs(toGoal)>5&&
    Math.hypot(ballVelocity.x,ballVelocity.y)<=8;
+  const nativeCarryProposal=()=>planNativeCarryTouch({attacker:player,attackingSide:player.team,
+   defender:nearestNativeCarryOpponent(player,ballPosition,actors),ballPosition,ballVelocity,attackPolarity,
+   phase:playerFrame.smallSidedMovementDecisions?.find(d=>d.id===id&&d.tick===tick&&d.kind==='carry-ball')?.carryPhase??null,...(nativeCarryParameters??{})});
+  const contextualCarryProposal=carryGeometryPossible&&liveRanking?nativeCarryProposal():null;
+  const carryPossible=carryGeometryPossible&&(!liveRanking||nativeCarryImpulseAvailable(contextualCarryProposal));
   const contextualChoice=contextualAttacker?
    (liveRanking?chooseNativeFootballAction:chooseSmallSidedContextAction)({
     ...(!liveRanking?{situationId:smallSidedDecisionContext.situationId,variantIndex:smallSidedDecisionContext.variantIndex,tick,actorId:id,team:player.team,attackingSide:smallSidedDecisionContext.attackingSide}:{}),
@@ -630,7 +639,7 @@ export function selectUniformAutonomousContactAction({
     rule=nearestOpponentM<IMMEDIATE_PRESSURE_M?
      'pressured-short-ground-touch':'open-lane-short-ground-touch';
    }else{
-    if(!permits('clearance'))continue;
+    if(!permits('clearance')||carryGeometryPossible&&liveRanking&&!carryPossible)continue;
     action='clearance';dx=attack*25;
     dy=-ballPosition.y*0.45;vertical=0.32;
     rule=shotRange?'blocked-shot-no-safe-pass':
@@ -644,10 +653,8 @@ export function selectUniformAutonomousContactAction({
   if(!permits(action))continue;
   let nativeCarryTouch=null;
   if((collective||pairedPhysicalSource&&!activeKeeperAttacker)&&action==='carry'){
-   const nearest=nearestNativeCarryOpponent(player,ballPosition,actors);
-   nativeCarryTouch=planNativeCarryTouch({attacker:player,attackingSide:player.team,defender:nearest,ballPosition,ballVelocity,attackPolarity,
-    phase:playerFrame.smallSidedMovementDecisions?.find(d=>d.id===id&&d.tick===tick&&d.kind==='carry-ball')?.carryPhase??null,...(nativeCarryParameters??{})});
-   if(nativeCarryTouch.magnitudeNs<0.025)continue;
+   nativeCarryTouch=contextualCarryProposal??nativeCarryProposal();
+   if(!nativeCarryImpulseAvailable(nativeCarryTouch))continue;
    dx=nativeCarryTouch.dx;dy=nativeCarryTouch.dy;
    rule='native-live-opponent-ground-touch';
   }

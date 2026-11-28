@@ -1008,7 +1008,7 @@ test('#628 LAB-VAR-01 variants preserve real Rapier native shoes and original-ac
    assert.ok(Math.abs(zero.ball.position.y-setup.ball.y)<1e-5,
     'Rapier float32 Y must preserve the seeded physical ball start');
    assert.deepEqual(zero.smallSidedParticipants,setup.activeIds);
-   let realStarts=0,realAttempts=0;
+   let realStarts=0,realAttempts=0;const contactSamples=[];
    for(let i=1;i<=60;i++){
     const x=a.step(),y=b.step();
     assert.deepEqual(x.ball,y.ball,'deterministic native Rapier seed');
@@ -1019,6 +1019,7 @@ test('#628 LAB-VAR-01 variants preserve real Rapier native shoes and original-ac
     assert.equal(x.officialMatchPossession,false);
     assert.ok(x.starts.every(id=>setup.activeIds.includes(id)));
     realStarts+=x.starts.length;
+    if(x.starts.length)contactSamples.push({tick:i,starts:x.starts,ball:x.ball,decision:x.decisionEvidence,action:x.action?.action??null});
     if(x.action){
      realAttempts++;
      assert.equal(x.action.appliedByRapier,true);
@@ -1027,6 +1028,7 @@ test('#628 LAB-VAR-01 variants preserve real Rapier native shoes and original-ac
     }
     if(x.refereeEvidence?.lastEvent)break;
    }
+   if(!realStarts||!realAttempts)process.stdout.write('ME_628_VARIANT_NATIVE_FAILURE '+JSON.stringify({id:s.id,side,variantIndex,realStarts,realAttempts,contactSamples})+'\n');
    assert.ok(realStarts>0,'variant must preserve a true physical shoe START');
    assert.ok(realAttempts>0,'variant must preserve an authentic action impulse');
   }finally{a.dispose();b.dispose();}
@@ -1046,11 +1048,12 @@ test('#628 LAB-VAR-02 live small-sided choices vary across 29 seeds and still re
    try{
     const zero=scene.snapshot();
     assert.equal(zero.smallSidedVariantIndex,variantIndex);
-    let first=null;
+    let first=null;const contactSamples=[];
     for(let tick=1;tick<=90;tick++){
      const frame=scene.step();
      assert.ok(frame.starts.every(id=>frame.smallSidedParticipants.includes(id)),
       'Only existing small-sided native Rapier shoes can start a contact');
+     if(frame.starts.length)contactSamples.push({tick,starts:frame.starts,ball:frame.ball,decision:frame.decisionEvidence,action:frame.action?.action??null});
      if(frame.action?.team===side){
       first=frame.action;
       assert.deepEqual(frame.starts,[first.playerId]);
@@ -1066,6 +1069,7 @@ test('#628 LAB-VAR-02 live small-sided choices vary across 29 seeds and still re
      }
      if(frame.refereeEvidence?.lastEvent)break;
     }
+    if(!first)process.stdout.write('ME_628_VARIANT_RANKING_FAILURE '+JSON.stringify({id:sId,side,variantIndex,contactSamples})+'\n');
     assert.ok(first,sId+' '+side+' V'+(variantIndex+1)+
      ' must produce an actual attacking Rapier shoe impulse');
     observed.add(first.action);
