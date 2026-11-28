@@ -13,7 +13,7 @@ import {projectNativeShoeBodyStep,projectNativeShoeBodyFacing}
  from './native-shoe-body-handoff.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
 import {smallSidedSetup,keeperDuelAttackerTarget,keeperDuelReboundTarget,
- keeperDuelGoalkeeperTarget,keeperDuelCloseDownTarget,planNativeKeeperCloseDown,planNativeFootballMovement,supportsNativeOpenPlay} from './small-sided-lab-scenarios.mjs';
+ keeperDuelGoalkeeperTarget,keeperDuelCloseDownTarget,planNativeKeeperCloseDown,planNativeFootballMovement,planNativeAerialContest,supportsNativeOpenPlay} from './small-sided-lab-scenarios.mjs';
 import {basicSourcePositiveRestartSetup}
  from './basic-restart-source-lineup-b05b.mjs';
 import {initialB06bOpeningLineup} from './basic-opening-kickoff-lineup-b06b.mjs';
@@ -2673,6 +2673,11 @@ export function createPlayerMovement(options={}){
     if(plan?.decision?.plan)nativeDeliveryPlans[defender.id]=plan.decision;
    }
   }
+  if(collectiveApproaches&&collectiveControl?.kind==='loose'&&(smallSided.aerialSurface||options.researchNativeAerialEnabled===true)){
+   const height=smallSided.aerialSurface==='chest'?1.35:smallSided.aerialSurface==='foot'?0.85:1.95;
+   const aerial=planNativeAerialContest(players.filter(p=>smallActive.has(p.id)&&!isNativeRecoveryLocked(collectiveControl,p.id,tick+1)),ballPosition,realBallVelocity,height);
+   for(const [id,plan] of Object.entries(aerial))if(!nativeDeliveryPlans[id])nativeDeliveryPlans[id]=Object.freeze({kind:plan.kind,plan});
+  }
   const nextNativeSlides={},nextNativeShoulders={},nativeBalance={};
   if(collectiveApproaches){
    const owner=players.find(p=>p.id===collectiveControl?.playerId);
@@ -3148,7 +3153,7 @@ export function createPlayerMovement(options={}){
   if(smallSided)lastSmallSidedMovementDecisions=Object.freeze(players
    .filter(p=>smallActive.has(p.id)).map(p=>{
     const target=targets[players.indexOf(p)];
-    const kind=(collectiveApproaches&&p.role==='goalkeeper'?'goalkeeping':null)??(collectiveApproaches?.[p.id]&&(isDuelGettingUp(collectiveControl,p.id,tick+1)?'getting-up':nativeShoulders[p.id]?'shoulder-challenge':nativeSlides[p.id]?.phase==='slide'?'press-ball':null)||null)??(nativeDeliveryPlans[p.id]?.kind==='block'?'block-shot':nativeDeliveryPlans[p.id]?.kind==='interception'?'intercept-ball':null)??collectiveApproaches?.[p.id]?.kind??(smallSided.blockStart&&p.id===smallSided.opponent+'-2'?(blockState?.phase==='blocked'?'press-ball':'block-shot'):smallSided.interceptionStart&&p.id===smallSided.opponent+'-2'?(interceptionState?.phase==='flight'?'intercept-ball':['intercepted','collected'].includes(interceptionState?.phase)?'carry-ball':'press-ball'):duelActors?(isDuelGettingUp(duelTransition,p.id,tick+1)?'getting-up':duelShoulder?.actorId===p.id&&duelShoulder.sideOn?'shoulder-challenge':duelInterception?.actorId===p.id?'intercept-ball':duelTransition?.profile==='mixed'&&duelTransition.ballControl?.kind==='loose'?'press-ball':p.id===duelActors.attacker.id?'carry-ball':'press-ball'):p.id===smallSided.opponent+'-1'?'goalkeeping':
+    const kind=(collectiveApproaches&&p.role==='goalkeeper'?'goalkeeping':null)??(collectiveApproaches?.[p.id]&&(isDuelGettingUp(collectiveControl,p.id,tick+1)?'getting-up':nativeShoulders[p.id]?'shoulder-challenge':nativeSlides[p.id]?.phase==='slide'?'press-ball':null)||null)??(nativeDeliveryPlans[p.id]?.kind==='block'?'block-shot':nativeDeliveryPlans[p.id]?.kind==='interception'?'intercept-ball':nativeDeliveryPlans[p.id]?.kind==='aerial-approach'?'aerial-approach':null)??collectiveApproaches?.[p.id]?.kind??(smallSided.blockStart&&p.id===smallSided.opponent+'-2'?(blockState?.phase==='blocked'?'press-ball':'block-shot'):smallSided.interceptionStart&&p.id===smallSided.opponent+'-2'?(interceptionState?.phase==='flight'?'intercept-ball':['intercepted','collected'].includes(interceptionState?.phase)?'carry-ball':'press-ball'):duelActors?(isDuelGettingUp(duelTransition,p.id,tick+1)?'getting-up':duelShoulder?.actorId===p.id&&duelShoulder.sideOn?'shoulder-challenge':duelInterception?.actorId===p.id?'intercept-ball':duelTransition?.profile==='mixed'&&duelTransition.ballControl?.kind==='loose'?'press-ball':p.id===duelActors.attacker.id?'carry-ball':'press-ball'):p.id===smallSided.opponent+'-1'?'goalkeeping':
      p.team!==smallSided.side?'press-ball':
      p.id===smallSided.side+'-10'?
       ((smallSided.id==='dribble-1v1'||smallSided.id==='carry-solo')?'carry-ball':'approach-ball'):

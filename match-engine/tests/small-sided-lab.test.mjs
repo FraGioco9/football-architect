@@ -7,14 +7,14 @@ import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {createEngine,initializeRapier} from '../src/core.mjs';
 import {createPlayerMovement,INITIAL_PLAYERS,goalkeeperPosition} from '../src/player-movement.mjs';
 import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT,
- keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget,planCollectiveApproaches,planCollectiveSupport,planCollectiveDefense,planNativeFootballMovement,supportsNativeOpenPlay,planNativeKeeperCloseDown}
+ keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget,planCollectiveApproaches,planCollectiveSupport,planCollectiveDefense,planNativeFootballMovement,supportsNativeOpenPlay,planNativeKeeperCloseDown,planNativeAerialContest}
  from '../src/small-sided-lab-scenarios.mjs';
 import {createControlledActionLab,projectActiveLabDecisions,createNativeFullFieldSession} from '../src/action-labs.mjs';
 import {createCollectiveBallControlObserver,createNativeBallControlObserver,createDribbleTransitionObserver,chooseCollectiveDefensiveTouch,planNativeDefensiveIntervention,isNativeRecoveryLocked,applyNativeSlideRecovery} from '../src/isolated-dribble-touches.mjs';
 import {observeNativeShotBlock,planNativeShotBlock} from '../src/defensive-intervention-selection.mjs';
 import {selectUniformAutonomousContactAction,chooseRecipient,eligibleLiveKeeperSave,chooseNativeHeaderIntent} from '../src/player-ball-uniform-autonomous-action.mjs';
 import {planNativeCarryTouch,chooseNativePassInterceptionTouch} from '../src/isolated-dribble-touches.mjs';
-import {planNativeKeeperDive,planNativeKeeperChallenge,eligibleKeeperGrip,planNativeKeeperDistribution,createNativeAerialHead,planNativeAerialJump,aerialHeadHeight,AERIAL_JUMP_TICKS,planNativeAerialControl,planNativeAerialCushion,createNativeAerialControl} from '../src/small-sided-native-body-guard.mjs';
+import {planNativeKeeperDive,planNativeKeeperChallenge,eligibleKeeperGrip,planNativeKeeperDistribution,createNativeAerialHead,planNativeAerialJump,aerialHeadHeight,AERIAL_JUMP_TICKS,planNativeAerialControl,planNativeAerialCushion,createNativeAerialControl,exclusiveNativeAerialStart,observeNativeAerialDuel} from '../src/small-sided-native-body-guard.mjs';
 import {planSlidingTackle} from '../src/sliding-tackle.mjs';
 import {detectFirstFullyOutBallB05} from '../src/basic-match-referee-b05.mjs';
 import {SOLO_CARRY_PHASES,advanceSoloCarryPhase} from '../src/solo-carry-phases.mjs';
@@ -2170,4 +2170,55 @@ test('AERIAL-03 LABs use actual mirrored cross/chest and descending foot contact
  }
  process.stdout.write('ME_628_AERIAL_CONTROL '+JSON.stringify(rows)+'\\n');
  assert.ok(rows.every(r=>r.tick!==null),JSON.stringify(rows.filter(r=>r.tick===null)));
+});
+
+test('AERIAL-04 pursuit and exclusive contact arbitration are independent of team and input order',()=>{
+ const players=[{id:'home-10',team:'home',role:'forward',x:-0.7,y:0,vx:0,vy:0},{id:'away-2',team:'away',role:'defender',x:1.2,y:0,vx:0,vy:0}];
+ const p={x:0,y:0,z:3.8},v={x:0,y:0,z:-0.4};
+ const plans=planNativeAerialContest(players,p,v);
+ assert.deepEqual(plans,planNativeAerialContest([...players].reverse(),p,v));
+ assert.equal(Object.keys(plans).length,2);
+ assert.deepEqual(plans['home-10'].target,plans['away-2'].target);
+ const hit=id=>({version:'me-628-native-aerial-head-v1',actorId:id,team:id.split('-')[0],tick:10,contact:true,contactStarted:true,actualNativeSolverContact:true,sameOriginalRapierWorld:true});
+ const a=hit('home-10'),b=hit('away-2');
+ assert.equal(exclusiveNativeAerialStart([a]),a);
+ assert.equal(exclusiveNativeAerialStart([a,b]),null);
+ assert.equal(exclusiveNativeAerialStart([a],['away-2'],['away-2']),null);
+ assert.equal(exclusiveNativeAerialStart([a],[],[],true),null);
+ const close=[players[0],{...players[1],x:0.7}];
+ const action={tick:10,playerId:a.actorId,nativeExclusiveHeadStart:true,appliedByRapier:true,actualPhysicsImpulseApplied:true};
+ assert.equal(observeNativeAerialDuel({tick:10,evidence:[a],players:close,action}).actorId,a.actorId);
+ assert.equal(observeNativeAerialDuel({tick:10,evidence:[a,b],players:close,action}).actorId,null);
+ assert.equal(observeNativeAerialDuel({tick:10,evidence:[a],players:close,action:null}).actorId,null);
+});
+test('AERIAL-04 mirrored native duel variants never award an unobserved winner',{timeout:120000},async()=>{
+ const R=await initializeRapier(rapier),rows=[];
+ for(const side of ['home','away'])for(let variantIndex=0;variantIndex<30;variantIndex++){
+  const lab=createControlledActionLab(R,'aerial-duel',{shotSide:side,variantIndex});
+  try{
+   assert.equal(lab.snapshot().genuinePhysicalPlayerCount,2);
+   assert.deepEqual(new Set(lab.focus),new Set([side+'-10',(side==='home'?'away':'home')+'-2']));
+   let observed=null,attempts=new Set();
+   for(let tick=1;tick<=120;tick++){
+    const frame=lab.step(),body=frame.smallSidedNativeBodyGuard;
+    for(const sample of body.aerial)if(sample.jumpStarted)attempts.add(sample.actorId);
+    if(frame.action?.nativeExclusiveHeadStart){
+     assert.deepEqual(body.headBallStarts,[frame.action.playerId]);
+     assert.deepEqual(body.headBallContacts,[frame.action.playerId]);
+     assert.deepEqual(frame.starts,[]);
+    }
+    if(frame.aerialDuelAudit){
+     observed=frame.aerialDuelAudit;
+     assert.equal(observed.officialPossession,false);
+     assert.equal(observed.officialMatchResult,null);
+     if(observed.actorId)assert.equal(frame.action.playerId,observed.actorId);
+     break;
+    }
+   }
+   rows.push({side,variantIndex,attempts:[...attempts],observed});
+  }finally{lab.dispose();}
+ }
+ process.stdout.write('ME_628_AERIAL_DUEL '+JSON.stringify(rows)+'\\n');
+ assert.ok(rows.some(r=>r.observed?.kind==='exclusive-header'&&r.observed.team==='home'));
+ assert.ok(rows.some(r=>r.observed?.kind==='exclusive-header'&&r.observed.team==='away'));
 });

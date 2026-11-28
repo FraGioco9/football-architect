@@ -46,6 +46,28 @@ export function planNativeAerialJump(actor,ball){
  }
  return null;
 }
+// Shared source arbitration. A contested simultaneous manifold never
+// grants either participant the exclusive action or referee last touch.
+export function exclusiveNativeAerialStart(evidence,shoeStarts=[],shoeActive=[],conflict=false){
+ const contacts=(evidence??[]).filter(s=>s.contact);
+ if(conflict||shoeStarts.length||shoeActive.length||contacts.length!==1)return null;
+ const hit=contacts[0];
+ return hit.contactStarted===true&&hit.actualNativeSolverContact===true&&hit.sameOriginalRapierWorld===true?hit:null;
+}
+// Read-only contested-contact classification, not a possession or score.
+export function observeNativeAerialDuel({tick,evidence,players,action}={}){
+ if(!Number.isSafeInteger(tick)||!Array.isArray(evidence)||!Array.isArray(players))return null;
+ const heads=evidence.filter(s=>s.version===NATIVE_AERIAL_VERSION&&s.tick===tick);
+ const contacts=heads.filter(s=>s.contact&&s.actualNativeSolverContact===true&&s.sameOriginalRapierWorld===true);
+ if(!contacts.some(s=>s.contactStarted))return null;
+ const actors=contacts.map(s=>players.find(p=>p.id===s.actorId&&p.team===s.team)).filter(Boolean);
+ const contested=actors.some(p=>players.some(q=>q.team!==p.team&&q.role!=='goalkeeper'&&Math.hypot(p.x-q.x,p.y-q.y)<=1.6));
+ if(!contested)return null;
+ const exclusive=exclusiveNativeAerialStart(evidence);
+ const winner=exclusive&&action?.nativeExclusiveHeadStart===true&&action.tick===tick&&action.playerId===exclusive.actorId&&action.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true?exclusive:null;
+ return freeze({tick,kind:winner?'exclusive-header':contacts.length>1?'ambiguous-contact':'contested-contact',
+  actorId:winner?.actorId??null,team:winner?.team??null,contactIds:freeze(contacts.map(s=>s.actorId)),officialPossession:false,officialMatchResult:null});
+}
 export function createNativeAerialHead(R,world,ballCollider,actor){
  const head=world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased()
   .setTranslation(actor.x,actor.y,AERIAL_HEAD_REST_Z_M).setCcdEnabled(true));

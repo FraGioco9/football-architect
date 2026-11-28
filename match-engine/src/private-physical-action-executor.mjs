@@ -1,5 +1,5 @@
 import {validateAttackPolarity} from './match-directions.mjs';
-import {planNativeAerialCushion,NATIVE_AERIAL_CONTROL_VERSION} from './small-sided-native-body-guard.mjs';
+import {planNativeAerialCushion,NATIVE_AERIAL_CONTROL_VERSION,exclusiveNativeAerialStart} from './small-sided-native-body-guard.mjs';
 // Extracted #481 A4.2b.1 physical impulse boundary.
 // A private, opt-in adapter for the SAME Rapier ball body and canonical
 // 22-shoe event source. No world, policy/mover override or official results.
@@ -236,11 +236,11 @@ export function createPrivatePhysicalActionExecutor({
     throw new TypeError('Current native head solver evidence required');
    const heads=aerialEvidence.filter(s=>s.contact);
    if(heads.length){
+    const exclusive=exclusiveNativeAerialStart(aerialEvidence,contact.started,contact.active,aerialConflict);
     let result=null;
     const head=heads[0],actor=playerFrame.players.find(p=>p.id===head.actorId&&p.team===head.team&&p.role!=='goalkeeper');
     if(!actor||playerFrame.tick!==nextTick)throw new TypeError('Canonical native header actor required');
-    if(!suppressOriginalAction&&!aerialConflict&&heads.length===1&&head.contactStarted&&
-       !contact.started.length&&!contact.active.length&&keeperDistribution===null&&
+    if(!suppressOriginalAction&&exclusive===head&&keeperDistribution===null&&
        nextTick-lastActionTick>=UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS){
      const origin=Object.freeze({...ballBody.translation()}),before=Object.freeze({...ballBody.linvel()});
      const control=head.version===NATIVE_AERIAL_CONTROL_VERSION;

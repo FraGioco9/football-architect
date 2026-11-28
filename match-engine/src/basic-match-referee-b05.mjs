@@ -1,3 +1,4 @@
+import {exclusiveNativeAerialStart} from './small-sided-native-body-guard.mjs';
 // #628 ACTIONS-B05: original 60Hz Rapier ball crossing and minimal referee
 // restarts. DEV read-only source auditor; never fabricates an action, possession,
 // a touch, or a result in the world competitions database.
@@ -131,7 +132,7 @@ export function createBasicMatchRefereeB05({attackPolarity=1}={}){
       s.contactStarted&&!s.contact||!playerFrame.players.some(p=>p.id===s.actorId&&p.team===s.team&&p.role!=='goalkeeper'))))
    throw new TypeError('B05 head touch requires current original native evidence');
   const heads=(aerialEvidence??[]).filter(s=>s.contact);
-  const headStart=heads.length===1&&heads[0].contactStarted&&!aerialConflict&&foot.active.length===0&&foot.started.length===0?heads[0]:null;
+  const headStart=exclusiveNativeAerialStart(aerialEvidence,foot.started,foot.active,aerialConflict);
   const headerAction=action?.nativeExclusiveHeadStart===true&&headStart?.version==='me-628-native-aerial-head-v1'&&action.actualNativeSolverContact===true&&headStart?.actorId===action.playerId;
   const aerialControlAction=action?.nativeExclusiveAerialControlStart===true&&headStart?.version==='me-628-native-aerial-control-v1'&&action.surface===headStart.surface&&action.actualNativeSolverContact===true&&headStart.actorId===action.playerId;
   if(action!==null&&(

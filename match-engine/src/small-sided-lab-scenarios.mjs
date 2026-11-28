@@ -69,7 +69,9 @@ const headerDefinition=freeze({id:'header-pair',nativeOpenPlay:true,title:'Heade
  description:'A grounded ball and two canonical teammates in crossing geometry. The shared policy selects a real lofted cross, then a reachable physical header; no staged airborne ball or awarded outcome.'});
 const chestDefinition=freeze({...headerDefinition,id:'chest-control',title:'Control · Chest',description:'Real cross from a teammate, then a physically reachable chest cushion. No automatic control.'});
 const footDefinition=freeze({...headerDefinition,id:'aerial-foot-control',title:'Control · Aerial foot',attackers:freeze([10]),description:'One player receives a descending ball with a reachable raised foot. No automatic control.'});
-const byId=new Map([...definitions,headerDefinition,chestDefinition,footDefinition].map(s=>[s.id,s]));
+const aerialDuelDefinition=freeze({...headerDefinition,id:'aerial-duel',title:'Aerial duel · 1v1',attackers:freeze([10]),defenders:freeze([2]),
+ description:'Two opposing canonical outfield players contest one descending physical ball. Neither side is assigned a winner.'});
+const byId=new Map([...definitions,headerDefinition,chestDefinition,footDefinition,aerialDuelDefinition].map(s=>[s.id,s]));
 // Private full-field research fixture: initial geometry only. Not in the
 // visible LAB catalog until the full native participant path is certified.
 byId.set('full-field-native',freeze({id:'full-field-native',nativeOpenPlay:true,fullField:true}));
@@ -114,6 +116,26 @@ export function planNativeSupport({player,ball,opponents,reserved=[],attackPolar
  if(!best)return freeze({target:freeze({x:player.x,y:player.y}),safeLane:false,decisionOnly:true,officialPossession:false});
  return freeze({target:freeze({x:best.x,y:best.y}),safeLane:best.safe,laneClearanceM:best.lane,
   opponentGapM:best.separation,decisionOnly:true,officialPossession:false});
+}
+// AERIAL-04: symmetric live intercept pursuit for loose descending balls.
+// Select the most reachable outfielder independently on each team. A
+// predicted reach is only movement intent, not a jump/contact award.
+export function planNativeAerialContest(players,ball,velocity,height=1.95){
+ if(!Array.isArray(players)||![ball?.x,ball?.y,ball?.z,velocity?.x,velocity?.y,velocity?.z,height].every(Number.isFinite)||
+    ball.z<height||ball.z>12||height<0.8||height>2.3)return freeze({});
+ const d=velocity.z*velocity.z+19.62*(ball.z-height);
+ const eta=(velocity.z+Math.sqrt(d))/9.81;
+ if(!(eta>0&&eta<=3))return freeze({});
+ const target=freeze({x:bounded(ball.x+velocity.x*eta,-51.99,51.99),y:bounded(ball.y+velocity.y*eta,-33.49,33.49)});
+ const result={};
+ for(const team of ['home','away']){
+  const candidates=players.filter(p=>p.team===team&&p.role!=='goalkeeper'&&[p.x,p.y,p.vx,p.vy].every(Number.isFinite))
+   .map(p=>({p,gap:Math.hypot(p.x-target.x,p.y-target.y)}))
+   .filter(c=>c.gap<=0.35+Math.min(7*eta,Math.hypot(c.p.vx,c.p.vy)*eta+4.5*eta*eta))
+   .sort((a,b)=>a.gap-b.gap||a.p.id.localeCompare(b.p.id));
+  if(candidates.length){const {p}=candidates[0];result[p.id]=freeze({kind:'aerial-approach',target,etaS:eta,decisionOnly:true,officialPossession:false});}
+ }
+ return freeze(result);
 }
 // COL-05: approach from the goal side when the opponent has observed
 // control. Keep the second defender in a distinct cover lane. These
@@ -295,9 +317,9 @@ export const SMALL_SIDED_LAB_SCENARIOS=freeze(definitions.map(s=>
 ));
 // Keep grounded baseline matrix stable; aerial fixtures have their own
 // contact-source assertions while sharing the same scenario registry.
-export const AERIAL_LAB_SCENARIOS=freeze([headerDefinition,chestDefinition,footDefinition].map(d=>freeze({...d,mode:'situation',goal:'situation',
+export const AERIAL_LAB_SCENARIOS=freeze([headerDefinition,chestDefinition,footDefinition,aerialDuelDefinition].map(d=>freeze({...d,mode:'situation',goal:'situation',
  initial:freeze({preset:d.id==='aerial-foot-control'?'drop':'roll',seed:'me-small-'+d.id+'-home',x:27,y:26,z:d.id==='aerial-foot-control'?1.6:0,vx:0,vy:0,vz:d.id==='aerial-foot-control'?-2:0}),
- focus:freeze(d.attackers.slice().sort((a,b)=>a-b).map(n=>'home-'+n)),source:'original-rapier-selected-aerial-and-shoe-colliders',officialResult:false})));
+ focus:freeze([...d.attackers.slice().sort((a,b)=>a-b).map(n=>'home-'+n),...d.defenders.map(n=>'away-'+n)]),source:'original-rapier-selected-aerial-and-shoe-colliders',officialResult:false})));
 export function getSmallSidedScenario(id){
  const d=byId.get(id);
  if(!d)throw new RangeError('Unknown private small-sided situation');
@@ -392,6 +414,20 @@ export function smallSidedSetup(id,side,canonicalPlayers,{
     genuinePhysicalPlayers:1,officialMatchResult:null});
   }
   throw new RangeError('No collision-free original raised foot setup');
+ }
+ if(id==='aerial-duel'){
+  const random=seededGeometry(id,variantIndex);
+  for(let attempt=0;attempt<96;attempt++){
+   const x=18+random()*15,y=-11+random()*22;
+   const near=0.70+random()*0.20,far=1.15+random()*0.35;
+   const left=variantIndex%2===0?near:far,right=variantIndex%2===0?far:near;
+   const staged=stage(new Map([[side+'-10',[x-left,y]],[opponent+'-2',[x+right,y]]]));
+   if(!physicallySeparated(staged,1.15))continue;
+   return freeze({id,side,opponent,variantIndex,activeIds,staged,aerialSurface:'head',
+    ball:freeze({preset:'drop',seed:'me-small-aerial-duel-v'+variantIndex+'-'+side,x:dir*x,y,z:3.4+random()*0.4,vx:dir*(random()-0.5)*0.7,vy:0,vz:-0.4}),
+    genuinePhysicalPlayers:2,officialMatchResult:null});
+  }
+  throw new RangeError('No collision-free original aerial duel setup');
  }
  // PASS-01: before-tick-zero geometry only. No opponent or keeper.
  if(id==='pass-pair'){
