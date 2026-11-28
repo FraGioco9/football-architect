@@ -310,7 +310,7 @@ test('ME-01-QA U-02e2: mirrored physical header subtypes and ground clearance re
   const dir=team==='home'?1:-1,actorId=team+'-10',mateId=team+'-9',ground=kind==='clearance';
   const x=dir*(kind==='header-shot'?45:kind==='header-pass'?0:-42);
   const activeIds=kind==='header-pass'?[actorId,mateId]:[actorId];
-  const players=INITIAL_PLAYERS.map(p=>p.id===actorId?{...p,x,y:0,vx:0,vy:0,facingRad:dir===1?0:Math.PI}:p.id===mateId?{...p,x:x+dir*14,y:5,vx:0,vy:0}:p);
+  const players=INITIAL_PLAYERS.map(p=>p.id===actorId?{...p,x,y:0,vx:0,vy:0,facingRad:dir===1?0:Math.PI}:p.id===mateId&&kind==='header-pass'?{...p,x:x+dir*14,y:5,vx:0,vy:0}:p);
   const actor=players.find(p=>p.id===actorId);
   const world=new R.World({x:0,y:0,z:ground?0:-9.81});world.timestep=PLAYER_DT;
   const left=footProxyTransform(soloCarryTwoFootPositions(actor).left);

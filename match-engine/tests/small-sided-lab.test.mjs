@@ -1,3 +1,4 @@
+import {resolveInlineActionLabOptions} from '../src/action-labs.mjs';
 // #628 LAB-SMALL-01: real 2–7 selected shoe-collider mini situations.
 // Genuine Rapier sample and uniform policy only; no 11v11 match or authority.
 import test from 'node:test';
@@ -838,7 +839,9 @@ test('#628 selected situations reuse main field/elevation and original transport
  assert.match(html,/id="step"/);
  assert.match(html,/id="reset"/);
  assert.ok(js.includes('createControlledActionLab(rapier,id,{shotSide:side,')&&
-  js.includes("bodyGuardEnabled:id!=='carry-solo'")&&
+  js.includes('...resolveInlineActionLabOptions(id,{archiveMode,duelTackleProfile:')&&
+  resolveInlineActionLabOptions('carry-solo').bodyGuardEnabled===false&&
+  ['dribble-1v1','keeper-1v1','defender-1v1','overload-2v1','duel-2v2','duel-3v3'].every(id=>resolveInlineActionLabOptions(id).bodyGuardEnabled===true)&&
   js.includes("nativeFixedCarryResearch:id==='carry-solo'")&&
   js.includes("carryRunwayStart:id==='carry-solo'"),
   'Visible LAB must isolate native shoe-authenticated Solo Carry and preserve native bodies in opposed scenes');

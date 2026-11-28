@@ -749,7 +749,7 @@ export function selectUniformAutonomousContactAction({
     passCompleted:false,goalScored:false,
     ...(contextualChoice?{smallSidedChoice:contextualChoice}:{}),
     ...(dribbleTouch?{isolatedDribbleTouch:dribbleTouch}:{}),
-    ...(nativeCarryTouch?{nativeCarryTouch}:{})
+    ...(nativeCarryTouch?{nativeCarryTouch:Object.freeze({...nativeCarryTouch,tick,actorId:id})}:{})
    }),
    temporaryPlayersOnly:true,uniformPlayerStats:true,
    officialMatchAction:false,officialMatchPossession:false,
