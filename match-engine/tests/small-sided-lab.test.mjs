@@ -14,7 +14,7 @@ import {createCollectiveBallControlObserver,createNativeBallControlObserver,crea
 import {observeNativeShotBlock,planNativeShotBlock} from '../src/defensive-intervention-selection.mjs';
 import {selectUniformAutonomousContactAction,chooseRecipient,eligibleLiveKeeperSave} from '../src/player-ball-uniform-autonomous-action.mjs';
 import {planNativeCarryTouch,chooseNativePassInterceptionTouch} from '../src/isolated-dribble-touches.mjs';
-import {planNativeKeeperDive,planNativeKeeperChallenge,eligibleKeeperGrip,planNativeKeeperDistribution} from '../src/small-sided-native-body-guard.mjs';
+import {planNativeKeeperDive,planNativeKeeperChallenge,eligibleKeeperGrip,planNativeKeeperDistribution,createNativeAerialHead,planNativeAerialJump,aerialHeadHeight,AERIAL_JUMP_TICKS} from '../src/small-sided-native-body-guard.mjs';
 import {planSlidingTackle} from '../src/sliding-tackle.mjs';
 import {detectFirstFullyOutBallB05} from '../src/basic-match-referee-b05.mjs';
 import {SOLO_CARRY_PHASES,advanceSoloCarryPhase} from '../src/solo-carry-phases.mjs';
@@ -1972,4 +1972,55 @@ test('UME-06D4C2 mirrored keeper hand geometry, distribution, slide and observed
  const reverseBlock=observeNativeShotBlock({tick:2,delivery,players:[mirror(player)],starts:[player.id],before:mirror(pre),after:mirror(post),attackPolarity:-1});
  assert.ok(block?.blocked);assert.deepEqual(reverseBlock,block);
  assert.equal(observeNativeShotBlock({tick:2,delivery,players:[mirror(player)],starts:[],before:mirror(pre),after:mirror(post),attackPolarity:-1}),null);
+});
+
+test('AERIAL-01 bounded native head reach: actual same-world descending ball solver contact, no invented heading',async()=>{
+ const R=await initializeRapier(rapier);
+ const actor={id:'home-10',team:'home',role:'forward',x:0,y:0,vx:0,vy:0};
+ assert.equal(planNativeAerialJump(actor,{position:{x:0,y:0,z:0.11},velocity:{x:0,y:0,z:0}}),null);
+ assert.equal(planNativeAerialJump(actor,{position:{x:8,y:0,z:3},velocity:{x:0,y:0,z:-2}}),null);
+ assert.equal(aerialHeadHeight(0),aerialHeadHeight(AERIAL_JUMP_TICKS));
+ assert.ok(Math.abs(aerialHeadHeight(21)-2.27)<1e-9);
+ function run(side,deadBall=false){
+  const world=new R.World({x:0,y:0,z:-9.81});world.timestep=1/60;
+  try{
+   const p={...actor,id:side+'-10',team:side};
+   const ball=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(0,0,3).setLinvel(0,0,-2).setCcdEnabled(true));
+   const collider=world.createCollider(R.ColliderDesc.ball(0.11).setMass(0.43),ball);
+   const head=createNativeAerialHead(R,world,collider,p),samples=[];
+   let contact=null;
+   for(let t=1;t<=60;t++){
+    head.prepare(p,t,{position:ball.translation(),velocity:ball.linvel()},deadBall);
+    world.step();
+    const state=head.observe(t);samples.push(state);
+    assert.equal(state.physicalHeaderActionApplied,false);assert.equal(state.officialPossession,false);
+    assert.ok(state.headPosition.z>=1.72-1e-6&&state.headPosition.z<=2.27+1e-6);
+    if(state.contactStarted&&!contact)contact=state;
+   }
+   if(deadBall){assert.ok(samples.every(s=>!s.jumping&&!s.contact));return null;}
+   assert.ok(contact?.actualNativeSolverContact,'actual original Rapier head solver contact required');
+   assert.equal(contact.actorId,p.id);assert.ok(samples.some(s=>s.jumpStarted));
+   assert.ok(samples.some(s=>s.tick>42&&!s.jumping));
+   return contact.tick;
+  }finally{world.free();}
+ }
+ const home=run('home'),away=run('away');assert.equal(home,away);assert.equal(run('home',true),null);
+ process.stdout.write('ME_628_AERIAL01_HEAD '+JSON.stringify({homeContactTick:home,awayContactTick:away})+'\n');
+});
+test('AERIAL-01 core integration enables native heads only on guarded collective research; grounded replay stays grounded',async()=>{
+ const R=await initializeRapier(rapier),id='full-field-native',side='home';
+ const fixture=smallSidedSetup(id,side,INITIAL_PLAYERS);
+ assert.throws(()=>createEngine(R,fixture.ball,{diagnosticNativeAerialEnabled:true}),/guarded collective/);
+ const engine=createEngine(R,fixture.ball,{diagnosticSmallSidedSituation:id,diagnosticSmallSidedSide:side,
+  diagnosticPlayerFootContactsEnabled:true,diagnosticAutonomousFixtureActionEnabled:true,diagnosticSmallSidedBodyGuardEnabled:true,
+  diagnosticSmallSidedBodyFeedbackEnabled:true,diagnosticCollectiveActions:true,diagnosticLatestLabDynamics:true,diagnosticNativeAerialEnabled:true});
+ try{
+  const mover=createPlayerMovement({researchSmallSidedSituation:id,researchSmallSidedSide:side,researchSmallSidedBodyFeedback:true,researchCollectiveApproaches:true});
+  const initial=engine.snapshot(),frame=mover.step(initial.ball.position,null,null,initial.ball.velocity,null,false,false,null,null,null,engine.collectiveControlSnapshot());
+  engine.step(frame);
+  const body=engine.smallSidedBodyGuardSnapshot();
+  assert.equal(body.aerial.length,20);assert.deepEqual(body.headBallContacts,[]);assert.deepEqual(body.headBallStarts,[]);
+  assert.ok(body.aerial.every(s=>s.tick===1&&!s.jumping&&!s.contact&&s.sameOriginalRapierWorld));
+  mover.reconcileSmallSidedNativeBodyResponse(body);engine.acknowledgeSmallSidedBodyFeedback(mover.snapshot());
+ }finally{engine.dispose();}
 });

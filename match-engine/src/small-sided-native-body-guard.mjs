@@ -20,9 +20,76 @@ const finite=Number.isFinite;
 const freeze=Object.freeze;
 const idPair=(a,b)=>[a,b].sort().join('|');
 
+
+// ME-01 AERIAL-01: provisional bounded vertical head reach, shared by
+// all enabled outfield players. Not an articulated whole-body jump,
+// heading action, or assertion of a won aerial duel.
+export const NATIVE_AERIAL_VERSION='me-628-native-aerial-head-v1';
+export const AERIAL_JUMP_TICKS=42;
+export const AERIAL_HEAD_REST_Z_M=1.72;
+export const AERIAL_JUMP_RISE_M=0.55;
+const AERIAL_HEAD_RADIUS_M=0.13,AERIAL_RECOVERY_TICKS=18;
+export function aerialHeadHeight(elapsed){
+ if(!Number.isSafeInteger(elapsed)||elapsed<0||elapsed>AERIAL_JUMP_TICKS)throw new RangeError('Bounded aerial jump tick required');
+ return AERIAL_HEAD_REST_Z_M+AERIAL_JUMP_RISE_M*Math.sin(Math.PI*elapsed/AERIAL_JUMP_TICKS);
+}
+export function planNativeAerialJump(actor,ball){
+ const p=ball?.position,v=ball?.velocity;
+ if(!actor||actor.role==='goalkeeper'||![actor.x,actor.y,actor.vx,actor.vy,p?.x,p?.y,p?.z,v?.x,v?.y,v?.z].every(finite)||
+    p.z<1.55||p.z>4.5||v.z>=-0.15||Math.hypot(v.x,v.y)>25)return null;
+ // Predict reach only; actual contact must be observed from Rapier.
+ for(let k=6;k<=AERIAL_JUMP_TICKS-6;k++){
+  const t=k*PLAYER_DT,z=p.z+v.z*t-4.905*t*t;
+  const gap=Math.hypot(p.x+v.x*t-(actor.x+actor.vx*t),p.y+v.y*t-(actor.y+actor.vy*t));
+  if(gap<=0.20&&Math.abs(z-aerialHeadHeight(k))<=0.12)
+   return freeze({actorId:actor.id,expectedTickOffset:k,decisionOnly:true});
+ }
+ return null;
+}
+export function createNativeAerialHead(R,world,ballCollider,actor){
+ const head=world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased()
+  .setTranslation(actor.x,actor.y,AERIAL_HEAD_REST_Z_M).setCcdEnabled(true));
+ const collider=world.createCollider(R.ColliderDesc.ball(AERIAL_HEAD_RADIUS_M)
+  .setFriction(0.25).setRestitution(0.25).setCollisionGroups(0),head);
+ let jumpStart=null,recoverUntil=0,prepared=null,lastTick=0,previousContact=false;
+ function prepare(player,tick,ball,deadBall=false){
+  if(prepared!==null||tick!==lastTick+1||player?.id!==actor.id||player.team!==actor.team)
+   throw new TypeError('Native aerial head needs consecutive canonical ticks');
+  if(deadBall){jumpStart=null;recoverUntil=tick+AERIAL_RECOVERY_TICKS;}
+  let started=false;
+  if(!deadBall&&jumpStart===null&&tick>=recoverUntil&&planNativeAerialJump(player,ball)){
+   jumpStart=tick;started=true;
+  }
+  const elapsed=jumpStart===null?null:tick-jumpStart+1;
+  const active=elapsed!==null&&elapsed<=AERIAL_JUMP_TICKS;
+  if(!active&&jumpStart!==null){jumpStart=null;recoverUntil=tick+AERIAL_RECOVERY_TICKS;}
+  const target={x:player.x,y:player.y,z:active?aerialHeadHeight(elapsed):AERIAL_HEAD_REST_Z_M};
+  collider.setCollisionGroups(active?(LEG_CATEGORY<<16)|BALL_CATEGORY:0);
+  head.setNextKinematicTranslation(target);
+  prepared={tick,active,started,elapsed:active?elapsed:null};
+ }
+ function observe(tick){
+  if(prepared?.tick!==tick)throw new TypeError('Native aerial evidence requires original post-step solver tick');
+  let contact=false;
+  if(prepared.active)world.contactPair(ballCollider,collider,m=>{
+   if(m.numContacts()>0&&m.numSolverContacts()>0)contact=true;
+  });
+  const point=head.translation();
+  const result=freeze({version:NATIVE_AERIAL_VERSION,tick,actorId:actor.id,team:actor.team,
+   jumping:prepared.active,jumpStarted:prepared.started,jumpElapsedTicks:prepared.elapsed,
+   headPosition:freeze({x:point.x,y:point.y,z:point.z}),
+   contact,contactStarted:contact&&!previousContact,actualNativeSolverContact:contact,
+   sameOriginalRapierWorld:true,physicalHeaderActionApplied:false,officialPossession:false,officialMatchResult:null});
+  previousContact=contact;lastTick=tick;prepared=null;return result;
+ }
+ return freeze({prepare,observe});
+}
+
 export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
  initialPlayers,activePlayerIds,{feedbackEnabled=false,
-  dribbleGroundBallCentreZ=null,fullFieldNative=false}={}){
+  dribbleGroundBallCentreZ=null,fullFieldNative=false,aerialEnabled=false}={}){
+ if(typeof aerialEnabled!=='boolean'||aerialEnabled&&(!feedbackEnabled||dribbleGroundBallCentreZ!==null))
+  throw new TypeError('Native aerial research requires original guarded movement feedback');
  if(typeof fullFieldNative!=='boolean'||fullFieldNative&&(activePlayerIds?.length!==22||feedbackEnabled!==true||dribbleGroundBallCentreZ!==null))throw new TypeError('Full field requires all 22 native bodies and canonical feedback');
  if(typeof feedbackEnabled!=='boolean')
   throw new TypeError('LAB feedback option must be a boolean');
@@ -63,7 +130,8 @@ export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
     dribbleGroundBallCentreZ+0.018-LEG_CENTRE_Z_M)
    .setDensity(80).setFriction(0.7).setRestitution(0)
    .setCollisionGroups((LEG_CATEGORY<<16)|BALL_CATEGORY),rigid);
-  entries.push({id:actor.id,team:actor.team,rigid,torso,leg});
+  entries.push({id:actor.id,team:actor.team,rigid,torso,leg,
+   head:aerialEnabled&&actor.role!=='goalkeeper'?createNativeAerialHead(R,world,ballCollider,actor):null});
  }
  if(entries.length!==activePlayerIds.length)
   throw new Error('Selected physical body identity mismatch');
@@ -72,8 +140,10 @@ export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
  let latest=null,prior=initialPlayers.map(p=>({id:p.id,x:p.x,y:p.y}));
  function requireLive(){if(disposed)throw new Error('Physical body guard disposed');}
  function snapshot(){requireLive();return latest;}
- function prepare(frame,nextTick){
+ function prepare(frame,nextTick,ball=null,deadBall=false){
   requireLive();
+  if(aerialEnabled&&(!ball||!['x','y','z'].every(k=>finite(ball.position?.[k])&&finite(ball.velocity?.[k]))||typeof deadBall!=='boolean'))
+   throw new TypeError('Native aerial preparation needs real prior ball sample');
   if((feedbackEnabled&&lastAcceptedTick!==tick)||
      prepared!==null||nextTick!==tick+1||
      !Number.isSafeInteger(nextTick)||
@@ -93,6 +163,7 @@ export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
   for(const e of entries){
    const actor=frame.players.find(p=>p.id===e.id);
    e.rigid.setLinvel({x:actor.vx,y:actor.vy,z:0},true);
+   e.head?.prepare(actor,nextTick,ball,deadBall);
   }
   prior=frame.players.map(p=>({id:p.id,x:p.x,y:p.y}));
   prepared=nextTick;
@@ -129,6 +200,7 @@ export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
     velocity:freeze({x:v.x,y:v.y,z:v.z}),
     originalCanonicalDriftM:Math.hypot(p.x-canonical.x,p.y-canonical.y)});
   }));
+  const aerial=aerialEnabled?freeze(entries.filter(e=>e.head).map(e=>e.head.observe(nextTick))):null;
   tick=nextTick;prepared=null;previousBallIds=now;
   latest=freeze({
    version:SMALL_SIDED_BODY_VERSION,tick,
@@ -137,6 +209,8 @@ export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
    lowerLegBallStarts:starts,lowerLegBallEnds:ends,
    nativeOpposingTorsoPairs:freeze(opponentBodyPairs.sort()),
    bodies:sourceBodies,
+   ...(aerialEnabled?{aerial,headBallContacts:freeze(aerial.filter(x=>x.contact).map(x=>x.actorId)),
+    headBallStarts:freeze(aerial.filter(x=>x.contactStarted).map(x=>x.actorId))}:{}),
    ballProtectionProven:false,successfulPossession:false,
    tackleWon:false,officialMatchResult:null,
    evidenceSource:'native-rapier-solver-manifold'
@@ -166,7 +240,7 @@ export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
   oneOriginalRapierWorld:true,selectedColliderIds:freeze(entries.map(e=>e.id)),
   lowerLegBallContacts:freeze([]),lowerLegBallStarts:freeze([]),
   lowerLegBallEnds:freeze([]),nativeOpposingTorsoPairs:freeze([]),
-  bodies:freeze([]),ballProtectionProven:false,
+  bodies:freeze([]),...(aerialEnabled?{aerial:freeze([]),headBallContacts:freeze([]),headBallStarts:freeze([])}:{}),ballProtectionProven:false,
   successfulPossession:false,tackleWon:false,officialMatchResult:null,
   evidenceSource:'native-rapier-solver-manifold'});
  return freeze({prepare,observe,snapshot,dispose,
