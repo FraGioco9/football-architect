@@ -51,24 +51,10 @@ export function advanceSoloCarryPhase({previousPhase='control',tick,
     (playerSpeedMps<2.45||ballSpeedMps<1.75||ballGapM<0.38)){
   phase='moderate';
  }
- const fixedProfile=lockedPhase===null?null:
-  phase==='moderate'?Object.freeze({
-   maxSpeedMps:4.7,accelerationMps2:9,brakingMps2:11,
-   ballTargetOffsetM:-0.30
-  }):phase==='sprint'?Object.freeze({
-   // Fast open-space carry: longer stride and further ball pursuit.
-   // This is not an automatic-phase or official match parameter.
-   maxSpeedMps:7.0,accelerationMps2:14,brakingMps2:14,
-   ballTargetOffsetM:-0.62
-  }):null;
  const attributeInputs=lockedPhase===null?null:
   playerAttributes===null?uniformSoloCarryAttributes(50):
    validateSoloCarryAttributes(playerAttributes);
- const tuned=fixedProfile===null?profiles[phase]:
-  Object.freeze({...profiles[phase],...fixedProfile});
- const calibrated=attributeInputs===null?tuned:
-  Object.freeze({...tuned,
-   ...calibrateSoloCarryKinematics(tuned,attributeInputs)});
+ const calibrated=attributeInputs===null?profiles[phase]:nativeReferenceCarryKinematics(phase,attributeInputs);
  return Object.freeze({
   tick,phase,previousPhase,changed:phase!==previousPhase,
   ...(lockedPhase!==null?{lockedPhase}:{}),
@@ -112,4 +98,35 @@ export function planNativeCarryPhaseImpulse({phase,playerAttributes=uniformSoloC
  return Object.freeze({phase,attributes:attrs,nativeFixedSprintLongStride,playerForwardSpeedMps:playerForward,
   observedPreImpulseBallForwardMps:ballForward,calibratedTargetSpeedMps:config.targetSpeedMps,
   controlledTargetSpeedMps:controlledTarget,impulseNs});
+}
+
+export function nativeReferenceCarryKinematics(phase,playerAttributes=uniformSoloCarryAttributes(50)){
+ if(!SOLO_CARRY_PHASES.includes(phase))throw new TypeError('Unknown native Carry phase');
+ const override=phase==='moderate'?{maxSpeedMps:4.7,accelerationMps2:9,brakingMps2:11,ballTargetOffsetM:-0.30}:
+  phase==='sprint'?{maxSpeedMps:7.0,accelerationMps2:14,brakingMps2:14,ballTargetOffsetM:-0.62}:null;
+ const tuned=override===null?profiles[phase]:Object.freeze({...profiles[phase],...override});
+ return Object.freeze({...tuned,...calibrateSoloCarryKinematics(tuned,playerAttributes)});
+}
+// Common conservative pressure boundary, candidate pending physical QA.
+export const NATIVE_OPEN_CARRY_GAP_M=6;
+export function hasNativeOpenCarrySpace(ball,opponent=null){
+ if(![ball?.x,ball?.y].every(Number.isFinite)||opponent!==null&&![opponent.x,opponent.y].every(Number.isFinite))
+  throw new TypeError('Live carry space geometry required');
+ return opponent===null||Math.hypot(opponent.x-ball.x,opponent.y-ball.y)>NATIVE_OPEN_CARRY_GAP_M;
+}
+export function planNativeOpenCarryMotion({player,ball,velocity,opponent=null,phase=null,attackPolarity=1}={}){
+ if(!player||!hasNativeOpenCarrySpace(ball,opponent))return null;
+ const selected=phase??selectNativeOpenCarryPhase({playerSpeedMps:Math.hypot(player.vx,player.vy),
+  ballSpeedMps:Math.hypot(velocity.x,velocity.y),ballGapM:Math.hypot(player.x-ball.x,player.y-ball.y)});
+ const configuration=nativeReferenceCarryKinematics(selected);
+ const dir=attackDirection(player.team,attackPolarity);
+ const offset=nativeCarryPursuitOffset({phase:selected,configuration,player,ball,velocity,attackPolarity,sprintLeadM:0.25});
+ return Object.freeze({phase:selected,configuration,target:Object.freeze({x:Math.max(-52.06,Math.min(52.06,ball.x+dir*offset)),y:Math.max(-33.56,Math.min(33.56,ball.y))})});
+}
+export function nativeCarryPursuitOffset({phase,configuration,player,ball,velocity,attackPolarity=1,sprintLeadM=0.25}={}){
+ if(!SOLO_CARRY_PHASES.includes(phase)||![configuration?.ballTargetOffsetM,player?.x,ball?.x,velocity?.x,velocity?.y,sprintLeadM].every(Number.isFinite)||sprintLeadM<0||sprintLeadM>0.25)throw new TypeError('Live carry pursuit geometry required');
+ const ahead=(ball.x-player.x)*attackDirection(player.team,attackPolarity);
+ const scale=Math.max(0,Math.min(1,(ahead-0.44)/0.16));
+ return phase==='sprint'?(Math.hypot(velocity.x,velocity.y)<0.45?-0.18:0.08+sprintLeadM*scale):
+  phase==='moderate'?-0.06:configuration.ballTargetOffsetM;
 }

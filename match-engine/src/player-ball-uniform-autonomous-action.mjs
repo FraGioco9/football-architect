@@ -603,7 +603,8 @@ export function selectUniformAutonomousContactAction({
   let nativeCarryTouch=null;
   if(collective&&action==='carry'){
    const nearest=actors.filter(p=>p.team!==player.team).sort((a,b)=>Math.hypot(a.x-ballPosition.x,a.y-ballPosition.y)-Math.hypot(b.x-ballPosition.x,b.y-ballPosition.y)||a.id.localeCompare(b.id))[0]??null;
-   nativeCarryTouch=planNativeCarryTouch({attacker:player,attackingSide:player.team,defender:nearest,ballPosition,ballVelocity,attackPolarity});
+   nativeCarryTouch=planNativeCarryTouch({attacker:player,attackingSide:player.team,defender:nearest,ballPosition,ballVelocity,attackPolarity,
+    phase:playerFrame.smallSidedMovementDecisions?.find(d=>d.id===id&&d.tick===tick&&d.kind==='carry-ball')?.carryPhase??null});
    if(nativeCarryTouch.magnitudeNs<0.025)continue;
    dx=nativeCarryTouch.dx;dy=nativeCarryTouch.dy;
    rule='native-live-opponent-ground-touch';

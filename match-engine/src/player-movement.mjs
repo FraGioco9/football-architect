@@ -6,7 +6,7 @@ import {advanceSlidingTackle,planSlidingTackle,SLIDE_MAX_SPEED_MPS,SLIDE_ACCEL_M
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
 // Research LAB only. No Rapier bodies, ball contact, official world or club data.
 import {advanceFreePlayerKinematics,advancePlayerOrientation,advanceGoalkeeperBallOrientation} from './individual-kinematics.mjs';
-import {advanceSoloCarryPhase,SOLO_CARRY_PHASES} from './solo-carry-phases.mjs';
+import {advanceSoloCarryPhase,SOLO_CARRY_PHASES,planNativeOpenCarryMotion,nativeCarryPursuitOffset} from './solo-carry-phases.mjs';
 import {validateSoloCarryAttributes}
  from './solo-carry-attribute-calibration.mjs';
 import {projectNativeShoeBodyStep,projectNativeShoeBodyFacing}
@@ -2576,15 +2576,9 @@ export function createPlayerMovement(options={}){
    // No direct player displacement, shoe event, ball impulse or ownership.
    const sprintPursuitRunner=smallSided?.id==='carry-solo'?
     players.find(p=>p.id===smallSided.side+'-10'):null;
-   const realBallAheadM=sprintPursuitRunner?
-    (ball.x-sprintPursuitRunner.x)*(smallSided.side==='home'?1:-1):0;
-   const sprintPursuitScale=clamp((realBallAheadM-0.44)/0.16,0,1);
    const nativeFixedOffset=options.researchNativeFixedCarry===true?
-    currentSoloCarryPhase.phase==='sprint'?
-     (Math.hypot(realBallVelocity.x,realBallVelocity.y)<0.45?-0.18:
-       0.08+(options.researchSoloSprintPursuitLeadM??0)*sprintPursuitScale):
-    currentSoloCarryPhase.phase==='moderate'?-0.06:
-     currentSoloCarryPhase.ballTargetOffsetM:null;
+    nativeCarryPursuitOffset({phase:currentSoloCarryPhase.phase,configuration:currentSoloCarryPhase,
+     player:sprintPursuitRunner,ball,velocity:realBallVelocity,sprintLeadM:options.researchSoloSprintPursuitLeadM??0}):null;
   const duelActors=directedDribble?resolveDuelActors(players,smallSided.side,duelTransition,ball):null;
   defensiveDecision=null;
   duelShoulder=duelTransition?.profile==='shoulder'&&duelActors&&!duelActors.candidateId?
@@ -2665,6 +2659,14 @@ export function createPlayerMovement(options={}){
   }
   const shoulderBalance=directedDribble?Object.fromEntries(players.map(p=>[p.id,planShoulderBalanceRecovery(p,duelTransition,tick+1)])):{};
   const collectiveApproaches=options.researchCollectiveApproaches===true?planNativeFootballMovement(players.filter(p=>smallActive.has(p.id)&&p.role!=='goalkeeper'),ball,realBallVelocity??{x:0,y:0},collectiveControl,players.filter(p=>smallActive.has(p.id)&&p.role==='goalkeeper'),attackPolarity):null;
+  const openCarryMotion={};
+  if(collectiveApproaches&&!restartPlacement){
+   for(const p of players.filter(p=>smallActive.has(p.id)&&collectiveApproaches[p.id]?.kind==='carry-ball'&&!isNativeRecoveryLocked(collectiveControl,p.id,tick+1))){
+    const opponent=players.filter(q=>smallActive.has(q.id)&&q.team!==p.team).sort((a,b)=>Math.hypot(a.x-ball.x,a.y-ball.y)-Math.hypot(b.x-ball.x,b.y-ball.y)||a.id.localeCompare(b.id))[0]??null;
+    const motion=planNativeOpenCarryMotion({player:p,ball,velocity:realBallVelocity,opponent,attackPolarity});
+    if(motion)openCarryMotion[p.id]=motion;
+   }
+  }
   // Actual delivery provenance permits trajectory-based positioning for
   // any active outfielder. It does not manufacture a block or interception.
   const nativeDeliveryPlans={};
@@ -2842,6 +2844,7 @@ export function createPlayerMovement(options={}){
      if(nativeShoulders[p.id])return nativeShoulders[p.id].target;
     }
     if(nativeDeliveryPlans[p.id]?.plan?.target)return nativeDeliveryPlans[p.id].plan.target;
+    if(openCarryMotion[p.id])return openCarryMotion[p.id].target;
     if(collectiveApproaches?.[p.id])return collectiveApproaches[p.id].target;
     const attack=smallSided.side==='home'?1:-1;
     if(duelActors){
@@ -3052,6 +3055,7 @@ export function createPlayerMovement(options={}){
       soloKinematicLimits(currentSoloCarryPhase):
       recoveringDribbleBall?D01_CHASE_KINEMATIC_LIMITS:
        soloKinematicLimits(currentSoloCarryPhase):
+    openCarryMotion[p.id]?soloKinematicLimits(openCarryMotion[p.id].configuration):
     !collectiveApproaches&&smallSided?.id==='dribble-1v1'&&smallActive.has(p.id)?
      recoveringDribbleBall?D01_CHASE_KINEMATIC_LIMITS:D01_KINEMATIC_LIMITS:
      PLAYER_KINEMATIC_LIMITS;
@@ -3209,7 +3213,7 @@ export function createPlayerMovement(options={}){
      ...(isShoulderCollecting(duelTransition,p.id,tick+1)?{shoulderCollection:true}:{}),
      ...(defensiveDecision?.actorId===p.id?{defensiveIntervention: defensiveDecision.kind}:{}),
      ...(duelAlignment?{postContactAlignment:true,alignmentDetour:duelAlignment[p.id].detour&&!directedContactRelease&&duelSlide?.actorId!==p.id}:{}),
-     ...(smallSided.id==='carry-solo'?{carryPhase:currentSoloCarryPhase.phase}:{}),
+     ...(smallSided.id==='carry-solo'?{carryPhase:currentSoloCarryPhase.phase}:openCarryMotion[p.id]?{carryPhase:openCarryMotion[p.id].phase}:{}),
      target:Object.freeze({x:target.x,y:target.y}),
      speedMps:Math.hypot(p.vx,p.vy),
      blockedBy:p.blockedBy??null,

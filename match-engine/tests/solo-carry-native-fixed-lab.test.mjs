@@ -5,7 +5,7 @@ import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {uniformSoloCarryAttributes} from '../src/solo-carry-attribute-calibration.mjs';
 import {planNativeCarryTouch} from '../src/isolated-dribble-touches.mjs';
-import {planNativeCarryPhaseImpulse} from '../src/solo-carry-phases.mjs';
+import {planNativeCarryPhaseImpulse,advanceSoloCarryPhase,nativeReferenceCarryKinematics,planNativeOpenCarryMotion,hasNativeOpenCarrySpace} from '../src/solo-carry-phases.mjs';
 import {chooseNativeFixedCarryImpulse}
  from '../src/native-fixed-carry-impulse.mjs';
 
@@ -615,5 +615,26 @@ test('ME-01-QA U-01B: same selected open carry phase has the same physical impul
   assert.equal(planNativeCarryPhaseImpulse({...base,ballVelocity:{x:dir*10,y:0,z:0}}).impulseNs,null);
   assert.throws(()=>chooseNativeFixedCarryImpulse({...base,playerAttributes:uniformSoloCarryAttributes(50),
    verifiedNativeExclusiveShoeStart:false,contactActorId:actor.id}),/exclusive Rapier shoe/);
+ }
+});
+
+test('ME-01-QA U-01C: distant opposition shares reference movement and selected carry impulse',()=>{
+ for(const team of ['home','away'])for(const attackPolarity of [1,-1])for(const [phase,speed,rolling,gap] of [['control',0.6,0.2,0.30],['moderate',2,1.2,0.42],['sprint',4,2.4,0.60]]){
+  const dir=(team==='home'?1:-1)*attackPolarity,player={id:team+'-10',team,x:dir*10,y:0,vx:dir*speed,vy:0};
+  const ball={x:player.x+dir*gap,y:0,z:0.11},velocity={x:dir*rolling,y:0,z:0};
+  const opponent={id:'rival',team:team==='home'?'away':'home',x:ball.x+dir*10,y:0};
+  const motion=planNativeOpenCarryMotion({player,ball,velocity,opponent,attackPolarity});
+  assert.equal(motion.phase,phase);
+  assert.deepEqual(motion.configuration,nativeReferenceCarryKinematics(phase));
+  const locked=advanceSoloCarryPhase({previousPhase:phase,lockedPhase:phase,tick:1,playerSpeedMps:speed,ballSpeedMps:rolling,ballGapM:gap});
+  for(const key of Object.keys(motion.configuration))assert.equal(motion.configuration[key],locked[key]);
+  assert.deepEqual(motion,planNativeOpenCarryMotion({player,ball,velocity,attackPolarity}));
+  const action=planNativeCarryTouch({attacker:player,attackingSide:team,defender:opponent,ballPosition:ball,ballVelocity:velocity,phase:motion.phase,attackPolarity});
+  assert.deepEqual(action.phaseProposal,planNativeCarryPhaseImpulse({phase,player,attackingSide:team,ballVelocity:velocity,attackPolarity}));
+  assert.equal(action.genuineRapierShoeStartRequired,true);
+  const near={...opponent,x:ball.x+dir*3};
+  assert.equal(hasNativeOpenCarrySpace(ball,near),false);
+  assert.equal(planNativeOpenCarryMotion({player,ball,velocity,opponent:near,attackPolarity}),null);
+  assert.equal(planNativeCarryTouch({attacker:player,attackingSide:team,defender:near,ballPosition:ball,ballVelocity:velocity,phase,attackPolarity}).phaseProposal,undefined);
  }
 });
