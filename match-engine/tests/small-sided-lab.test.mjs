@@ -2346,9 +2346,12 @@ test('AERIAL-07 real cross precedes native high-claim attempts and observed hand
    const keeper=(side==='home'?'away':'home')+'-1';
    assert.equal(lab.snapshot().genuinePhysicalPlayerCount,3);
    assert.ok(lab.focus.includes(keeper));
-   let cross=null,audit=null;
+   let cross=null,audit=null,handDiagnostic=null,catchAttempt=null,gripFailure=null;
    for(let tick=1;tick<=300;tick++){
     const frame=lab.step(),k=frame.nativeKeeperStates.find(x=>x.keeperId===keeper);
+    if(k.highHandDiagnostic&&!handDiagnostic)handDiagnostic=k.highHandDiagnostic;
+    if(k.highHandAction?.kind==='catch-attempt')catchAttempt=k.tick;
+    if(catchAttempt!==null&&k.catchState?.released&&k.catchState.confirmedTick===null&&!gripFailure)gripFailure={tick:k.tick,errorM:k.catchState.errorM,relativeSpeedMps:k.catchState.relativeSpeedMps};
     if(frame.action?.action==='cross'&&!cross){cross=frame.action;assert.deepEqual(frame.starts,[cross.playerId]);assert.equal(cross.actualPhysicsImpulseApplied,true);}
     if(frame.highClaimAudit){
      audit=frame.highClaimAudit;assert.ok(cross&&cross.tick<audit.attemptTick);
@@ -2358,7 +2361,7 @@ test('AERIAL-07 real cross precedes native high-claim attempts and observed hand
     }
     if(audit?.confirmedTick!=null)break;
    }
-   rows.push({side,variantIndex,cross:!!cross,attempt:!!audit,contact:audit?.contactTick??null,confirmed:audit?.confirmedTick??null,punch:audit?.punchTick??null});
+   rows.push({side,variantIndex,cross:!!cross,attempt:!!audit,contact:audit?.contactTick??null,confirmed:audit?.confirmedTick??null,punch:audit?.punchTick??null,catchAttempt,gripFailure,handDiagnostic});
   }finally{lab.dispose();}
  }
  process.stdout.write('ME_628_HIGH_CLAIM '+JSON.stringify(rows)+'\\n');
@@ -2388,6 +2391,10 @@ test('AERIAL-07B high hand decision catches reachable unpressured deliveries or 
   const gripEvidence={team,contact:true,ballPosition,before:input.incoming,after:{x:0,y:0,z:0},glovePosition:handPosition,gloveVelocity:input.handVelocity};
   assert.equal(eligibleKeeperGrip(gripEvidence),false);
   assert.equal(eligibleKeeperGrip({...gripEvidence,highClaim:true}),true);
+  const highCentre={...ballPosition,z:2.29};
+  assert.equal(eligibleKeeperGrip({...gripEvidence,ballPosition:highCentre,highClaim:true}),true);
+  assert.equal(eligibleKeeperGrip({...gripEvidence,ballPosition:{...ballPosition,z:2.40},highClaim:true}),false);
+  assert.equal(planNativeHighHandAction({...input,ballPosition:highCentre}).kind,'catch');
   assert.equal(eligibleKeeperGrip({...gripEvidence,highClaim:true,after:{x:5,y:0,z:0}}),false);
  }
 });

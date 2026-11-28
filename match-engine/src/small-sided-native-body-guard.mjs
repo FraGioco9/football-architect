@@ -369,6 +369,9 @@ export const KEEPER_DIVE_VERSION='me-628-native-keeper-dive-v1';
 // Full reaching pose includes lateral body extension, not just arm length.
 // These are provisional geometric/kinematic limits, not attribute tuning.
 const DIVE_REACH_M=2.65,DIVE_GLOVE_RADIUS_M=0.21,DIVE_SPEED_MPS=8.5;
+// Maximum high ball-centre height at the existing 2.05m hand target:
+// hand collider radius + regulation ball radius, not extra arm reach.
+const HIGH_CLAIM_BALL_MAX_Z=2.05+DIVE_GLOVE_RADIUS_M+0.11;
 export function planNativeKeeperDive(keeper,ball,attackPolarity=1){
  const dir=attackDirection(keeper.team,attackPolarity),p=ball.position,v=ball.velocity;
  if(![keeper.x,keeper.y,p.x,p.y,p.z,v.x,v.y,v.z].every(finite)||
@@ -418,7 +421,7 @@ export function eligibleKeeperGrip({team,contact,ballPosition,before,after,glove
  const gap=Math.hypot(ballPosition.x-glovePosition.x,ballPosition.y-glovePosition.y,ballPosition.z-glovePosition.z);
  const relative=Math.hypot(after.x-gloveVelocity.x,after.y-gloveVelocity.y,after.z-gloveVelocity.z);
  return -dir*ballPosition.x>=36&&-dir*ballPosition.x<52.39&&Math.abs(ballPosition.y)<=20.16&&
-  ballPosition.z>=0.10&&ballPosition.z<=2.2&&gap<=0.36&&
+  ballPosition.z>=0.10&&ballPosition.z<=(highClaim?HIGH_CLAIM_BALL_MAX_Z:2.2)&&gap<=0.36&&
   (!highClaim||ballPosition.z>=1.40)&&Math.hypot(before.x,before.y,before.z)<=(highClaim?22:8)&&relative<=3.5;
 }
 // High claims can absorb a faster delivery than a low scoop, but only
@@ -430,7 +433,7 @@ export function planNativeHighHandAction({keeper,players,ballPosition,incoming,v
     ![ballPosition,incoming,velocity,handPosition,handVelocity].every(v=>v&&['x','y','z'].every(k=>finite(v[k])))||
     !finite(massKg)||massKg<=0||incoming.z>=-0.15)return null;
  const dir=attackDirection(keeper.team,attackPolarity),p=ballPosition;
- if(-dir*p.x<36||-dir*p.x>=52.39||Math.abs(p.y)>20.16||p.z<1.40||p.z>2.2||
+ if(-dir*p.x<36||-dir*p.x>=52.39||Math.abs(p.y)>20.16||p.z<1.40||p.z>HIGH_CLAIM_BALL_MAX_Z||
     Math.hypot(p.x-handPosition.x,p.y-handPosition.y,p.z-handPosition.z)>0.36)return null;
  const pressure=players.some(q=>q.team!==keeper.team&&Math.hypot(q.x-p.x,q.y-p.y)<1.5);
  const incomingSpeed=Math.hypot(incoming.x,incoming.y,incoming.z);
@@ -551,6 +554,7 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
   .setFriction(0.35).setRestitution(0.05).setCollisionGroups(0),body);
  const grip=ballBody?createNativeKeeperGrip(R,world,body,ballBody,keeper.team):null;
  let plan=null,shotTick=null,usedShot=null,crossTick=null,usedCross=null,startTick=null,active=false,priorHit=false,lastChallengeTick=-60;
+ let highGripSettling=null;
  let latest=freeze({version:KEEPER_DIVE_VERSION,tick:0,keeperId:keeper.id,
   phase:'ready',glove:null,started:false,contact:false,contactStarted:false,
   officialSave:false});
@@ -596,6 +600,20 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
    phase='holding';target=rest(actor);
    const h=body.translation(),d=Math.hypot(target.x-h.x,target.y-h.y,target.z-h.z);
    if(d>0.045)target=lerp(h,target,0.045/d);
+   // For a newly accepted high catch, blend hand speed towards the
+   // ordinary holding pose over the confirmation window. The ball
+   // stays on the original physical joint; no additional ball impulse.
+   if(highGripSettling){
+    const elapsed=tick-highGripSettling.tick;
+    if(elapsed<=6){
+     const u=Math.max(0,1-elapsed/6),v=highGripSettling.velocity;
+     const candidate={x:target.x*(1-u)+(h.x+v.x*PLAYER_DT)*u,y:target.y*(1-u)+(h.y+v.y*PLAYER_DT)*u,z:target.z*(1-u)+(h.z+v.z*PLAYER_DT)*u};
+     const dir=attackDirection(actor.team,attackPolarity);
+     const localGap=Math.hypot(candidate.x-actor.x,candidate.y-actor.y,candidate.z-0.85);
+     // Never extend the original keeper's reachable/legal envelope.
+     if(localGap<=DIVE_REACH_M&&-dir*candidate.x>=36.36&&-dir*candidate.x<=52.03&&Math.abs(candidate.y)<=19.8&&candidate.z>=0.45&&candidate.z<=2.25)target=candidate;
+    }else highGripSettling=null;
+   }
   }else if(plan){
    const elapsed=tick-startTick+1,holdTicks=4,recoveryTicks=24;
    if(elapsed<=plan.reachTicks){
@@ -622,7 +640,7 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
    if(m.numContacts()>0&&m.numSolverContacts()>0)hit=true;
   });
   const pos=body.translation();
-  let highHandAction=null;
+  let highHandAction=null,highHandDiagnostic=null;
   if(hit&&grip&&!grip.active()&&prepared.phase!=='recovering'){
    const high=prepared.plan?.kind==='high-claim';
    const evidence={contact:true,ballPosition:ballBody.translation(),
@@ -631,6 +649,11 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
     const handPlan=!priorHit?planNativeHighHandAction({keeper:prepared.actor,players:prepared.physicalPlayers??[],
      ballPosition:evidence.ballPosition,incoming:evidence.before,velocity:postVelocity,handPosition:pos,handVelocity:evidence.gloveVelocity,
      massKg:ballBody.mass(),contact:true,conflict:otherBallContact,attackPolarity}):null;
+    if(!priorHit)highHandDiagnostic=freeze({tick,decision:handPlan?.kind??null,otherBallContact,
+     position:freeze({...evidence.ballPosition}),incomingSpeedMps:Math.hypot(...Object.values(evidence.before)),
+     handRelativeSpeedMps:Math.hypot(evidence.before.x-evidence.gloveVelocity.x,evidence.before.y-evidence.gloveVelocity.y,evidence.before.z-evidence.gloveVelocity.z),
+     nearestOpponentM:Math.min(150,...(prepared.physicalPlayers??[]).filter(q=>q.team!==keeper.team).map(q=>Math.hypot(q.x-evidence.ballPosition.x,q.y-evidence.ballPosition.y))),
+     handGapM:Math.hypot(evidence.ballPosition.x-pos.x,evidence.ballPosition.y-pos.y,evidence.ballPosition.z-pos.z),incomingVerticalMps:evidence.before.z});
     if(handPlan){
      const before=freeze({...ballBody.linvel()});
      const magnitude=Math.hypot(...Object.values(handPlan.impulseNs));
@@ -640,6 +663,7 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
      highHandAction=freeze({tick,keeperId:keeper.id,kind:handPlan.kind==='punch'?'punch':accepted?'catch-attempt':'deflection',
       impulseNs:handPlan.impulseNs,before,after,nativeExclusiveHandStart:true,actualNativeSolverContact:true,
       actualPhysicsImpulseApplied:magnitude>0.025,officialPossession:false,officialSave:false});
+     if(accepted)highGripSettling=freeze({tick,velocity:freeze({...evidence.gloveVelocity})});
      if(accepted||handPlan.kind==='punch'){
       plan=null;glove.setCollisionGroups(0);
       if(!accepted)active=false;
@@ -653,20 +677,20 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
   let catchState=grip?.observe(tick)??null;
   const distribution=nativeOpenPlay&&catchState?.active?grip.distribute(tick,prepared.actor,prepared.physicalPlayers):null;
   if(distribution){catchState=grip.snapshot();shotTick=null;lastChallengeTick=tick;glove.setCollisionGroups(0);}
-  if(catchState?.released){active=false;plan=null;}
+  if(catchState?.released){active=false;plan=null;highGripSettling=null;}
   latest=freeze({version:KEEPER_DIVE_VERSION,tick,keeperId:keeper.id,
    phase:prepared.phase,started:prepared.started,plan:prepared.plan,
    glove:active?freeze({x:pos.x,y:pos.y,z:pos.z}):null,
    contact:hit,contactStarted:hit&&!priorHit,
    contactMotion:hit?freeze({before:prepared.priorVelocity,after:freeze({...postVelocity})}):null,
-   catchState,...(nativeOpenPlay?{distribution,highHandAction}:{}),
+   catchState,...(nativeOpenPlay?{distribution,highHandAction,highHandDiagnostic}:{}),
    officialSave:false,source:'native-rapier-solver-manifold'});
   priorHit=hit;prepared=null;return latest;
  }
  function clearForDeadBall(tick){
   if(!nativeOpenPlay||latest.tick!==tick||tick<1||prepared!==null)throw new TypeError('Current native keeper tick required for dead ball');
   grip?.release();const catchState=grip?.observe(tick)??null;
-  plan=null;shotTick=null;usedShot=null;crossTick=null;usedCross=null;startTick=null;active=false;priorHit=false;lastChallengeTick=tick;
+  plan=null;shotTick=null;usedShot=null;crossTick=null;usedCross=null;startTick=null;active=false;priorHit=false;lastChallengeTick=tick;highGripSettling=null;
   glove.setCollisionGroups(0);
   latest=freeze({version:KEEPER_DIVE_VERSION,tick,keeperId:keeper.id,phase:'ready',
    glove:null,started:false,contact:false,contactStarted:false,catchState,
