@@ -17,6 +17,21 @@ import {choosePhysicalReceiverSecondTouch}
  from './physical-receiver-choice-m27.mjs';
 import {calculatePhysicalReceiverReleaseTap} from './physical-receiver-tap-m30.mjs';
 
+// Ballistic initial impulse only. No steering, teleport or arrival guarantee.
+// Range, height and maximum impulse are bounded provisional physics values.
+export function calculateNativeLoftedPassImpulse({origin,velocity,target,massKg}={}){
+ if(![origin?.x,origin?.y,origin?.z,velocity?.x,velocity?.y,velocity?.z,target?.recipientX,target?.recipientY,massKg].every(Number.isFinite)||massKg<=0)return null;
+ const dx=target.recipientX-origin.x,dy=target.recipientY-origin.y,d=Math.hypot(dx,dy);
+ if(d<26-1e-6||d>48+1e-6)return null;
+ const flightS=Math.max(2.0,Math.min(2.85,Math.sqrt(d/5.8)));
+ const targetZ=0.85;
+ const desired={x:dx/flightS,y:dy/flightS,z:(targetZ-origin.z)/flightS+4.905*flightS};
+ const raw={x:massKg*(desired.x-velocity.x),y:massKg*(desired.y-velocity.y),z:massKg*(desired.z-velocity.z)};
+ const magnitude=Math.hypot(raw.x,raw.y,raw.z),scale=Math.min(1,12/Math.max(magnitude,1e-9));
+ if(magnitude<0.025||raw.z<=0)return null;
+ return Object.freeze({source:'native-lofted-pass-range-v1',distanceM:d,flightS,targetZ,
+  impulseNs:Object.freeze({x:raw.x*scale,y:raw.y*scale,z:raw.z*scale}),officialMatchAction:false});
+}
 export const PRIVATE_PHYSICAL_ACTION_EXECUTOR_VERSION=
  'me-action-foundation-real-shoe-impulse-v1';
 
@@ -309,7 +324,7 @@ export function createPrivatePhysicalActionExecutor({
   let orientedCandidate=null,orientedDelivery=null;
   if(sharedDynamics&&pendingDelivery&&nextTick>pendingDelivery.tick){
    const d=pendingDelivery,pos=ballBody.translation(),v=ballBody.linvel();
-   const eligible=d.kind==='pass'||(d.airborne&&d.descending);
+   const eligible=d.kind==='pass'&&!d.lofted||(d.airborne&&d.descending);
    if(contact.started.length){
     // First subsequent native contact consumes the delivery, even an
     // interruption or ambiguous contact. No later assisted trap.
@@ -449,7 +464,9 @@ export function createPrivatePhysicalActionExecutor({
    // Use a simple continuous distance-based boost, bounded even outside
    // the three staged distances. Direction, native START, ground/ball
    // properties and simulation clock are unchanged. This is provisional.
-   const passCalibration=sharedDynamics&&chosen.action==='pass'&&chosen.passTarget?Object.freeze({
+   const loftedCalibration=chosen.action==='pass'&&chosen.passTarget?.deliveryProfile==='lofted'?calculateNativeLoftedPassImpulse({origin:ballBody.translation(),velocity:ballBody.linvel(),target:chosen.passTarget,massKg:ballBody.mass()}):null;
+   if(chosen.passTarget?.deliveryProfile==='lofted'&&!loftedCalibration)throw new Error('Lofted pass outside bounded physical launch envelope');
+   const passCalibration=sharedDynamics&&chosen.action==='pass'&&chosen.passTarget&&!loftedCalibration?Object.freeze({
     source:'isolated-ground-pass-distance-candidate-v3',
     distanceM:chosen.passTarget.distanceM,
     scale:Math.max(1.25,Math.min(3.30,1.25+0.10*chosen.passTarget.distanceM)),
@@ -483,7 +500,7 @@ export function createPrivatePhysicalActionExecutor({
          (activePlayerIds===null||activePlayerIds.includes(p.id))&&
          (blockShotSide!==chosen.team||p.role==='goalkeeper'))}):null;
     if(isolatedShotProfile==='tap-in'&&!shotCalibration)throw new Error('Tap-in contact outside calibrated low finishing envelope');
-     const impulse=shotCalibration?shotCalibration.impulseNs:crossCalibration?Object.freeze({
+     const impulse=loftedCalibration?loftedCalibration.impulseNs:shotCalibration?shotCalibration.impulseNs:crossCalibration?Object.freeze({
     x:chosen.impulseNs.x*crossCalibration.scale,
     y:chosen.impulseNs.y*crossCalibration.scale,
     z:chosen.impulseNs.z*crossCalibration.scale
@@ -505,6 +522,7 @@ export function createPrivatePhysicalActionExecutor({
    applied=Object.freeze({
     ...chosen,
     impulseNs:impulse,
+    ...(loftedCalibration?{nativeLoftedPassCalibration:loftedCalibration}:{}),
     ...(passCalibration?{isolatedGroundPassCalibration:passCalibration}:{}),
     ...(crossCalibration?{isolatedCrossCalibration:crossCalibration}:{}),
     ...(shotCalibration?{labShotCalibration:shotCalibration,labShotSpin:shotSpin}:{}),
@@ -568,7 +586,7 @@ export function createPrivatePhysicalActionExecutor({
    const target=applied.action==='pass'?applied.passTarget:applied.crossTarget;
    if(target?.recipientId)pendingDelivery={kind:applied.action,tick:nextTick,
     actorId:applied.playerId,recipientId:target.recipientId,team:applied.team,
-    airborne:false,descending:false};
+    airborne:false,descending:false,lofted:target.deliveryProfile==='lofted'};
   }
   if(keeperDistribution!==null){
    const d=keeperDistribution;

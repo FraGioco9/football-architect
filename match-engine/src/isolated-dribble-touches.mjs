@@ -53,7 +53,7 @@ export function createNativeBallControlObserver(activeIds,outfieldIds){
    const source=players.find(p=>p.id===action.playerId);
    const receiver=['pass','cross'].includes(action.action)?players.find(p=>p.id===action.recipientId&&p.team===source?.team&&p.id!==source.id&&activeIds.includes(p.id)):null;
    delivery=['pass','cross','shot'].includes(action.action)?Object.freeze({tick,playerId:action.playerId,team:source?.team,kind:action.action,
-    ...(receiver?{recipientId:receiver.id}:{})}):null;
+    ...(receiver?{recipientId:receiver.id}:{}),...(action.passTarget?.deliveryProfile==='lofted'?{lofted:true}:{})}):null;
    if(action.action==='carry'&&outfieldIds.includes(action.playerId))witness={playerId:action.playerId,tick};
   }
   getUpUntil=Object.fromEntries(Object.entries(getUpUntil).filter(([,until])=>until>=tick));

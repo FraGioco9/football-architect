@@ -71,7 +71,8 @@ const chestDefinition=freeze({...headerDefinition,id:'chest-control',title:'Cont
 const footDefinition=freeze({...headerDefinition,id:'aerial-foot-control',title:'Control · Aerial foot',attackers:freeze([10]),description:'One player receives a descending ball with a reachable raised foot. No automatic control.'});
 const aerialDuelDefinition=freeze({...headerDefinition,id:'aerial-duel',title:'Aerial duel · 1v1',attackers:freeze([10]),defenders:freeze([2]),
  description:'Two opposing canonical outfield players contest one descending physical ball. Neither side is assigned a winner.'});
-const byId=new Map([...definitions,headerDefinition,chestDefinition,footDefinition,aerialDuelDefinition].map(s=>[s.id,s]));
+const loftedPassDefinition=freeze({...headerDefinition,id:'lofted-pass',title:'Pass · Lofted',description:'Two separated teammates, a genuine long lofted pass and physical receiving opportunity.'});
+const byId=new Map([...definitions,headerDefinition,chestDefinition,footDefinition,aerialDuelDefinition,loftedPassDefinition].map(s=>[s.id,s]));
 // Private full-field research fixture: initial geometry only. Not in the
 // visible LAB catalog until the full native participant path is certified.
 byId.set('full-field-native',freeze({id:'full-field-native',nativeOpenPlay:true,fullField:true}));
@@ -317,7 +318,7 @@ export const SMALL_SIDED_LAB_SCENARIOS=freeze(definitions.map(s=>
 ));
 // Keep grounded baseline matrix stable; aerial fixtures have their own
 // contact-source assertions while sharing the same scenario registry.
-export const AERIAL_LAB_SCENARIOS=freeze([headerDefinition,chestDefinition,footDefinition,aerialDuelDefinition].map(d=>freeze({...d,mode:'situation',goal:'situation',
+export const AERIAL_LAB_SCENARIOS=freeze([headerDefinition,chestDefinition,footDefinition,aerialDuelDefinition,loftedPassDefinition].map(d=>freeze({...d,mode:'situation',goal:'situation',
  initial:freeze({preset:d.id==='aerial-foot-control'?'drop':'roll',seed:'me-small-'+d.id+'-home',x:27,y:26,z:d.id==='aerial-foot-control'?1.6:0,vx:0,vy:0,vz:d.id==='aerial-foot-control'?-2:0}),
  focus:freeze([...d.attackers.slice().sort((a,b)=>a-b).map(n=>'home-'+n),...d.defenders.map(n=>'away-'+n)]),source:'original-rapier-selected-aerial-and-shoe-colliders',officialResult:false})));
 export function getSmallSidedScenario(id){
@@ -428,6 +429,18 @@ export function smallSidedSetup(id,side,canonicalPlayers,{
     genuinePhysicalPlayers:2,officialMatchResult:null});
   }
   throw new RangeError('No collision-free original aerial duel setup');
+ }
+ if(id==='lofted-pass'){
+  const random=seededGeometry(id,variantIndex);
+  for(let attempt=0;attempt<96;attempt++){
+   const x=-23+random()*8,y=-8+random()*16,distance=32+random()*10,dy=(random()-0.5)*14;
+   const staged=stage(new Map([[side+'-10',[x-0.30,y]],[side+'-9',[x+distance,y+dy]]]));
+   if(!physicallySeparated(staged,1.15))continue;
+   return freeze({id,side,opponent,variantIndex,activeIds,staged,aerialSurface:'foot',
+    ball:freeze({preset:'roll',seed:'me-small-lofted-pass-v'+variantIndex+'-'+side,x:dir*x,y,z:0,vx:0,vy:0,vz:0}),
+    genuinePhysicalPlayers:2,officialMatchResult:null});
+  }
+  throw new RangeError('No collision-free original lofted pass setup');
  }
  // PASS-01: before-tick-zero geometry only. No opponent or keeper.
  if(id==='pass-pair'){

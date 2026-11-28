@@ -12,7 +12,7 @@ import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT,
 import {createControlledActionLab,projectActiveLabDecisions,createNativeFullFieldSession} from '../src/action-labs.mjs';
 import {createCollectiveBallControlObserver,createNativeBallControlObserver,createDribbleTransitionObserver,chooseCollectiveDefensiveTouch,planNativeDefensiveIntervention,isNativeRecoveryLocked,applyNativeSlideRecovery} from '../src/isolated-dribble-touches.mjs';
 import {observeNativeShotBlock,planNativeShotBlock} from '../src/defensive-intervention-selection.mjs';
-import {selectUniformAutonomousContactAction,chooseRecipient,eligibleLiveKeeperSave,chooseNativeHeaderIntent} from '../src/player-ball-uniform-autonomous-action.mjs';
+import {selectUniformAutonomousContactAction,chooseRecipient,eligibleLiveKeeperSave,chooseNativeHeaderIntent,chooseNativeLoftedRecipient} from '../src/player-ball-uniform-autonomous-action.mjs';
 import {planNativeCarryTouch,chooseNativePassInterceptionTouch} from '../src/isolated-dribble-touches.mjs';
 import {planNativeKeeperDive,planNativeKeeperChallenge,eligibleKeeperGrip,planNativeKeeperDistribution,createNativeAerialHead,planNativeAerialJump,aerialHeadHeight,AERIAL_JUMP_TICKS,planNativeAerialControl,planNativeAerialCushion,createNativeAerialControl,exclusiveNativeAerialStart,observeNativeAerialDuel} from '../src/small-sided-native-body-guard.mjs';
 import {planSlidingTackle} from '../src/sliding-tackle.mjs';
@@ -2221,4 +2221,37 @@ test('AERIAL-04 mirrored native duel variants never award an unobserved winner',
  process.stdout.write('ME_628_AERIAL_DUEL '+JSON.stringify(rows)+'\\n');
  assert.ok(rows.some(r=>r.observed?.kind==='exclusive-header'&&r.observed.team==='home'));
  assert.ok(rows.some(r=>r.observed?.kind==='exclusive-header'&&r.observed.team==='away'));
+});
+
+test('AERIAL-05 long aerial pass recipient uses live forward geometry and safe receiving space',()=>{
+ for(const side of ['home','away']){
+  const dir=side==='home'?1:-1,actor={id:side+'-10',team:side,role:'forward',x:dir*-20,y:0};
+  const receiver={id:side+'-9',team:side,role:'forward',x:dir*17,y:3};
+  const ball={x:actor.x,y:0,z:0.11};
+  assert.equal(chooseNativeLoftedRecipient(actor,ball,[actor,receiver]).player.id,receiver.id);
+  assert.equal(chooseNativeLoftedRecipient(actor,ball,[actor,{...receiver,x:dir*-10}]),null);
+  assert.equal(chooseNativeLoftedRecipient(actor,ball,[actor,receiver,{...receiver,id:(side==='home'?'away':'home')+'-2',team:side==='home'?'away':'home',x:receiver.x+0.5}]),null);
+ }
+});
+test('AERIAL-05 physical mirrored long pass journeys launch once from a real shoe, then observe receipt',{timeout:120000},async()=>{
+ const R=await initializeRapier(rapier),rows=[];
+ for(const side of ['home','away'])for(let variantIndex=0;variantIndex<30;variantIndex++){
+  const lab=createControlledActionLab(R,'lofted-pass',{shotSide:side,variantIndex});
+  try{
+   let audit=null;
+   for(let i=0;i<300;i++){
+    const frame=lab.step();audit=frame.loftedPassAudit;
+    if(frame.action?.passTarget?.deliveryProfile==='lofted'){
+     assert.equal(frame.action.action,'pass');assert.equal(frame.action.actualPhysicsImpulseApplied,true);
+     assert.deepEqual(frame.starts,[frame.action.playerId]);
+     assert.ok(frame.action.impulseNs.z>0);assert.ok(Math.hypot(...Object.values(frame.action.impulseNs))<=12+1e-8);
+     assert.ok(frame.action.nativeLoftedPassCalibration.distanceM>=26);
+    }
+    if(audit?.receiverContact)break;
+   }
+   rows.push({side,variantIndex,launch:!!audit,peak:audit?.peakZM??0,receipt:!!audit?.receiverContact});
+  }finally{lab.dispose();}
+ }
+ process.stdout.write('ME_628_LOFTED_PASS '+JSON.stringify(rows)+'\\n');
+ assert.ok(rows.every(r=>r.launch&&r.peak>2&&r.receipt),JSON.stringify(rows.filter(r=>!r.receipt)));
 });
