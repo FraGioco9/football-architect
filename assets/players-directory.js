@@ -411,7 +411,6 @@
     addHeader(t.columns[1],'age');addHeader(t.columns[3],'height');addHeader(t.columns[4],'foot');
     addHeader(globalThis.faMarketValue?.label(language())||'Market value','market_value_arc');
     row.lastElementChild.classList.add('app-market-value-col');
-    row.lastElementChild.querySelector('button').title=globalThis.faMarketValue?.help(language())||'Estimated remaining agent commissions (DRAFT benchmark)';
     const club=document.createElement('th');club.scope='col';club.className='app-players-club-col';club.textContent=t.club;row.append(club);
    }else{
     addHeader(t.columns[2],'positions');

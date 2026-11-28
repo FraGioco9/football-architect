@@ -98,7 +98,7 @@
   for(const key of columns()){
    const th=document.createElement('th');th.scope='col';
    if(key==='nationality')th.className='app-players-flag-col';
-   if(key==='market_value_arc'){th.className='app-market-value-col';th.title=window.faMarketValue?.help(language())||'Estimated remaining agent commissions (DRAFT benchmark)';}
+   if(key==='market_value_arc')th.className='app-market-value-col';
    th.setAttribute('aria-sort',sort===key?(order==='desc'?'descending':'ascending'):'none');
    const button=document.createElement('button');button.type='button';button.className='app-players-sort-button';button.dataset.previewSort=key;
    const wrap=document.createElement('span');wrap.className='app-players-sort-label';

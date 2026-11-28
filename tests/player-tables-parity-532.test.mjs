@@ -31,6 +31,9 @@ test('#532 Club Roster Info follows public Positions-before-Age while preserving
   const table=html.slice(html.indexOf('<table class="app-players-table club-roster-table"'));
   assert.deepEqual([...table.matchAll(/data-club-roster-sort="([^"]+)"/g)].slice(0,7).map(x=>x[1]),
    ['nationality','name','positions','age','height','foot','market_value_arc'],language+' header order');
+  const marketHeader=[...table.matchAll(/<th\b[^>]*>[\s\S]*?<\/th>/g)].find(m=>m[0].includes('data-club-roster-sort="market_value_arc"'))?.[0];
+  assert.ok(marketHeader,language+' market value header');
+  assert.doesNotMatch(marketHeader,/\b(?:title|data-roster-stat-help)\s*=/,language+' market value header has no tooltip');
   assert.match(table,/<colgroup><col class="app-players-flag-column"><col class="app-players-name-column"><col class="app-players-view-third-column">/);
   assert.match(table,/<a class="club-roster-player-link" href="\/players\/17" data-mobile-name="M. Example" aria-label="Marco Example"><span class="fa-player-full-name">Marco Example<\/span><span class="fa-player-short-name">M. Example<\/span><\/a><\/td><td>CM, DM<\/td><td>23<\/td>/,language+' data order');
   const attrsHtml=model.render(manifest,club,language,'?view=attributes&group=technical',null,1,null,snap);
@@ -87,4 +90,20 @@ test('#777 Admin Contracts aligns signed-term columns and read-only first paint'
  assert.deepEqual(signingPosts,['/api/admin/contracts/preview','/api/admin/contracts/sign']);
  assert.equal((js.match(/method:\s*['"]POST/g)||[]).length,signingPosts.length,'no other mutation endpoint');
  assert.match(css,/\.app-admin-view \.admin-contracts-table tbody tr\{height:36px\}/);
+});
+
+test('Market value table headings do not attach the valuation tooltip',()=>{
+ const surfaces=[
+  ['assets/players-directory.js','players/index.html','data-players-sort="market_value_arc"'],
+  ['assets/admin-players-preview.js','admin/players/preview/index.html','class="app-market-value-col"'],
+  ['assets/transfers-page.mjs','transfers/index.html','id="transfers-value-sort"'],
+  ['assets/club-model.js','clubs/_shared/index.html','data-club-roster-sort="market_value_arc"']
+ ];
+ for(const [source,page,marker] of surfaces){
+  assert.doesNotMatch(read(source),/\b(?:faMarketValue|marketUI|valuation)\?*\.help\s*\(/,source);
+  const header=[...read(page).matchAll(/<th\b[^>]*>[\s\S]*?<\/th>/g)].find(m=>m[0].includes(marker))?.[0];
+  assert.ok(header,page+' market value heading');
+  assert.doesNotMatch(header,/\btitle\s*=/,page);
+ }
+ assert.match(read('assets/player-detail.js'),/marketLabel\.title=/,'non-column player detail is unchanged');
 });

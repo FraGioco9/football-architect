@@ -44,7 +44,6 @@ if(root){
   root.querySelector('[data-transfers-value-min-label]').textContent=label+' ('+bounds[0]+', $ARC)';
   root.querySelector('[data-transfers-value-max-label]').textContent=label+' ('+bounds[1]+', $ARC)';
   sortButton.querySelector('[data-transfers-value-label]').textContent=label;
-  sortButton.title=valuation.help(currentLocale());
   sortHead.setAttribute('aria-sort',state.sort?(state.order==='desc'?'descending':'ascending'):'none');
   document.title=c.title+' — Football Architect';
   status.textContent=notice==='loading'?c.loading:notice==='error'?c.error:notice==='stale'?c.stale:notice==='empty'?(state.name||state.position||state.valueMin||state.valueMax?c.empty:c.none):'';

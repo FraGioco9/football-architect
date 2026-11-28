@@ -288,8 +288,7 @@
     return '<th scope="col" aria-sort="'+(active?order==='desc'?'descending':'ascending':'none')+'"'+(key==='market_value_arc'?' class="app-market-value-col"':'')+
      (i===0?' class="app-players-flag-col" aria-label="'+escape(w.nationality)+'"':'')+'>'+
      '<button type="button" class="app-players-sort-button" data-club-roster-sort="'+key+'"'+
-     (mode==='stats'&&i>=3?' data-roster-stat-help="'+escape(rosterStatHelp[lang][key])+'"':'')+
-     (key==='market_value_arc'?' title="'+escape(marketUI?.help(lang)||'Estimated remaining agent commissions (DRAFT benchmark)')+'"':'')+'>'+
+     (mode==='stats'&&i>=3?' data-roster-stat-help="'+escape(rosterStatHelp[lang][key])+'"':'')+'>'+
      '<span class="app-players-sort-label">'+(i===0?'<span class="sr-only">'+escape(w.nationality)+'</span>':escape(label))+
      rosterSortChevron+'</span></button></th>';
    }).join('')+
