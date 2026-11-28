@@ -31,7 +31,9 @@ export function createNativeBallControlObserver(activeIds,outfieldIds){
     new Set(activeIds).size!==activeIds.length||new Set(outfieldIds).size!==outfieldIds.length||
     !outfieldIds.every(id=>activeIds.includes(id)))throw new TypeError('Active physical participants required');
  let witness=null,delivery=null,getUpUntil={},shoulderByPlayer={},lastInterventions={},lastBlock=null,blockCount=0,latest=Object.freeze({tick:0,...observeDuelBallControl(),delivery:null,getUpUntil:Object.freeze({}),shoulderByPlayer:Object.freeze({}),lastInterventions:Object.freeze({}),lastBlock:null,blockCount:0,keeperHold:null,keeperDistribution:null});
- function observe({tick,players,ball,starts,active,bodyStarts=[],bodyActive=[],action,physicalChallengeReleased=false,shoulderPlans=[],torsoPairs=[],bodies=[],beforeBallVelocity=null,afterSolverVelocity=null,keeperStates=[]}){
+ function observe({tick,players,ball,starts,active,bodyStarts=[],bodyActive=[],action,physicalChallengeReleased=false,shoulderPlans=[],torsoPairs=[],bodies=[],beforeBallVelocity=null,afterSolverVelocity=null,keeperStates=[],attackPolarity=1}){
+  validateAttackPolarity(attackPolarity);
+  if(attackPolarity!==1&&activeIds.length!==22)throw new TypeError('Reversed control observation requires full-field native participants');
   if(tick!==latest.tick+1)throw new TypeError('Consecutive native control ticks required');
   const participants=players.filter(p=>outfieldIds.includes(p.id));
   const touching=[...new Set([...active,...bodyActive])].filter(id=>activeIds.includes(id));
@@ -40,7 +42,7 @@ export function createNativeBallControlObserver(activeIds,outfieldIds){
    starts.length===1&&starts[0]===action.playerId&&active.length===1&&active[0]===action.playerId&&
    touching.length===1&&touching[0]===action.playerId&&action.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true;
   if(witness&&(started.some(id=>id!==witness.playerId)||touching.some(id=>id!==witness.playerId)||real&&action.action!=='carry'))witness=null;
-  const block=observeNativeShotBlock({tick,delivery,players:participants,starts,bodyStarts,before:beforeBallVelocity,after:afterSolverVelocity});
+  const block=observeNativeShotBlock({tick,delivery,players:participants,starts,bodyStarts,before:beforeBallVelocity,after:afterSolverVelocity,attackPolarity});
   if(block){lastBlock=block;if(block.blocked)blockCount++;}
   if(delivery&&(tick-delivery.tick>180||started.some(id=>id!==delivery.playerId)||touching.some(id=>id!==delivery.playerId)))delivery=null;
   if(real){

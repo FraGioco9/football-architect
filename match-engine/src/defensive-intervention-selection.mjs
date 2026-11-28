@@ -41,7 +41,8 @@ export function planNativeShotBlock({player,ball,velocity,attackPolarity=1}={}){
 // UME-04C: observe a native trajectory change following a genuine shot.
 // This read-only classifier does not award a save, possession or official
 // result. Ambiguous simultaneous player contacts cannot identify a blocker.
-export function observeNativeShotBlock({tick,delivery,players,starts=[],bodyStarts=[],before,after}={}){
+export function observeNativeShotBlock({tick,delivery,players,starts=[],bodyStarts=[],before,after,attackPolarity=1}={}){
+ validateAttackPolarity(attackPolarity);
  if(!Number.isSafeInteger(tick)||delivery?.kind!=='shot'||!Number.isSafeInteger(delivery.tick)||
     tick<=delivery.tick||tick-delivery.tick>180||!['home','away'].includes(delivery.team)||
     !Array.isArray(players)||!Array.isArray(starts)||!Array.isArray(bodyStarts)||
@@ -52,7 +53,7 @@ export function observeNativeShotBlock({tick,delivery,players,starts=[],bodyStar
  if(!actor||actor.team===delivery.team||actor.role==='goalkeeper'||!['home','away'].includes(actor.team))return null;
  const pre=Math.hypot(before.x,before.y,before.z),post=Math.hypot(after.x,after.y,after.z);
  const change=Math.hypot(before.x-after.x,before.y-after.y,before.z-after.z);
- const dir=delivery.team==='home'?1:-1;
+ const dir=attackDirection(delivery.team,attackPolarity);
  const incoming=pre>=0.6&&before.x*dir>0.25;
  const blocked=incoming&&change>=0.6&&(post<pre*0.85||
     before.x*after.x+before.y*after.y+before.z*after.z<pre*post*0.92);

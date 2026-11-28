@@ -14,6 +14,8 @@ import {createCollectiveBallControlObserver,createNativeBallControlObserver,crea
 import {observeNativeShotBlock,planNativeShotBlock} from '../src/defensive-intervention-selection.mjs';
 import {selectUniformAutonomousContactAction,chooseRecipient,eligibleLiveKeeperSave} from '../src/player-ball-uniform-autonomous-action.mjs';
 import {planNativeCarryTouch,chooseNativePassInterceptionTouch} from '../src/isolated-dribble-touches.mjs';
+import {planNativeKeeperDive,planNativeKeeperChallenge,eligibleKeeperGrip,planNativeKeeperDistribution} from '../src/small-sided-native-body-guard.mjs';
+import {planSlidingTackle} from '../src/sliding-tackle.mjs';
 import {detectFirstFullyOutBallB05} from '../src/basic-match-referee-b05.mjs';
 import {SOLO_CARRY_PHASES,advanceSoloCarryPhase} from '../src/solo-carry-phases.mjs';
 
@@ -1865,7 +1867,8 @@ test('UME-06D4B collective targets and goalkeeper geometry reflect X without swa
  assert.throws(()=>planNativeFootballMovement(players,ball,v,null,keepers,0),/polarity/);
 });
 test('UME-06D4B original mover reversed formation preparation is bounded and identity preserving; normal engine is not switched',()=>{
- const mover=createPlayerMovement({researchSmallSidedSituation:'full-field-native',researchSmallSidedSide:'home',researchCollectiveApproaches:true});
+ const options={researchSmallSidedSituation:'full-field-native',researchSmallSidedSide:'home',researchCollectiveApproaches:true,researchSmallSidedBodyFeedback:true};
+ const mover=createPlayerMovement(options);
  const before=mover.snapshot(),control={tick:0,kind:'loose',officialPossession:false};
  const placement={kind:'kickoff',assignedTeam:'away',takerId:'away-10',tick:0,spot:{x:0,y:0,z:0.11},deadBallPlacementOnly:true};
  const ball={x:0,y:0,z:0.11},v={x:0,y:0,z:0};
@@ -1879,7 +1882,8 @@ test('UME-06D4B original mover reversed formation preparation is bounded and ide
   assert.ok(Math.abs(target.x-(p.id==='away-10'?0.10:-base.x))<1e-9);
   assert.equal(target.y,p.id==='away-10'?0:base.y);
  }
- assert.throws(()=>mover.step(ball,null,null,v,null,false,false,null,null,null,{tick:1,kind:'controlled',playerId:'home-10',officialPossession:false},null,-1),/Reversed movement/);
+ assert.throws(()=>createPlayerMovement(options).step(ball,null,null,v,null,false,false,null,null,null,{tick:0,kind:'controlled',playerId:'home-10',officialPossession:false},null,-1),/Reversed movement/);
+ assert.throws(()=>mover.step(ball,null,null,v,null,false,false,null,null,null,{tick:1,kind:'loose',officialPossession:false},placement,-1),/prior tick acknowledgment/);
 });
 
 test('UME-06D4C1 native action and defensive touch direction preserves actor and mirrored geometry',()=>{
@@ -1920,4 +1924,35 @@ test('UME-06D4C1 native action and defensive touch direction preserves actor and
  assert.ok(Math.abs(normal.impulseNs.y-reversed.impulseNs.y)<1e-9);
  assert.equal(normal.impulseNs.z,reversed.impulseNs.z);
  assert.equal(select(-1,[]),null);assert.equal(select(-1,[actor.id,receiver.id]),null);
+});
+
+test('UME-06D4C2 mirrored keeper hand geometry, distribution, slide and observed block preserve original team',()=>{
+ const mirror=p=>({...p,x:-p.x,...(Number.isFinite(p.vx)?{vx:-p.vx}:{})});
+ const keeper={id:'away-1',team:'away',role:'goalkeeper',x:48,y:0};
+ const shot={position:{x:43,y:1,z:0.8},velocity:{x:18,y:0,z:3}};
+ const reverseBall=b=>({position:mirror(b.position),velocity:mirror(b.velocity)});
+ const a=planNativeKeeperDive(keeper,shot),b=planNativeKeeperDive(mirror(keeper),reverseBall(shot),-1);
+ assert.ok(a&&b);assert.equal(a.target.x,-b.target.x);assert.equal(a.target.y,b.target.y);assert.equal(a.target.z,b.target.z);
+ const attacker={id:'home-10',team:'home',role:'forward',x:47,y:0.2};
+ const loose={position:{x:47.2,y:0.2,z:0.11},velocity:{x:1,y:0,z:0}};
+ const q=planNativeKeeperChallenge(keeper,attacker,loose),s=planNativeKeeperChallenge(mirror(keeper),mirror(attacker),reverseBall(loose),-1);
+ assert.ok(q&&s);assert.equal(q.target.x,-s.target.x);assert.equal(q.target.y,s.target.y);
+ const evidence={team:'away',contact:true,ballPosition:{x:47.5,y:0,z:0.8},before:{x:2,y:0,z:0},after:{x:0.2,y:0,z:0},glovePosition:{x:47.5,y:0,z:0.8},gloveVelocity:{x:0,y:0,z:0}};
+ const reversed={...evidence,...Object.fromEntries(['ballPosition','before','after','glovePosition','gloveVelocity'].map(k=>[k,mirror(evidence[k])])),attackPolarity:-1};
+ assert.equal(eligibleKeeperGrip(evidence),true);assert.equal(eligibleKeeperGrip(reversed),true);
+ assert.equal(eligibleKeeperGrip({...reversed,attackPolarity:1}),false);
+ const dist=planNativeKeeperDistribution(keeper,evidence.ballPosition,[keeper]),rev=planNativeKeeperDistribution(mirror(keeper),reversed.ballPosition,[mirror(keeper)],-1);
+ assert.equal(dist.kind,'clearance');assert.equal(rev.kind,'clearance');
+ assert.equal(dist.desiredVelocity.x,-rev.desiredVelocity.x);assert.equal(dist.desiredVelocity.z,rev.desiredVelocity.z);
+ const player={id:'away-2',team:'away',role:'defender',x:31,y:0.4,vx:-2,vy:-0.8,facingRad:Math.atan2(-0.8,-2)};
+ const carrier={id:'home-10',team:'home',x:29.6,y:0};
+ const ball={x:30,y:0,z:0.11},velocity={x:1,y:0,z:0};
+ const slide=planSlidingTackle({attackingSide:'home',attacker:carrier,defender:player,ball,velocity});
+ const reverseSlide=planSlidingTackle({attackingSide:'home',attacker:mirror(carrier),defender:{...mirror(player),facingRad:Math.atan2(player.vy,-player.vx)},ball:mirror(ball),velocity:mirror(velocity),attackPolarity:-1});
+ assert.ok(slide&&reverseSlide);assert.equal(slide.actorId,reverseSlide.actorId);assert.equal(slide.target.x,-reverseSlide.target.x);
+ const delivery={tick:1,kind:'shot',team:'home',playerId:carrier.id},pre={x:12,y:0,z:0},post={x:2,y:1,z:0};
+ const block=observeNativeShotBlock({tick:2,delivery,players:[player],starts:[player.id],before:pre,after:post});
+ const reverseBlock=observeNativeShotBlock({tick:2,delivery,players:[mirror(player)],starts:[player.id],before:mirror(pre),after:mirror(post),attackPolarity:-1});
+ assert.ok(block?.blocked);assert.deepEqual(reverseBlock,block);
+ assert.equal(observeNativeShotBlock({tick:2,delivery,players:[mirror(player)],starts:[],before:mirror(pre),after:mirror(post),attackPolarity:-1}),null);
 });

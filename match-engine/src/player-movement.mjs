@@ -2640,7 +2640,7 @@ export function createPlayerMovement(options={}){
    const attacker=players.find(p=>smallActive.has(p.id)&&p.id===delivery.playerId&&p.team===delivery.team);
    const recipient=players.find(p=>smallActive.has(p.id)&&p.id===delivery.recipientId&&p.team===delivery.team);
    if(attacker)for(const defender of players.filter(p=>smallActive.has(p.id)&&p.role!=='goalkeeper'&&p.team!==attacker.team)){
-    const plan=planNativeDefensiveIntervention({attacker,recipient,defender,ballPosition,ballVelocity:realBallVelocity,context:delivery.kind});
+    const plan=planNativeDefensiveIntervention({attacker,recipient,defender,ballPosition,ballVelocity:realBallVelocity,context:delivery.kind,attackPolarity});
     if(plan?.decision?.plan)nativeDeliveryPlans[defender.id]=plan.decision;
    }
   }
@@ -2655,10 +2655,10 @@ export function createPlayerMovement(options={}){
     const impact=collectiveControl?.shoulderByPlayer?.[defender.id];
     if(impact)nativeBalance[defender.id]=planShoulderBalanceRecovery(defender,{lastShoulder:impact},tick+1);
     if(!opponent)continue;
-    const source={attackingSide:opponent.team,attacker:opponent,defender,ball:ballPosition,velocity:realBallVelocity};
+    const source={attackingSide:opponent.team,attacker:opponent,defender,ball:ballPosition,velocity:realBallVelocity,attackPolarity};
     const available=!!owner&&owner.id===opponent.id&&!locked;
     const sliding=available?planSlidingTackle(source):null;
-    const planned=planNativeDefensiveIntervention({attacker:opponent,defender,ballPosition,ballVelocity:realBallVelocity,unavailable:locked,activeSlide:previous?.phase==='slide',available,sliding});
+    const planned=planNativeDefensiveIntervention({attacker:opponent,defender,ballPosition,ballVelocity:realBallVelocity,unavailable:locked,activeSlide:previous?.phase==='slide',available,sliding,attackPolarity});
     const contact=collectiveControl?.lastInterventions?.[defender.id]??null;
     const next=advanceSlidingTackle({tick:tick+1,previous,source,allowLaunch:available&&planned?.decision.kind==='sliding-tackle',cancel:!available||!!previous&&previous.opponentId!==opponent.id,contact});
     if(next)nextNativeSlides[defender.id]=Object.freeze({...next,opponentId:previous?.opponentId??opponent.id});
