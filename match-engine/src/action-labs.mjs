@@ -167,7 +167,7 @@ export function createControlledActionLab(RAPIER,id,{
  soloSprintActiveFootReleaseM=0,intentDrivenSoloCarry=false,soloCarryLockedPhase=null,
  carryRunwayStart=false,nativeFixedCarryResearch=false,
  nativeFixedSprintLongStride=false,soloSprintPursuitLeadM=0,
- soloCarryPlayerAttributes=null,historicalEvidenceBaseline=false,shotProfile='power',firstTimeShot=false
+ soloCarryPlayerAttributes=null,historicalEvidenceBaseline=false,historicalCarryPhysics=false,shotProfile='power',firstTimeShot=false
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
@@ -256,6 +256,7 @@ export function createControlledActionLab(RAPIER,id,{
  const refereeMode=spec.mode==='referee';
  if(typeof historicalEvidenceBaseline!=='boolean'||(historicalEvidenceBaseline&&smallSided))
   throw new TypeError('Historical evidence only for original archived action fixtures');
+ if(typeof historicalCarryPhysics!=='boolean'||historicalCarryPhysics&&(!['carry-solo','dribble-1v1'].includes(id)||collectiveApproaches))throw new TypeError('Historical carry physics requires isolated research');
  const currentDynamics=!refereeMode&&!historicalEvidenceBaseline;
  const sourceRestart=['throw-in','corner','goal-kick'].includes(id);
  const basicFootwork=['trap','dribble'].includes(id);
@@ -362,7 +363,7 @@ export function createControlledActionLab(RAPIER,id,{
    diagnosticSmallSidedSituation:id,
    diagnosticSmallSidedSide:shotSide,
    diagnosticSmallSidedVariantIndex:variantIndex,
-   diagnosticCarryRunwayStart:carryRunwayStart,
+   diagnosticCarryRunwayStart:carryRunwayStart,diagnosticHistoricalCarryPhysics:historicalCarryPhysics,
    ...(id==='carry-solo'?{
     diagnosticSoloShoeWidthScale:soloShoeWidthScale,
     diagnosticSoloShoeLengthScale:soloShoeLengthScale,

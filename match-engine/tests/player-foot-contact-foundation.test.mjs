@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {initializeRapier,createEngine,canonicalSnapshot,
- BALL_RADIUS,BALL_MASS_KG,BALL_INERTIA_KG_M2,GRAVITY}
+ BALL_RADIUS,BALL_MASS_KG,BALL_INERTIA_KG_M2,GRAVITY,nativeBallGroundContactProfile}
  from '../src/core.mjs';
 import {INITIAL_PLAYERS,PLAYER_DT,createPlayerMovement}
  from '../src/player-movement.mjs';
@@ -14,7 +14,7 @@ import {FOOT_CONTACT_VERSION,FOOT_CONTACT_HALF_LENGTH_M,
  FOOT_CONTACT_ROUNDING_M,FOOT_CONTACT_FRICTION,
  FOOT_CONTACT_RESTITUTION,initialFootPositions,footProxyTransform,
  validateFootContactFrame} from '../src/player-foot-contact.mjs';
-import {createPrivateRapierFootContactBridge,usesNativePairedShoeBridge,hasExclusiveNativeShoeStart,soloCarryTwoFootPositions,planNativeFirstTimeFootRecovery,nativeFirstTimeRecoveryTarget} from '../src/rapier-foot-contact-bridge.mjs';
+import {createPrivateRapierFootContactBridge,usesNativePairedShoeBridge,hasExclusiveNativeShoeStart,soloCarryTwoFootPositions,planNativeFirstTimeFootRecovery,nativeFirstTimeRecoveryTarget,nativeShoeContactProfile} from '../src/rapier-foot-contact-bridge.mjs';
 import {createFootContactTimeline,FOOT_CONTACT_TIMELINE_VERSION}
  from '../src/player-foot-contact-timeline.mjs';
 import {summarizeFootSolverEvidence,FOOT_SOLVER_EVIDENCE_VERSION}
@@ -282,4 +282,20 @@ test('ME-01-QA U-01E4: first-time recovery follows only the authenticated physic
   assert.deepEqual(prev,pose);
   assert.equal(nativeFirstTimeRecoveryTarget(pose,foot,plan,7),pose);
  }
+});
+
+test('ME-01-QA U-01E5a: common native material with explicit archived carry exception',()=>{
+ const normal=nativeBallGroundContactProfile(),archived=nativeBallGroundContactProfile(true);
+ assert.deepEqual(normal,{groundRestitution:.62,ballRestitution:.62,groundFriction:.65,ballFriction:.45});
+ assert.deepEqual(archived,{...normal,groundRestitution:0,ballRestitution:0});
+ assert.throws(()=>nativeBallGroundContactProfile('carry-solo'),/Boolean/);
+ const standard=nativeShoeContactProfile();
+ assert.deepEqual(nativeShoeContactProfile({researchScale:true}),standard);
+ const old=nativeShoeContactProfile({legacyGround:true});
+ assert.equal(old.restitution,0);assert.equal(old.halfHeightM,.015);
+ for(const widthScale of [.9,1,1.1])for(const lengthScale of [.9,1,1.05,1.075,1.1]){
+  const scaled=nativeShoeContactProfile({researchScale:true,widthScale,lengthScale});
+  assert.deepEqual(scaled,{...standard,halfWidthM:standard.halfWidthM*widthScale,halfLengthM:standard.halfLengthM*lengthScale});
+ }
+ assert.throws(()=>nativeShoeContactProfile({widthScale:1.1}),/geometry/);
 });

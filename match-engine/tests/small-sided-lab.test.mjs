@@ -1420,7 +1420,7 @@ test('#628 paired real Rapier worlds: combined toe-length and recovery controls'
   for(const arm of arms){
    const lab=createControlledActionLab(R,'carry-solo',{
     shotSide:side,variantIndex,bodyGuardEnabled:true,
-    soloShoeLengthScale:arm.length,
+    historicalCarryPhysics:true,soloShoeLengthScale:arm.length,
     soloRecoveryStepScale:arm.recovery
    });
    try{
@@ -1585,7 +1585,7 @@ test('#628 genuine Sprint cadence/lateral-track 6s counterfactuals preserve defa
   for(const arm of arms){
    const lab=createControlledActionLab(R,'carry-solo',{
     shotSide:side,variantIndex,bodyGuardEnabled:true,
-    soloSprintCadenceScale:arm.cadence,
+    historicalCarryPhysics:true,soloSprintCadenceScale:arm.cadence,
     soloSprintLateralTrackScale:arm.track
    });
    try{

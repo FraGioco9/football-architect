@@ -40,6 +40,11 @@ export const BALL_FRONTAL_AREA_M2 = Math.PI * BALL_RADIUS ** 2;
 export const DRAG_EXPERIMENT_CD = 0.24; // illustrative constant coefficient, not a universal soccer-ball Cd.
 export const GROUND_RESTITUTION = 0.62; // candidate: measure LAB-05 rebound against FIFA turf reference.
 export const BALL_RESTITUTION = 0.62;
+// Only explicitly archived ground-carry research may retain zero bounce.
+export function nativeBallGroundContactProfile(historicalCarryPhysics=false){
+ if(typeof historicalCarryPhysics!=='boolean')throw new TypeError('Boolean historical carry material mode required');
+ return Object.freeze({groundRestitution:historicalCarryPhysics?0:GROUND_RESTITUTION,ballRestitution:historicalCarryPhysics?0:BALL_RESTITUTION,groundFriction:0.65,ballFriction:0.45});
+}
 // Public scenario Z is clearance from grass to the ball's underside; Rapier Z is center height.
 export const toCenterHeight = clearance => clearance + BALL_RADIUS;
 export const toGroundClearance = centerHeight => Math.max(0, centerHeight - BALL_RADIUS);
@@ -134,6 +139,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticSoloSprintLateralTrackScale = 1,
   diagnosticSoloSprintActiveFootReleaseM = 0,
   diagnosticIntentDrivenSoloCarryEnabled = false,
+  diagnosticHistoricalCarryPhysics = false,
   diagnosticNativeFixedCarryResearchEnabled = false,
   diagnosticNativeFixedSprintLongStrideEnabled = false,
   diagnosticSmallSidedBodyGuardEnabled = false,
@@ -517,6 +523,9 @@ export function createEngine(RAPIER, input = {}, {
  // Locked carry exercises keep their experimental physical setup. Open
  // play uses the same ordinary ball and shoe physics for every fixture.
  const isolatedCarry=!diagnosticCollectiveActions&&(smallSided?.id==='dribble-1v1'||smallSided?.id==='carry-solo');
+ if(typeof diagnosticHistoricalCarryPhysics!=='boolean'||diagnosticHistoricalCarryPhysics&&!isolatedCarry)throw new TypeError('Historical carry materials require isolated carry research');
+ const historicalCarryPhysics=isolatedCarry&&(diagnosticHistoricalCarryPhysics||diagnosticIntentDrivenSoloCarryEnabled);
+ const contactMaterial=nativeBallGroundContactProfile(historicalCarryPhysics);
  const stagedShoes=smallSided?smallSided.staged:
   diagnosticB06bOpeningKickoffEnabled?
    initialB06bOpeningLineup(INITIAL_PLAYERS):
@@ -646,7 +655,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticSoloShoeLengthScale,diagnosticSoloRecoveryStepScale,
     diagnosticSoloSprintCadenceScale,diagnosticSoloSprintLateralTrackScale,
     diagnosticSoloSprintActiveFootReleaseM,
-    diagnosticIntentDrivenSoloCarryEnabled,
+    diagnosticIntentDrivenSoloCarryEnabled,diagnosticHistoricalCarryPhysics,
     diagnosticNativeFixedCarryResearchEnabled,
     diagnosticSmallSidedBodyGuardEnabled,diagnosticCollectiveActions,diagnosticKeeperSingleShot,diagnosticDirectedDribble,
      diagnosticSmallSidedBodyFeedbackEnabled,
@@ -673,7 +682,7 @@ export function createEngine(RAPIER, input = {}, {
     RAPIER.ColliderDesc.cuboid(53.5, 35, 0.2):
     RAPIER.ColliderDesc.cuboid(52.5, 34, 0.2);
   const ground = groundDesc
-    .setTranslation(0, 0, -0.2).setFriction(0.65).setRestitution(isolatedCarry?0:GROUND_RESTITUTION);
+    .setTranslation(0, 0, -0.2).setFriction(contactMaterial.groundFriction).setRestitution(contactMaterial.groundRestitution);
   const groundCollider=world.createCollider(ground);
   const desc = RAPIER.RigidBodyDesc.dynamic()
     .setTranslation(scenario.x, scenario.y, toCenterHeight(scenario.z))
@@ -688,7 +697,7 @@ export function createEngine(RAPIER, input = {}, {
       {x: 0, y: 0, z: 0},
       {x: BALL_INERTIA_KG_M2, y: BALL_INERTIA_KG_M2, z: BALL_INERTIA_KG_M2},
       {w: 1, x: 0, y: 0, z: 0})
-    .setFriction(0.45).setRestitution(isolatedCarry?0:BALL_RESTITUTION);
+    .setFriction(contactMaterial.ballFriction).setRestitution(contactMaterial.ballRestitution);
   // In M9 only, category 0x1 shoes/ball can interact with each other
   // and ground but NOT player-body category 0x20. Default path untouched.
   if(diagnosticSharedContactEventsEnabled)
@@ -717,7 +726,7 @@ export function createEngine(RAPIER, input = {}, {
       ...(diagnosticFirstTimeShot&&diagnosticIsolatedShotProfile!=='tap-in'?
        {firstTimeShotReleaseId:smallSided.side+'-10'}:{}),
       ...(isolatedCarry?{
-       isolatedGroundDribbleBallCentreZ:BALL_RADIUS,
+       isolatedGroundDribbleBallCentreZ:BALL_RADIUS,historicalCarryMaterial:historicalCarryPhysics,
        dribbleAttackerId:smallSided.side+'-10',
        ...(diagnosticDirectedDribble?{sharedDuelStride:true}:{}),
        soloCarry:smallSided.id==='carry-solo',
@@ -745,7 +754,7 @@ export function createEngine(RAPIER, input = {}, {
    createSmallSidedNativeBodyGuard(RAPIER,world,ballCollider,
      stagedShoes,smallSided.activeIds,{
       feedbackEnabled:diagnosticSmallSidedBodyFeedbackEnabled,fullFieldNative:smallSided.fullField===true,aerialEnabled:diagnosticNativeAerialEnabled,aerialSurface:smallSided.aerialSurface??'all',
-      ...(isolatedCarry?{
+      ...(historicalCarryPhysics?{
        dribbleGroundBallCentreZ:BALL_RADIUS
       }:{})
      }):null;
@@ -1544,6 +1553,7 @@ export function createEngine(RAPIER, input = {}, {
     ...(smallSided?{
       originalSmallSidedPhysicalShoeIds:()=>shoeBridge.physicalColliderIds,
       originalSmallSidedPhysicalShoeColliderCount:()=>shoeBridge.physicalShoeColliderCount,
+      nativeContactMaterialSnapshot:()=>Object.freeze({historicalCarryPhysics,...contactMaterial,shoe:shoeBridge.contactMaterialProfile}),
       ...(smallBodyGuard?{
         smallSidedBodyGuardSnapshot:()=>smallBodyGuard.snapshot(),
         ...(diagnosticSmallSidedBodyFeedbackEnabled?{

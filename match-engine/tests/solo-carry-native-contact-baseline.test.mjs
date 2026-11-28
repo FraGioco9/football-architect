@@ -13,7 +13,7 @@ test('#628 real native two-shoe baseline vs intent: 5s/10s control and loss evid
  for(const mode of ['native','intent']){
   for(const side of ['home','away']){
    const lab=createControlledActionLab(R,'carry-solo',{
-    shotSide:side,variantIndex:3,carryRunwayStart:true,
+    shotSide:side,variantIndex:3,carryRunwayStart:true,historicalCarryPhysics:true,
     intentDrivenSoloCarry:mode==='intent',
     ...(mode==='intent'?{soloCarryLockedPhase:'sprint',
      soloCarryPlayerAttributes:{speed:50,agility:50,
