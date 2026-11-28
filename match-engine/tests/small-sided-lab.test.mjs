@@ -2161,6 +2161,11 @@ test('AERIAL-03 LABs use actual mirrored cross/chest and descending foot contact
  for(const id of ['chest-control','aerial-foot-control'])for(const side of ['home','away'])for(let variantIndex=0;variantIndex<30;variantIndex++){
   const lab=createControlledActionLab(R,id,{shotSide:side,variantIndex});
   try{
+   if(id==='aerial-foot-control'){
+    const setup=smallSidedSetup(id,side,INITIAL_PLAYERS,{variantIndex});
+    const dir=side==='home'?1:-1;
+    assert.ok(Math.hypot(dir*52.5-setup.ball.x,setup.ball.y)>30,'isolated reception starts outside shooting range');
+   }
    let hit=null;
    const trace={reachTicks:0,solverStarts:0,ambiguousStarts:0,exclusiveWithoutImpulse:0,firstStart:null};
    for(let tick=1;tick<=300;tick++){

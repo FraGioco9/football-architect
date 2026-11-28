@@ -338,7 +338,7 @@ export const SMALL_SIDED_LAB_SCENARIOS=freeze(definitions.map(s=>
 // Keep grounded baseline matrix stable; aerial fixtures have their own
 // contact-source assertions while sharing the same scenario registry.
 export const AERIAL_LAB_SCENARIOS=freeze([headerDefinition,chestDefinition,footDefinition,aerialDuelDefinition,loftedPassDefinition,volleyDefinition,highClaimDefinition,shortLoftDefinition,switchDefinition].map(d=>freeze({...d,mode:'situation',goal:'situation',
- initial:freeze({preset:d.id==='aerial-foot-control'?'drop':'roll',seed:'me-small-'+d.id+'-home',x:27,y:26,z:d.id==='aerial-foot-control'?1.6:0,vx:0,vy:0,vz:d.id==='aerial-foot-control'?-2:0}),
+ initial:freeze({preset:d.id==='aerial-foot-control'?'drop':'roll',seed:'me-small-'+d.id+'-home',x:d.id==='aerial-foot-control'?17:27,y:d.id==='aerial-foot-control'?0:26,z:d.id==='aerial-foot-control'?1.6:0,vx:0,vy:0,vz:d.id==='aerial-foot-control'?-2:0}),
  focus:freeze([...d.attackers.slice().sort((a,b)=>a-b).map(n=>'home-'+n),...(d.includeGoalkeeper?['away-1']:[]),...d.defenders.map(n=>'away-'+n)]),source:'original-rapier-selected-aerial-and-shoe-colliders',officialResult:false})));
 export function getSmallSidedScenario(id){
  const d=byId.get(id);
@@ -428,7 +428,9 @@ export function smallSidedSetup(id,side,canonicalPlayers,{
  if(id==='aerial-foot-control'){
   const random=seededGeometry(id,variantIndex);
   for(let attempt=0;attempt<96;attempt++){
-   const x=20+random()*10,y=-12+random()*24,gap=0.35+random()*0.12;
+   // Isolate receiving well outside the live shooting lane. Keep the
+   // same seeded relative geometry and unrestricted shared action policy.
+   const x=10+random()*10,y=-12+random()*24,gap=0.35+random()*0.12;
    const staged=stage(new Map([[side+'-10',[x,y]]]));
    if(!physicallySeparated(staged,1.15))continue;
    return freeze({id,side,opponent,variantIndex,activeIds,staged,aerialSurface:'foot',
