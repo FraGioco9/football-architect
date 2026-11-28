@@ -55,10 +55,6 @@ export function eligibleLiveKeeperSave(player,ballPosition,ballVelocity,attackPo
 export function usesNativeLiveActionRanking({nativeActionPolicy=false,pairedPhysicalSource=false}={}){
  return nativeActionPolicy||pairedPhysicalSource;
 }
-// Availability is decided before ranking; contact authority stays native.
-export function nativeCarryImpulseAvailable(proposal){
- return proposal!==null&&Number.isFinite(proposal?.magnitudeNs)&&proposal.magnitudeNs>=0.025;
-}
 export const UNIFORM_ACTION_CONTEXT_VERSION='me-pb-55-contextual-lane-observation-v1';
 const finite=n=>typeof n==='number'&&Number.isFinite(n);
 const ids=Object.freeze(INITIAL_PLAYERS.map(p=>p.id));
@@ -116,15 +112,7 @@ export function rankNativeKeeperGoalLanes(ball,team,players,attackPolarity=1){
  const lane=distance<=26?candidates.find(c=>c.fieldClearance>=SHOT_LANE_MIN_CLEARANCE_M&&c.keeperClearance>=minimum)??null:null;
  return Object.freeze({lane,best:candidates[0],minimum,distance});
 }
-// Current participants prefer the best eligible keeper lane. The ordinary
-// long-range fallback retains existing outfield and distance guards.
-export function chooseNativeGroundShotLane(ball,team,players,attackPolarity=1){
- const goalX=attackDirection(team,attackPolarity)*52.5;
- const ordinary=chooseLiveShotLane(ball,goalX,team,players);
- const ranked=rankNativeKeeperGoalLanes(ball,team,players,attackPolarity);
- return Object.freeze({lane:ranked?.lane??ordinary,minimum:ranked?.lane?ranked.minimum:undefined});
-}
-// Historical isolated decision adapter; paired play uses common ranking.
+// Historical unpaired adapter; current paired exercises use live ranking.
 export function chooseKeeperDuelAttackIntent(ball,velocity,team,keeper,allowedFundamentals=null,attackPolarity=1){
  const mask=createNativeFundamentalMask(allowedFundamentals);
  if(!keeper||!['home','away'].includes(team)||![ball.x,ball.y,velocity.x,velocity.y,keeper.x,keeper.y].every(finite))return null;
@@ -477,10 +465,10 @@ export function selectUniformAutonomousContactAction({
   const duelIntent=activeKeeperAttacker?chooseKeeperDuelAttackIntent(ballPosition,ballVelocity,player.team,
    actors.find(p=>p.team!==player.team&&p.role==='goalkeeper'),mask,attackPolarity):null;
   const blockLane=blockContext&&!blockContext.shotTaken&&pairedPhysicalSource&&shotRange&&permits('shot')?chooseLiveShotLane(ballPosition,goalX,player.team,actors,{minimumClearanceM:0,aimY:ballPosition.y>=0?2.65:-2.65}):null;
-  const nativeShot=usesNativeLiveActionRanking({nativeActionPolicy,pairedPhysicalSource})&&!blockContext&&!activeKeeperAttacker&&permits('shot')&&shotRange?chooseNativeGroundShotLane(ballPosition,player.team,actors,attackPolarity):null;
+  const keeperLanes=usesNativeLiveActionRanking({nativeActionPolicy,pairedPhysicalSource})&&!blockContext&&!activeKeeperAttacker&&permits('shot')&&shotRange?rankNativeKeeperGoalLanes(ballPosition,player.team,actors,attackPolarity):null;
   const ordinaryLane=permits('shot')&&shotRange?chooseLiveShotLane(ballPosition,goalX,player.team,actors):null;
-  const chosenShotLane=activeKeeperAttacker?(duelIntent?.action==='shot'?duelIntent.lane:null):nativeShot?.lane??ordinaryLane;
-  const keeperMinimum=activeKeeperAttacker?duelIntent?.minimum:nativeShot?.minimum;
+  const chosenShotLane=activeKeeperAttacker?(duelIntent?.action==='shot'?duelIntent.lane:null):ordinaryLane??keeperLanes?.lane??null;
+  const keeperMinimum=activeKeeperAttacker?duelIntent?.minimum:!ordinaryLane&&keeperLanes?.lane?keeperLanes.minimum:undefined;
   const shotLaneM=chosenShotLane?.clearance??
    lineClearance(ballPosition,goalTarget,player.team,actors);
   const collective=nativeActionPolicy;
@@ -501,16 +489,11 @@ export function selectUniformAutonomousContactAction({
    player.role!=='goalkeeper'&&!defensiveAttempt&&!collectiveTouch;
   const contextualRecipient=contextualAttacker&&permits('pass')&&requiredLoftedProfile===null?
    chooseRecipient(player,ballPosition,actors,attackPolarity):null;
-  const carryGeometryPossible=contextualAttacker&&permits('carry')&&allowPhysicalCarry&&
+  const carryPossible=contextualAttacker&&permits('carry')&&allowPhysicalCarry&&
    Math.abs(ballPosition.y)<=20&&
    (collective||attack*ballPosition.x>=-30)&&attack*ballPosition.x<=45&&
    Math.abs(toGoal)>5&&
    Math.hypot(ballVelocity.x,ballVelocity.y)<=8;
-  const nativeCarryProposal=()=>planNativeCarryTouch({attacker:player,attackingSide:player.team,
-   defender:nearestNativeCarryOpponent(player,ballPosition,actors),ballPosition,ballVelocity,attackPolarity,
-   phase:playerFrame.smallSidedMovementDecisions?.find(d=>d.id===id&&d.tick===tick&&d.kind==='carry-ball')?.carryPhase??null,...(nativeCarryParameters??{})});
-  const contextualCarryProposal=carryGeometryPossible&&liveRanking?nativeCarryProposal():null;
-  const carryPossible=carryGeometryPossible&&(!liveRanking||nativeCarryImpulseAvailable(contextualCarryProposal));
   const contextualChoice=contextualAttacker?
    (liveRanking?chooseNativeFootballAction:chooseSmallSidedContextAction)({
     ...(!liveRanking?{situationId:smallSidedDecisionContext.situationId,variantIndex:smallSidedDecisionContext.variantIndex,tick,actorId:id,team:player.team,attackingSide:smallSidedDecisionContext.attackingSide}:{}),
@@ -650,7 +633,7 @@ export function selectUniformAutonomousContactAction({
     rule=nearestOpponentM<IMMEDIATE_PRESSURE_M?
      'pressured-short-ground-touch':'open-lane-short-ground-touch';
    }else{
-    if(!permits('clearance')||carryGeometryPossible&&liveRanking&&!carryPossible)continue;
+    if(!permits('clearance'))continue;
     action='clearance';dx=attack*25;
     dy=-ballPosition.y*0.45;vertical=0.32;
     rule=shotRange?'blocked-shot-no-safe-pass':
@@ -664,8 +647,10 @@ export function selectUniformAutonomousContactAction({
   if(!permits(action))continue;
   let nativeCarryTouch=null;
   if((collective||pairedPhysicalSource&&!activeKeeperAttacker)&&action==='carry'){
-   nativeCarryTouch=contextualCarryProposal??nativeCarryProposal();
-   if(!nativeCarryImpulseAvailable(nativeCarryTouch))continue;
+   const nearest=nearestNativeCarryOpponent(player,ballPosition,actors);
+   nativeCarryTouch=planNativeCarryTouch({attacker:player,attackingSide:player.team,defender:nearest,ballPosition,ballVelocity,attackPolarity,
+    phase:playerFrame.smallSidedMovementDecisions?.find(d=>d.id===id&&d.tick===tick&&d.kind==='carry-ball')?.carryPhase??null,...(nativeCarryParameters??{})});
+   if(nativeCarryTouch.magnitudeNs<0.025)continue;
    dx=nativeCarryTouch.dx;dy=nativeCarryTouch.dy;
    rule='native-live-opponent-ground-touch';
   }

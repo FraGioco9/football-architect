@@ -22,6 +22,9 @@ export function nativeLabFundamentalMask({id=null,collective=false,interceptionS
  if(id==='volley-solo')return createNativeFundamentalMask(['cross','volley']);
  if(['lofted-pass','lofted-short','lofted-switch'].includes(id))return createNativeFundamentalMask(['pass','reception','aerial-control']);
  if(['keeper-high-cross','keeper-high-intercept'].includes(id))return createNativeFundamentalMask(['cross','save','pass','clearance']);
+ // A no-goalkeeper dribbling duel uses the common collective engine,
+ // but may only perform the duel fundamentals, not unrestricted football.
+ if(collective&&id==='dribble-1v1')return createNativeDuelFundamentalMask('mixed');
  if(collective)return createNativeFundamentalMask();
  if(interceptionStart)return createNativeFundamentalMask(['pass','interception','carry','reception']);
  if(blockStart)return createNativeFundamentalMask(['shot','save','block']);

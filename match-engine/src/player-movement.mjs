@@ -1,5 +1,5 @@
 import {attackDirection,validateAttackPolarity,nativeHalfFormationReady} from './match-directions.mjs';
-import {directedDribbleApproachTarget,planNativeOpposedCarryMotion,planDribbleDefender,resolveDuelActors,isDuelGettingUp,chooseDribbleDefensiveTouch,planShoulderBalanceRecovery,isShoulderCollecting,isSlideCollecting,routeDuelAroundOpponent,planDuelRecoveryApproach,planLooseDuelApproaches,planDuelPostContactAlignment,planDribbleContactRelease,dribbleReleaseApproach,planNativeDefensiveIntervention,isNativeRecoveryLocked} from './isolated-dribble-touches.mjs';
+import {directedDribbleApproachTarget,planDribbleDefender,resolveDuelActors,isDuelGettingUp,chooseDribbleDefensiveTouch,planShoulderBalanceRecovery,isShoulderCollecting,isSlideCollecting,routeDuelAroundOpponent,planDuelRecoveryApproach,planLooseDuelApproaches,planDuelPostContactAlignment,planDribbleContactRelease,dribbleReleaseApproach,planNativeDefensiveIntervention,isNativeRecoveryLocked} from './isolated-dribble-touches.mjs';
 import {createNativeFundamentalMask,nativeLabFundamentalMask,nativeDefensiveInterventionAllowed,nativePermittedAerialSurfaces,NATIVE_AERIAL_APPROACH_HEIGHTS,selectNativeCrossProfile,nativeCrossTargetHeight,nativeLabAerialSequence} from './native-fundamental-mask.mjs';
 import {advanceSlidingTackle,planSlidingTackle,SLIDE_MAX_SPEED_MPS,SLIDE_ACCEL_MPS2,SLIDE_BRAKE_MPS2} from './sliding-tackle.mjs';
 // ME-PLAYER-01/24 — autonomous movement and current handoff-corridor safety.
@@ -2738,7 +2738,7 @@ export function createPlayerMovement(options={}){
   nativeSlides=Object.freeze(nextNativeSlides);nativeShoulders=Object.freeze(nextNativeShoulders);
   // Resolve carry only after higher-priority live movement decisions. Its
   // target, limits and emitted phase must all describe the same decision.
-  const openCarryMotion={},opposedCarryMotion={};
+  const openCarryMotion={};
   if(sprintPursuitRunner&&options.researchHistoricalCarryMotion!==true){
    // Same proposal as an unopposed collective carrier. Explicit research
    // can lock pace or vary lead; no ordinary LAB-specific movement.
@@ -2758,10 +2758,6 @@ export function createPlayerMovement(options={}){
     const motion=planNativeOpenCarryMotion({player:p,ball,velocity:realBallVelocity,opponent,attackPolarity,
      previousPhase:previousNativeCarryPhase(lastSmallSidedMovementDecisions,p.id,tick)});
     if(motion)openCarryMotion[p.id]=motion;
-    else{
-     const opposed=planNativeOpposedCarryMotion({player:p,ball,velocity:realBallVelocity,opponent,attackPolarity});
-     if(opposed)opposedCarryMotion[p.id]=opposed;
-    }
    }
   }
   nativeAttackPolarity=attackPolarity;
@@ -2870,7 +2866,6 @@ export function createPlayerMovement(options={}){
     }
     if(nativeDeliveryPlans[p.id]?.plan?.target)return nativeDeliveryPlans[p.id].plan.target;
     if(openCarryMotion[p.id])return openCarryMotion[p.id].target;
-     if(opposedCarryMotion[p.id])return opposedCarryMotion[p.id].target;
     if(collectiveApproaches?.[p.id])return collectiveApproaches[p.id].target;
     const attack=smallSided.side==='home'?1:-1;
     if(duelActors){
@@ -3238,7 +3233,7 @@ export function createPlayerMovement(options={}){
      ...(isShoulderCollecting(duelTransition,p.id,tick+1)?{shoulderCollection:true}:{}),
      ...(defensiveDecision?.actorId===p.id?{defensiveIntervention: defensiveDecision.kind}:{}),
      ...(duelAlignment?{postContactAlignment:true,alignmentDetour:duelAlignment[p.id].detour&&!directedContactRelease&&duelSlide?.actorId!==p.id}:{}),
-     ...(smallSided.id==='carry-solo'?{carryPhase:currentSoloCarryPhase.phase}:openCarryMotion[p.id]?{carryPhase:openCarryMotion[p.id].phase}:opposedCarryMotion[p.id]?{carryPhase:opposedCarryMotion[p.id].phase}:
+     ...(smallSided.id==='carry-solo'?{carryPhase:currentSoloCarryPhase.phase}:openCarryMotion[p.id]?{carryPhase:openCarryMotion[p.id].phase}:
       !collectiveApproaches&&smallSided.id==='dribble-1v1'&&realBallVelocity&&nativeCarryMotionHasPriority({movementKind:kind,recoveryLocked:isDuelGettingUp(duelTransition,p.id,tick+1),balance:shoulderBalance[p.id],slide:duelSlide?.actorId===p.id?duelSlide:null,shoulder:duelShoulder?.actorId===p.id?duelShoulder:null,deliveryPlan:duelInterception?.actorId===p.id?duelInterception:null})?
        {carryPhase:selectNativeOpenCarryPhase({playerSpeedMps:Math.hypot(p.vx,p.vy),ballSpeedMps:Math.hypot(realBallVelocity.x,realBallVelocity.y),ballGapM:Math.hypot(p.x-ball.x,p.y-ball.y)})}:{}),
      target:Object.freeze({x:target.x,y:target.y}),

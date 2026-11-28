@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {INITIAL_PLAYERS,PLAYER_VERSION} from '../src/player-movement.mjs';
 import {selectUniformAutonomousContactAction,UNIFORM_ACTION_CONTEXT_VERSION,
- SHOT_MAX_RANGE_M,SHOT_HALF_GOAL_AIM_Y_M,usesNativeLiveActionRanking,chooseLiveShotLane,chooseRecipient,rankNativeKeeperGoalLanes,nativeCarryImpulseAvailable,chooseNativeGroundShotLane}
+ SHOT_MAX_RANGE_M,SHOT_HALF_GOAL_AIM_Y_M,usesNativeLiveActionRanking,chooseLiveShotLane,chooseRecipient,rankNativeKeeperGoalLanes}
  from '../src/player-ball-uniform-autonomous-action.mjs';
 import {createProvisionalActionOutcomeObserver,
  PROVISIONAL_ACTION_OBSERVATION_TICKS}
@@ -698,28 +698,6 @@ test('ME-01-QA U-02c2b: keeper lanes preserve outfield blocking constraints',()=
  }
 });
 
-test('ME-01-QA U-04d: reject non-action Carry before ranking a valid native shot',()=>{
- for(const team of ['home','away']){
-  const dir=team==='home'?1:-1,actor=team+'-10',keeper=(team==='home'?'away':'home')+'-1';
-  const playerFrame=mover({[actor]:{x:dir*29.7,y:0,vx:0,vy:0},[keeper]:{x:dir*50,y:4}});
-  const source={tick:1,contactStarted:[actor],contactActive:[actor],playerFrame,
-   ballPosition:{x:dir*30,y:0,z:.11},ballVelocity:{x:dir*4,y:0,z:0},ballRadiusM:.11,
-   activePlayerIds:[actor,keeper],allowPhysicalCarry:true,pairedPhysicalSource:true};
-  for(const context of [{smallSidedDecisionContext:{situationId:'keeper-1v1',variantIndex:2,attackingSide:team}},
-   {nativeActionPolicy:true,collectiveControl:{tick:0,kind:'loose',playerId:null,officialPossession:false}}]){
-   const input={...source,...context,allowedFundamentals:['carry','shot']};
-   const shot=selectUniformAutonomousContactAction(input);
-   assert.equal(shot?.action,'shot');
-   assert.equal(shot.decisionContext.smallSidedChoice.context.canCarry,false);
-   assert.equal(shot.decisionContext.smallSidedChoice.selected,'shot');
-   assert.equal(selectUniformAutonomousContactAction({...input,allowedFundamentals:['carry']}),null);
-   assert.equal(selectUniformAutonomousContactAction({...input,contactStarted:[],contactActive:[]}),null);
-  }
- }
- for(const [p,expected] of [[null,false],[{magnitudeNs:0},false],[{magnitudeNs:.024},false],[{magnitudeNs:.025},true],[{magnitudeNs:.42},true],[{magnitudeNs:NaN},false]])
-  assert.equal(nativeCarryImpulseAvailable(p),expected);
-});
-
 test('ME-01-QA U-04d2: paired keeper exercise and open play share the physical action proposal',()=>{
  for(const team of ['home','away']){
   const dir=team==='home'?1:-1,actor=team+'-10',keeper=(team==='home'?'away':'home')+'-1';
@@ -736,21 +714,6 @@ test('ME-01-QA U-04d2: paired keeper exercise and open play share the physical a
    assert.deepEqual(exercise?.decisionContext.nativeCarryTouch,open?.decisionContext.nativeCarryTouch);
    if(exercise)assert.equal(exercise.officialMatchAction,false);
    assert.equal(selectUniformAutonomousContactAction({...source,keeperSingleShotSide:team,contactStarted:[],contactActive:[]}),null);
-  }
- }
-});
-test('ME-01-QA U-04d2: common current shot lanes maximize real clearance and preserve blockers',()=>{
- for(const team of ['home','away'])for(const polarity of [1,-1]){
-  const dir=(team==='home'?1:-1)*polarity,other=team==='home'?'away':'home';
-  for(const x of [20,30,42,48])for(const y of [-3,0,3]){
-   const ball={x:dir*x,y},keeper={id:other+'-1',team:other,role:'goalkeeper',x:dir*50,y:1};
-   const result=chooseNativeGroundShotLane(ball,team,[keeper],polarity);
-   const rank=rankNativeKeeperGoalLanes(ball,team,[keeper],polarity);
-   const ordinary=chooseLiveShotLane(ball,dir*52.5,team,[keeper]);
-   assert.deepEqual(result.lane,rank.lane??ordinary);
-   if(rank.lane){assert.equal(result.minimum,rank.minimum);assert.ok(result.lane.clearance>=(ordinary?.clearance??0)-1e-9);}
-   const blocked=chooseNativeGroundShotLane(ball,team,[keeper,{id:other+'-2',team:other,role:'defender',x:ball.x,y:ball.y}],polarity);
-   assert.equal(blocked.lane,null);
   }
  }
 });
