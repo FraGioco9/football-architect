@@ -11,7 +11,7 @@ import {loadApprovedSnapshot} from './approved-season-one.ts';
 import {annualRewardHoldId} from './reward-calendar-gate.ts';
 import {rewardCalendarBudget} from './reward-settlement-plan.mjs';
 
-type Root={version:string;generation:string;reward_version:string;annual_rewards_arc:number;free_reserve_arc:number;posting_enabled:number;funded_clubs:number;completed:number};
+type Root={version:string;generation:string;reward_version:string;annual_rewards_arc:number;free_reserve_arc:number;posting_enabled:number;funded_clubs:number;expected_funded_clubs:number;completed:number};
 type Policy={version:string;approved_by:string;genesis_reserve_arc:number;issuance_limit_arc:number;club_opening_json:string;rules_json:string};
 const fail=()=>new ApiError(409,'economic_genesis_not_ready');
 function authorized(access:readonly Statement[]){if(!access.length)throw new ApiError(403,'economic_authority_required');}
@@ -44,7 +44,7 @@ async function readRoot(db:Database,access:readonly Statement[]){
  return (r.at(-1)!.results[0]??null) as Root|null;
 }
 export function requireEconomicGenesisGuard(db:Database,generation:string):Statement{
- return economicAssert(db,"SELECT 1 FROM economic_genesis_status g JOIN world_state w ON w.id=1 AND w.generation=g.generation WHERE g.generation=? AND g.completed=1 AND g.funded_clubs=320 AND g.posting_enabled=1 AND g.reward_version=? AND g.annual_rewards_arc=? AND (w.season_number<>0 OR EXISTS(SELECT 1 FROM economic_open_holds h WHERE h.id=? AND h.remaining_arc=g.annual_rewards_arc))",[generation,budget.version,budget.annual,annualRewardHoldId(generation,1)]);
+ return economicAssert(db,"SELECT 1 FROM economic_genesis_status g JOIN world_state w ON w.id=1 AND w.generation=g.generation WHERE g.generation=? AND g.completed=1 AND g.funded_clubs=g.expected_funded_clubs AND g.posting_enabled=1 AND g.reward_version=? AND g.annual_rewards_arc=? AND (w.season_number<>0 OR EXISTS(SELECT 1 FROM economic_open_holds h WHERE h.id=? AND h.remaining_arc=g.annual_rewards_arc))",[generation,budget.version,budget.annual,annualRewardHoldId(generation,1)]);
 }
 /** For #801/#797: no wage calculation, no optimistic Rewards counted as spendable. */
 export async function readGenesisClubFunding(db:Database,clubKey:string,generation:string,access:readonly Statement[]){

@@ -266,6 +266,34 @@ test('economic inheritance walks merged main trees and rejects changed consumers
    actions:{listWorkflowRuns:'runs',listJobsForWorkflowRun:'jobs'}},paginate:async method=>method==='runs'?[receipt]:proof};
   const check=()=>economicSource({github,owner:'owner',repo:'repo',pr});
   assert.equal((await check()).source,sourceSha);
+  // An internal stacked PR must prove the entire main-to-head diff,
+  // not just its immediate parent diff, using the same executed receipt.
+  git('update-ref','refs/remotes/origin/main',base);
+  github.rest.repos={getBranch:async()=>({data:{commit:{sha:base}}})};
+  const stackParent=head;
+  put('match-engine/src/player-movement.mjs','export const speed=7;');
+  const stackHead=commit('stacked isolated lab');
+  const stacked={base:{ref:'feat/parent',sha:stackParent,repo:identity},head:{sha:stackHead,repo:identity}};
+  const stackedCheck=()=>economicSource({github,owner:'owner',repo:'repo',pr:stacked});
+  const inherited=await stackedCheck();
+  assert.equal(inherited.source,sourceSha);
+  assert.equal(inherited.base,stackParent);
+  assert.equal(inherited.mainBase,base);
+  assert.equal(inherited.mode,'match-engine');
+  operator.steps.at(-1).conclusion='skipped';assert.equal(await stackedCheck(),null);operator.steps.at(-1).conclusion='success';
+  stacked.base.repo={full_name:'foreign/repo'};assert.equal(await stackedCheck(),null);stacked.base.repo=identity;
+  github.rest.repos.getBranch=async()=>({data:{commit:{sha:parent}}});
+  assert.equal(await stackedCheck(),null);
+  github.rest.repos.getBranch=async()=>({data:{commit:{sha:base}}});
+  // Parent contains an economic change; the child's isolated diff cannot
+  // launder it. Main-to-candidate must deny the inherited rehearsal.
+  git('checkout','--detach',base);
+  put('backend/src/economy.ts','export const balance=2;');const unsafeParent=commit('economic parent');
+  put('match-engine/src/core.mjs','export const gravity=11;');const unsafeHead=commit('isolated child');
+  stacked.base.sha=unsafeParent;stacked.head.sha=unsafeHead;
+  assert.equal(await stackedCheck(),null);
+  git('checkout','--detach',head);
+  // Continue the original direct-main negative cases at their exact HEAD.
   operator.steps.at(-1).conclusion='skipped';assert.equal(await check(),null);operator.steps.at(-1).conclusion='success';
   commitData.tree.sha=parent;assert.equal(await check(),null);commitData.tree.sha=tree;
   pr.head.sha=base;assert.equal(await check(),null);pr.head.sha=head;
@@ -364,4 +392,22 @@ test('merged Admin history requires original executed receipt and independent FU
  assert.equal(economicRepairShape(base,files),false);
  assert.equal(economicRepairShape(economicRepairAnchor,[...files,{filename:'backend/src/economy.ts',status:'modified'}]),false);
  assert.equal(economicRepairShape(economicRepairAnchor,files.map((f,i)=>i?f:{...f,status:'renamed'})),false);
+});
+
+
+test('stacked policy transition is bounded to six reviewed files and exact workflow guard',async()=>{
+ const {stackedRepairAnchor,stackedRepairShape,stackedRepairPatch}=await import('../tools/ci-full-evidence.cjs');
+ const files=['tools/ci-match-engine.cjs','tools/ci-full-evidence.cjs','tests/ci-opt-04-05.test.mjs','tests/ci-opt-02-workflow-contract.test.mjs','.github/workflows/ci-opt-03-full-gate.yml','.github/workflows/admin-world-checks.yml'].map(filename=>({filename,status:'modified'}));
+ assert.equal(stackedRepairShape(stackedRepairAnchor,files),true);
+ assert.equal(stackedRepairShape('a'.repeat(40),files),false);
+ assert.equal(stackedRepairShape(stackedRepairAnchor,[...files,{filename:'backend/src/economy.ts',status:'modified'}]),false);
+ assert.equal(stackedRepairShape(stackedRepairAnchor,files.map((f,i)=>i?f:{...f,status:'renamed'})),false);
+ const marker='$'+'{{';
+ files.at(-1).patch=[
+ '-        if: '+marker+" github.event.pull_request.base.ref == 'main' }}",
+ '+        if: '+marker+' github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.base.repo.full_name == github.repository }}',
+ '+          if [ "$PR_HEAD_REF" = ci/stacked-economic-evidence ] && [ "'+marker+' steps.economic.outputs.mode }}" != economic-only ]; then',
+ "+            echo 'BLOCKED: stacked policy transition lacks certified economic evidence.' >&2",'+            exit 1','+          fi'].join('\n');
+ assert.equal(stackedRepairPatch(files),true);
+ files.at(-1).patch+='\n+        run: echo unsafe';assert.equal(stackedRepairPatch(files),false);
 });
