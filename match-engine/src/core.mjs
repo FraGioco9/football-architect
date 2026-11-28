@@ -1089,7 +1089,11 @@ export function createEngine(RAPIER, input = {}, {
      const exclusive=nativeGroundRestartContactReady({mask:restartMask,kind:placement.kind,tick,takerId:id,foot,solver,exclusive:hasExclusiveNativeShoeStart(foot,id),otherBody});
      if(!nativeRestartAllowed(restartMask,placement.kind))throw new TypeError('Native restart not permitted');
      if(placement.kind==='throw-in'){
-      const take=nativeThrowHands.observe(tick,foot,smallBodyGuard.snapshot().lowerLegBallContacts);
+      // The hands are the exclusive source of a throw. Include every
+      // other active native surface, not just the lower-leg subset.
+      const competing=[...restartBody.lowerLegBallContacts,...(restartBody.headBallContacts??[]),...(restartBody.aerialControlContacts??[]),
+       ...keeperSnapshots().filter(k=>k.contact||k.catchState?.active||k.distribution?.tick===tick||k.boundedRelease?.tick===tick).map(k=>k.keeperId)];
+      const take=nativeThrowHands.observe(tick,foot,competing);
       if(take){
        nativeRestartTake=Object.freeze({...take,ball:snapshot().ball});
        nativeRestartPending=null;

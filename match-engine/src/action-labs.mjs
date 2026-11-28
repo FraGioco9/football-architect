@@ -81,6 +81,7 @@ export function createNativeFullFieldSession(RAPIER,{side='home',variantIndex=0,
    else if(playedTicks===researchHalfTicks&&!secondHalfStarted&&phase!=='dead-ball-placed-awaiting-native-take')phase='half-time-awaiting-native-restart';
    latest=Object.freeze({
     tick:physics.tick,ball:physics.ball,players:frame.players,starts:foot.started,action,
+    contactEvidence:physics.tick>0?Object.freeze({foot,solver:engine.footContactSolverSnapshot()}):null,
     control:engine.collectiveControlSnapshot(),keepers,reception:engine.latestLabReceptionSnapshot(),
     body:engine.smallSidedBodyGuardSnapshot(),decisions:frame.smallSidedMovementDecisions,
     activeIds:fixture.activeIds,phase,playedTicks,
@@ -125,7 +126,7 @@ export function createNativeFullFieldSession(RAPIER,{side='home',variantIndex=0,
    phase='dead-ball-placed-awaiting-native-take';
    latest=Object.freeze({...latest,ball:engine.snapshot().ball,
     control:engine.collectiveControlSnapshot(),keepers:engine.nativeKeeperSnapshots(),
-    action:null,starts:Object.freeze([]),reception:null,phase,
+    action:null,starts:Object.freeze([]),contactEvidence:null,reception:null,phase,
     clock:Object.freeze({...latest.clock,phase}),referee,timeline,
     provisionalScore:timeline.provisionalScore,physicalRestart:placement,
     pendingRestart:event.restart});
@@ -138,7 +139,7 @@ export function createNativeFullFieldSession(RAPIER,{side='home',variantIndex=0,
    phase='dead-ball-placed-awaiting-native-take';
    latest=Object.freeze({...latest,ball:engine.snapshot().ball,
     control:engine.collectiveControlSnapshot(),keepers:engine.nativeKeeperSnapshots(),
-    action:null,starts:Object.freeze([]),reception:null,phase,
+    action:null,starts:Object.freeze([]),contactEvidence:null,reception:null,phase,
     clock:Object.freeze({...latest.clock,phase}),referee:engine.nativeMatchRefereeSnapshot(),timeline,
     physicalRestart:placement,pendingRestart:null,attackPolarity:engine.nativeAttackPolaritySnapshot()});
    return latest;
