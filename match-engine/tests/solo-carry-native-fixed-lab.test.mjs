@@ -4,6 +4,7 @@ import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {uniformSoloCarryAttributes} from '../src/solo-carry-attribute-calibration.mjs';
+import {advanceD01LiveShoeGait,selectNativeCarryStridePhase} from '../src/rapier-foot-contact-bridge.mjs';
 import {planNativeCarryTouch} from '../src/isolated-dribble-touches.mjs';
 import {planNativeCarryPhaseImpulse,advanceSoloCarryPhase,nativeReferenceCarryKinematics,planNativeOpenCarryMotion,hasNativeOpenCarrySpace,nearestNativeCarryOpponent,nativeCarryMotionHasPriority} from '../src/solo-carry-phases.mjs';
 import {chooseNativeFixedCarryImpulse}
@@ -659,5 +660,29 @@ test('ME-01-QA U-01C-R2: shared active-opponent context and higher-priority moti
    assert.equal(nativeCarryMotionHasPriority({movementKind:kind}),false);
   for(const blocked of [{restartPlacement:{}},{recoveryLocked:true},{balance:{}},{slide:{phase:'slide'}},{slide:{phase:'recovery'}},{shoulder:{}},{deliveryPlan:{kind:'aerial-approach'}}])
    assert.equal(nativeCarryMotionHasPriority({...eligible,...blocked}),false);
+ }
+});
+
+test('ME-01-QA U-01D: common carry gait and same-tick native phase eligibility',()=>{
+ for(const team of ['home','away'])for(const polarity of [1,-1])for(const phase of ['control','moderate','sprint']){
+  const dir=(team==='home'?1:-1)*polarity;
+  const player={id:team+'-10',team,role:'forward',x:0,y:0,vx:dir*3,vy:0,facingRad:dir===1?0:Math.PI};
+  const ball={position:{x:dir*.55,y:.05,z:.11},velocity:{x:dir*2,y:0,z:0}};
+  let a=0,b=0;
+  for(let tick=1;tick<=120;tick++){
+   const solo=advanceD01LiveShoeGait({phaseRad:a,player,ball,tick,solo:true,carryPhase:phase});
+   const native=advanceD01LiveShoeGait({phaseRad:b,player,ball,tick,carryPhase:phase});
+   assert.deepEqual(native,solo);
+   assert.equal(native.nativeShoeEventCreated,false);
+   assert.equal(native.ballImpulseCreated,false);
+   a=solo.phaseRad;b=native.phaseRad;
+  }
+  const active=new Set([player.id]),d={id:player.id,tick:4,kind:'carry-ball',carryPhase:phase};
+  assert.equal(selectNativeCarryStridePhase(player,[d],4,active),phase);
+  assert.equal(selectNativeCarryStridePhase(player,[d],5,active),null);
+  assert.equal(selectNativeCarryStridePhase(player,[{...d,kind:'getting-up'}],4,active),null);
+  assert.equal(selectNativeCarryStridePhase(player,[{...d,carryPhase:'invalid'}],4,active),null);
+  assert.equal(selectNativeCarryStridePhase(player,[d],4,new Set()),null);
+  assert.equal(selectNativeCarryStridePhase({...player,role:'goalkeeper'},[d],4,active),null);
  }
 });

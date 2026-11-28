@@ -1,7 +1,7 @@
 // #624 - opt-in private 22-shoe Rapier bridge for the EXISTING ball world.
 // This module creates no world, assigns no player movement and never kicks.
 import {INITIAL_PLAYERS} from './player-movement.mjs';
-import {soloCarryPhaseConfiguration} from './solo-carry-phases.mjs';
+import {soloCarryPhaseConfiguration,SOLO_CARRY_PHASES} from './solo-carry-phases.mjs';
 import {FOOT_CONTACT_VERSION,FOOT_CONTACT_HALF_LENGTH_M,
  FOOT_CONTACT_FORWARD_OFFSET_M,
  FOOT_CONTACT_HALF_WIDTH_M,FOOT_CONTACT_HALF_HEIGHT_M,
@@ -41,9 +41,9 @@ const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
   const ballForwardMps=ball.velocity.x*cos+ball.velocity.y*sin;
   // Do not increase the fixed mechanical frequency blindly. Respond smoothly
   // to REAL observed speed and preserve a true full release stroke.
-  const cue=solo&&carryPhase!==null?
+  const cue=carryPhase!==null?
    soloCarryPhaseConfiguration(carryPhase):null;
-  const baseFrequencyHz=solo?
+  const baseFrequencyHz=solo||cue?
    (cue?cue.shoeFrequencyBaseHz+cue.shoeFrequencySpeedHz*
     gaitClamp(speedMps/4,0,1):1.35+0.35*gaitClamp(speedMps/4,0,1)):
    2.45+0.25*gaitClamp(speedMps/4,0,1);
@@ -57,7 +57,7 @@ const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
   // reduces missed shoes; backing stroke remains unchanged for native END.
   const approachM=gaitClamp((aheadM-0.53)*0.40,0,0.055)*
    Math.max(0,stroke);
-  const forwardM=(solo?(cue?.shoeForwardStrokeM??0.075):0.105)*stroke+
+  const forwardM=(solo||cue?(cue?.shoeForwardStrokeM??0.075):0.105)*stroke+
    approachM;
   const sideM=gaitClamp(lateralM*0.20,-0.03,0.03)*
    Math.max(0,stroke);
@@ -168,6 +168,14 @@ export function soloCarryTwoFootPositions(player,gait=null,{
  });
 }
 
+// Native pace is selected by the same-tick common movement policy, not a
+// LAB identity, possession award, or shoe event.
+export function selectNativeCarryStridePhase(player,decisions,tick,activeIds){
+ if(player.role==='goalkeeper'||!activeIds.has(player.id))return null;
+ const d=decisions?.find(d=>d.id===player.id&&d.tick===tick&&d.kind==='carry-ball');
+ return SOLO_CARRY_PHASES.includes(d?.carryPhase)?d.carryPhase:null;
+}
+
 export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  initialPlayers=INITIAL_PLAYERS,{sharedQueue=null,activePlayerIds=null,
  isolatedPhysicalBodies=false,isolatedGroundDribbleBallCentreZ=null,
@@ -175,7 +183,8 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  soloShoeLengthScale=1,soloRecoveryStepScale=1,
  soloSprintCadenceScale=1,soloSprintLateralTrackScale=1,
  soloSprintActiveFootReleaseM=0,intentDrivenSoloCarry=false,
- firstTimeShotReleaseId=null,sharedDuelStride=false,fullFieldNative=false}={}){
+ firstTimeShotReleaseId=null,sharedDuelStride=false,fullFieldNative=false,nativeCarryStride=false}={}){
+ if(typeof nativeCarryStride!=='boolean'||nativeCarryStride&&(!isolatedPhysicalBodies||activePlayerIds===null||dribbleAttackerId!==null||firstTimeShotReleaseId!==null))throw new TypeError('Native carry stride requires guarded open-play participants');
  if(typeof fullFieldNative!=='boolean'||fullFieldNative&&(activePlayerIds?.length!==22||!isolatedPhysicalBodies||isolatedGroundDribbleBallCentreZ!==null||sharedQueue!==null))throw new TypeError('Full field requires all 22 guarded physical shoe identities');
  if(firstTimeShotReleaseId!==null&&(
     activePlayerIds?.length!==1||activePlayerIds[0]!==firstTimeShotReleaseId||
@@ -331,6 +340,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  let actualShoeFeet=stagedFeet;
  let gaitPhaseRad=0,lastGaitFrequencyHz=null;
  const duelPhases=Object.fromEntries([...strideIds].map(id=>[id,0]));
+ const nativeStridePhases=new Map(),nativeStrideReturning=new Set();
  const shotReleaseIndex=firstTimeShotReleaseId===null?-1:
   initialPlayers.findIndex(p=>p.id===firstTimeShotReleaseId);
  let shotRelease=null,releasePreviousNativePose=null;
@@ -419,7 +429,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   // to the original physical 7m/s ceiling (one 60Hz tick = 0.1167m).
   // This is a real, continuous shoe pose: no new START/END, impulse, or ball
   // ownership is synthesized.
-  const newFeet=dribbleAttackerId===null?proposed:
+  let newFeet=dribbleAttackerId===null?proposed:
    Object.freeze(proposed.map((rawFoot,i)=>{
     if(!strideIds.has(initialPlayers[i].id))return rawFoot;
     const foot=limitSoloFootLateralMotion(rawFoot,actualShoeFeet[i]);
@@ -450,6 +460,26 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     y:prior.y+dy*ratio-
      FOOT_CONTACT_FORWARD_OFFSET_M*Math.sin(desired.facingRad)});
   };
+  // Carry uses the common phase cadence and stroke. The existing single
+  // collider remains authoritative in open play; returning to the normal
+  // pose uses the same continuous speed bound, never a teleport.
+  if(nativeCarryStride){
+   newFeet=Object.freeze(newFeet.map((foot,i)=>{
+    const p=playerFrame.players[i],phase=selectNativeCarryStridePhase(p,playerFrame.smallSidedMovementDecisions,nextTick,physicalIds);
+    if(phase===null&&!nativeStrideReturning.has(p.id))return foot;
+    let desired=foot;
+    if(phase!==null){
+     const g=advanceD01LiveShoeGait({phaseRad:nativeStridePhases.get(p.id)??0,player:p,ball:preStepBall,tick:nextTick,carryPhase:phase});
+     nativeStridePhases.set(p.id,g.phaseRad);
+     const c=Math.cos(p.facingRad),si=Math.sin(p.facingRad);
+     desired=Object.freeze({...foot,x:foot.x+g.forwardM*c-g.sideM*si,y:foot.y+g.forwardM*si+g.sideM*c});
+     nativeStrideReturning.add(p.id);
+    }
+    const actual=clampActualFoot(desired,actualShoeFeet[i]);
+    if(phase===null&&actual===desired){nativeStrideReturning.delete(p.id);nativeStridePhases.delete(p.id);}
+    return actual;
+   }));
+  }
   const rightFoot=rightDesired?
    clampActualFoot(rightDesired,actualRightFoot):null;
   const poses=newFeet.map(footProxyTransform);
