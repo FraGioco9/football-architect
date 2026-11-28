@@ -197,7 +197,9 @@ export function chooseRecipient(actor,ball,players,attackPolarity=1){
 // AERIAL-06: a real raised-foot receiving contact may become a first-time
 // shot if live geometry permits. This is only a decision; the private
 // executor is the sole authority for the same-tick physical impulse.
-export function chooseNativeVolleyIntent(actor,ball,incoming,players,attackPolarity=1){
+export function chooseNativeVolleyIntent(actor,ball,incoming,players,attackPolarity=1,allowedFundamentals=null){
+ const mask=createNativeFundamentalMask(allowedFundamentals);
+ if(!nativeFundamentalAllowed(mask,'volley')||!nativeFundamentalAllowed(mask,'shot'))return null;
  validateAttackPolarity(attackPolarity);
  if(!actor||actor.role==='goalkeeper'||!Array.isArray(players)||!players.some(p=>p.id===actor.id&&p.team===actor.team)||
     ![actor.x,actor.y,ball?.x,ball?.y,ball?.z,incoming?.x,incoming?.y,incoming?.z].every(finite)||
@@ -214,23 +216,26 @@ export function chooseNativeVolleyIntent(actor,ball,incoming,players,attackPolar
   desiredVelocity:Object.freeze({x:dx/flightS,y:dy/flightS,z:(targetZ-ball.z)/flightS+4.905*flightS}),
   distanceM:distance,decisionOnly:true});
 }
-export function chooseNativeHeaderIntent(actor,ball,velocity,players,attackPolarity=1){
+export function chooseNativeHeaderIntent(actor,ball,velocity,players,attackPolarity=1,allowedFundamentals=null){
+ const mask=createNativeFundamentalMask(allowedFundamentals),permits=kind=>nativeFundamentalAllowed(mask,kind);
+ if(!permits('header'))return null;
  validateAttackPolarity(attackPolarity);
  if(!actor||actor.role==='goalkeeper'||!Array.isArray(players)||!players.some(p=>p.id===actor.id&&p.team===actor.team)||
     ![actor.x,actor.y,ball?.x,ball?.y,ball?.z,velocity?.x,velocity?.y,velocity?.z].every(finite)||
     ball.z<1.45||ball.z>2.55)return null;
  const dir=attackDirection(actor.team,attackPolarity),goalX=dir*52.5;
  const goalDistance=Math.hypot(goalX-ball.x,ball.y);
- const lane=goalDistance<=16?chooseLiveShotLane(ball,goalX,actor.team,players):null;
- const recipient=chooseRecipient(actor,ball,players.filter(p=>p.role!=='goalkeeper'),attackPolarity);
+ const lane=permits('shot')&&goalDistance<=16?chooseLiveShotLane(ball,goalX,actor.team,players):null;
+ const recipient=permits('pass')?chooseRecipient(actor,ball,players.filter(p=>p.role!=='goalkeeper'),attackPolarity):null;
  let action,target,recipientId=null,speed,vz;
  if(lane){action='shot';target=lane.target;speed=11;vz=-1.5;}
- else if(dir*ball.x<-32&&nearOpponent(ball,actor.team,players)<4){
+ else if(permits('clearance')&&dir*ball.x<-32&&nearOpponent(ball,actor.team,players)<4){
   action='clearance';target={x:ball.x+dir*16,y:ball.y*.5};speed=10;vz=1.4;
  }else if(recipient){
   action='pass';target={x:recipient.player.x,y:recipient.player.y};recipientId=recipient.player.id;
   speed=Math.min(9,4+recipient.ballDistance*.28);vz=-1.6;
  }else{
+  if(!permits('clearance'))return null;
   action='clearance';target={x:ball.x+dir*14,y:ball.y*.5};speed=9;vz=0.6;
  }
  const dx=target.x-ball.x,dy=target.y-ball.y,distance=Math.hypot(dx,dy);

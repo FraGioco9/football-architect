@@ -264,13 +264,13 @@ export function createPrivatePhysicalActionExecutor({
        nextTick-lastActionTick>=UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS){
      const origin=Object.freeze({...ballBody.translation()}),before=Object.freeze({...ballBody.linvel()});
      const control=head.version===NATIVE_AERIAL_CONTROL_VERSION;
-     const plan=control?null:chooseNativeHeaderIntent(actor,origin,before,playerFrame.players.filter(p=>activePlayerIds.includes(p.id)),attackPolarity);
+     const plan=control?null:chooseNativeHeaderIntent(actor,origin,before,playerFrame.players.filter(p=>activePlayerIds.includes(p.id)),attackPolarity,fundamentalMask);
      const mass=ballBody.mass();
      if(control){
-      const volley=head.surface==='foot'?chooseNativeVolleyIntent(actor,origin,head.incomingVelocity,playerFrame.players.filter(p=>activePlayerIds.includes(p.id)),attackPolarity):null;
+      const volley=head.surface==='foot'?chooseNativeVolleyIntent(actor,origin,head.incomingVelocity,playerFrame.players.filter(p=>activePlayerIds.includes(p.id)),attackPolarity,fundamentalMask):null;
       const raw=volley&&Number.isFinite(mass)&&mass>0?{x:mass*(volley.desiredVelocity.x-before.x),y:mass*(volley.desiredVelocity.y-before.y),z:mass*(volley.desiredVelocity.z-before.z)}:null;
       const norm=raw?Math.hypot(raw.x,raw.y,raw.z):0;
-      if(volley&&permits('shot')&&norm>0.025){
+      if(volley&&permits('volley')&&permits('shot')&&norm>0.025){
        const scale=Math.min(1,12/norm),impulseNs=Object.freeze({x:raw.x*scale,y:raw.y*scale,z:raw.z*scale});
        ballBody.applyImpulse(impulseNs,true);
        result=Object.freeze({version:NATIVE_AERIAL_CONTROL_VERSION,tick:nextTick,playerId:actor.id,team:actor.team,
@@ -288,7 +288,7 @@ export function createPrivatePhysicalActionExecutor({
         appliedByRapier:true,actualPhysicsImpulseApplied:true,officialMatchAction:false,officialPossession:false});
        lastActionTick=nextTick;
       }
-     }else if(plan&&permits(plan.action)&&Number.isFinite(mass)&&mass>0){
+     }else if(plan&&permits('header')&&permits(plan.action)&&Number.isFinite(mass)&&mass>0){
       const raw={x:mass*(plan.desiredVelocity.x-before.x),y:mass*(plan.desiredVelocity.y-before.y),z:mass*(plan.desiredVelocity.z-before.z)};
       const norm=Math.hypot(raw.x,raw.y,raw.z),scale=Math.min(1,5/Math.max(norm,1e-9));
       if(norm>0.025){

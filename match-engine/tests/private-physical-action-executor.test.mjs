@@ -7,7 +7,7 @@ import {initializeRapier,createEngine,BALL_RADIUS,canonicalSnapshot}
  from '../src/core.mjs';
 import {INITIAL_PLAYERS,createPlayerMovement} from '../src/player-movement.mjs';
 import {footProxyTransform} from '../src/player-foot-contact.mjs';
-import {NATIVE_FUNDAMENTALS,createNativeFundamentalMask,nativeFundamentalAllowed,nativeLabFundamentalMask} from '../src/native-fundamental-mask.mjs';
+import {NATIVE_FUNDAMENTALS,createNativeFundamentalMask,nativeFundamentalAllowed,nativeLabFundamentalMask,nativeAerialSurfaceAllowed} from '../src/native-fundamental-mask.mjs';
 import {createNativeActionRestriction,evaluateNativeActionRestriction} from '../src/private-physical-action-executor.mjs';
 
 test('UME-05E isolated technical constraints filter the same native decision without creating actions',()=>{
@@ -147,7 +147,13 @@ test('ME-01-QA U-01F1: explicit fundamental masks never grant an action or mutat
   [{id:'keeper-1v1',keeperSingleShot:true},['carry','shot','save']],
   [{id:'full-field-native',collective:true},NATIVE_FUNDAMENTALS],
   [{id:'dribble-1v1',collective:true},NATIVE_FUNDAMENTALS],
-  [{id:'header-pair',collective:true},NATIVE_FUNDAMENTALS],
+  [{id:'header-pair',collective:true},['cross','header','shot','pass','clearance']],
+  [{id:'chest-control',collective:true},['cross','aerial-control']],
+  [{id:'aerial-foot-control',collective:true},['aerial-control']],
+  [{id:'aerial-duel',collective:true},['header','shot','pass','clearance']],
+  [{id:'volley-solo',collective:true},['cross','volley','shot']],
+  ...['lofted-pass','lofted-short','lofted-switch'].map(id=>[{id,collective:true},['pass','reception','aerial-control']]),
+  ...['keeper-high-cross','keeper-high-intercept'].map(id=>[{id,collective:true},['cross','save','pass','clearance']]),
   [{},NATIVE_FUNDAMENTALS]
  ];
  for(const [config,expected] of cases){
@@ -165,4 +171,15 @@ test('ME-01-QA U-01F1: explicit fundamental masks never grant an action or mutat
  assert.throws(()=>createNativeFundamentalMask(['pass','pass']),/Unique/);
  assert.throws(()=>createNativeFundamentalMask(['unknown']),/Unique/);
  assert.throws(()=>createNativeFundamentalMask('pass'),/Unique/);
+});
+
+test('ME-01-QA U-01F3a: aerial surface capabilities are independent from ground shot',()=>{
+ for(let bits=0;bits<16;bits++){
+  const kinds=['header','volley','shot','aerial-control'];
+  const mask=createNativeFundamentalMask(kinds.filter((_,i)=>bits&(1<<i)));
+  assert.equal(nativeAerialSurfaceAllowed(mask,'head'),!!(bits&1));
+  assert.equal(nativeAerialSurfaceAllowed(mask,'chest'),!!(bits&8));
+  assert.equal(nativeAerialSurfaceAllowed(mask,'foot'),!!(bits&8)||!!(bits&2)&&!!(bits&4));
+  assert.equal(nativeAerialSurfaceAllowed(mask,'unknown'),false);
+ }
 });

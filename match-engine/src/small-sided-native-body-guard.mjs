@@ -6,6 +6,7 @@ import {attackDirection,validateAttackPolarity} from './match-directions.mjs';
 import {INITIAL_PLAYERS,PLAYER_VERSION,PLAYER_DT,PLAYER_MAX_SPEED_MPS}
  from './player-movement.mjs';
 import {chooseRecipient} from './player-ball-uniform-autonomous-action.mjs';
+import {createNativeFundamentalMask,nativeFundamentalAllowed,nativeAerialSurfaceAllowed} from './native-fundamental-mask.mjs';
 import {planNativeKeeperHighIntercept,NATIVE_HIGH_HAND_MAX_Z} from './small-sided-lab-scenarios.mjs';
 
 export const SMALL_SIDED_BODY_VERSION='me-628-native-physical-body-guard-v1';
@@ -209,7 +210,8 @@ export function planNativeAerialCushion({surface,incoming,velocity,massKg,actor}
 }
 export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
  initialPlayers,activePlayerIds,{feedbackEnabled=false,
-  dribbleGroundBallCentreZ=null,fullFieldNative=false,aerialEnabled=false,aerialSurface='all'}={}){
+  dribbleGroundBallCentreZ=null,fullFieldNative=false,aerialEnabled=false,aerialSurface='all',allowedFundamentals=null}={}){
+ const mask=createNativeFundamentalMask(allowedFundamentals);
  if(!['all','head','chest','foot'].includes(aerialSurface))throw new TypeError('Known aerial training restriction required');
  if(typeof aerialEnabled!=='boolean'||aerialEnabled&&(!feedbackEnabled||dribbleGroundBallCentreZ!==null))
   throw new TypeError('Native aerial research requires original guarded movement feedback');
@@ -254,8 +256,8 @@ export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
    .setDensity(80).setFriction(0.7).setRestitution(0)
    .setCollisionGroups((LEG_CATEGORY<<16)|BALL_CATEGORY),rigid);
   entries.push({id:actor.id,team:actor.team,rigid,torso,leg,
-   head:aerialEnabled&&actor.role!=='goalkeeper'&&['all','head'].includes(aerialSurface)?createNativeAerialHead(R,world,ballCollider,actor):null,
-   controls:aerialEnabled&&actor.role!=='goalkeeper'?['chest','foot'].filter(surface=>aerialSurface==='all'||aerialSurface===surface).map(surface=>createNativeAerialControl(R,world,ballCollider,actor,surface)):[]});
+   head:aerialEnabled&&actor.role!=='goalkeeper'&&['all','head'].includes(aerialSurface)&&nativeAerialSurfaceAllowed(mask,'head')?createNativeAerialHead(R,world,ballCollider,actor):null,
+   controls:aerialEnabled&&actor.role!=='goalkeeper'?['chest','foot'].filter(surface=>(aerialSurface==='all'||aerialSurface===surface)&&nativeAerialSurfaceAllowed(mask,surface)).map(surface=>createNativeAerialControl(R,world,ballCollider,actor,surface)):[]});
  }
  if(entries.length!==activePlayerIds.length)
   throw new Error('Selected physical body identity mismatch');
@@ -465,13 +467,15 @@ export function planNativeHighHandAction({keeper,players,ballPosition,incoming,v
  return freeze({kind:'punch',impulseNs:freeze({x:raw.x*scale,y:raw.y*scale,z:raw.z*scale}),decisionOnly:true,officialPossession:false});
 }
 export const NATIVE_KEEPER_DISTRIBUTION_DELAY_TICKS=120;
-export function planNativeKeeperDistribution(keeper,position,players,attackPolarity=1){
+export function planNativeKeeperDistribution(keeper,position,players,attackPolarity=1,allowedFundamentals=null){
+ const mask=createNativeFundamentalMask(allowedFundamentals);
  validateAttackPolarity(attackPolarity);
  if(!keeper||keeper.role!=='goalkeeper'||!['home','away'].includes(keeper.team)||
     ![keeper.x,keeper.y,position?.x,position?.y,position?.z].every(finite)||!Array.isArray(players))return null;
  const dir=attackDirection(keeper.team,attackPolarity);
  if(-dir*position.x<36||-dir*position.x>=52.39||Math.abs(position.y)>20.16||position.z<0.09||position.z>2.2)return null;
- const recipient=chooseRecipient(keeper,position,players.filter(p=>p.role!=='goalkeeper'||p.id===keeper.id),attackPolarity);
+ const recipient=nativeFundamentalAllowed(mask,'pass')?chooseRecipient(keeper,position,players.filter(p=>p.role!=='goalkeeper'||p.id===keeper.id),attackPolarity):null;
+ if(!recipient&&!nativeFundamentalAllowed(mask,'clearance'))return null;
  const dx=recipient?recipient.player.x-position.x:dir*15,dy=recipient?recipient.player.y-position.y:-position.y*0.15;
  const length=Math.hypot(dx,dy);
  if(length<1e-8)return null;
@@ -479,7 +483,8 @@ export function planNativeKeeperDistribution(keeper,position,players,attackPolar
  return freeze({kind:recipient?'pass':'clearance',recipientId:recipient?.player.id??null,
   desiredVelocity:freeze({x:dx/length*speed,y:dy/length*speed,z:-0.5}),decisionOnly:true,officialPossession:false});
 }
-export function createNativeKeeperGrip(R,world,hand,ballBody,team){
+export function createNativeKeeperGrip(R,world,hand,ballBody,team,allowedFundamentals=null){
+ const mask=createNativeFundamentalMask(allowedFundamentals);
  let joint=null,anchor=null,heldSince=null,confirmedTick=null,latest=null,lastObservedTick=null,gripPolarity=1;
  function release(){
   if(joint)world.removeImpulseJoint(joint,true);
@@ -487,7 +492,7 @@ export function createNativeKeeperGrip(R,world,hand,ballBody,team){
  }
  function tryGrip(tick,evidence,attackPolarity=1){
   validateAttackPolarity(attackPolarity);
-  if(joint||!eligibleKeeperGrip({team,...evidence,attackPolarity}))return false;
+  if(!nativeFundamentalAllowed(mask,'save')||joint||!eligibleKeeperGrip({team,...evidence,attackPolarity}))return false;
   gripPolarity=attackPolarity;
   const p=ballBody.translation(),h=hand.translation();
   // The kinematic glove does not rotate. Local anchor at the measured
@@ -520,7 +525,7 @@ export function createNativeKeeperGrip(R,world,hand,ballBody,team){
  }
  function distribute(tick,keeper,players){
   if(!joint||confirmedTick===null||lastObservedTick!==tick||tick-confirmedTick<NATIVE_KEEPER_DISTRIBUTION_DELAY_TICKS||keeper?.team!==team)return null;
-  const plan=planNativeKeeperDistribution(keeper,ballBody.translation(),players,gripPolarity);
+  const plan=planNativeKeeperDistribution(keeper,ballBody.translation(),players,gripPolarity,mask);
   if(!plan)return null;
   const before=freeze({...ballBody.linvel()}),origin=freeze({...ballBody.translation()}),mass=ballBody.mass();
   if(!finite(mass)||mass<=0)return null;
@@ -554,7 +559,8 @@ export function planNativeKeeperChallenge(keeper,attacker,ball,attackPolarity=1)
  if(gap>1.65||gap<0.08)return null;
  return freeze({kind:'challenge',start:freeze(start),target:freeze(intended),intended:freeze(intended),eta,reachTicks,limited:false});
 }
-export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null,{closeChallengeEnabled=false,nativeOpenPlayIds=null}={}){
+export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null,{closeChallengeEnabled=false,nativeOpenPlayIds=null,allowedFundamentals=null}={}){
+ const mask=createNativeFundamentalMask(allowedFundamentals),canSave=nativeFundamentalAllowed(mask,'save');
  if(nativeOpenPlayIds!==null&&(!Array.isArray(nativeOpenPlayIds)||!nativeOpenPlayIds.includes(keeper.id)||new Set(nativeOpenPlayIds).size!==nativeOpenPlayIds.length))throw new TypeError('Native keeper requires explicit physical participants');
  const nativeOpenPlay=nativeOpenPlayIds!==null;
  let attackPolarity=1;
@@ -564,7 +570,7 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
   .setTranslation(origin.x,origin.y,origin.z).setCcdEnabled(true));
  const glove=world.createCollider(R.ColliderDesc.ball(DIVE_GLOVE_RADIUS_M)
   .setFriction(0.35).setRestitution(0.05).setCollisionGroups(0),body);
- const grip=ballBody?createNativeKeeperGrip(R,world,body,ballBody,keeper.team):null;
+ const grip=ballBody?createNativeKeeperGrip(R,world,body,ballBody,keeper.team,mask):null;
  let plan=null,shotTick=null,usedShot=null,crossTick=null,usedCross=null,startTick=null,active=false,priorHit=false,lastChallengeTick=-60;
  let highGripSettling=null;
  let latest=freeze({version:KEEPER_DIVE_VERSION,tick:0,keeperId:keeper.id,
@@ -589,7 +595,7 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
   else if(deadBall||crossTick!==null&&(tick-crossTick>180||lastAction?.tick===tick-1))crossTick=null;
   const physicalPlayers=nativeOpenPlay?frame.players.filter(p=>nativeOpenPlayIds.includes(p.id)):null;
   let started=false,phase='ready',target=rest(actor);
-  if(!deadBall&&!grip?.active()&&!plan){
+  if(canSave&&!deadBall&&!grip?.active()&&!plan){
    const shotCandidate=shotTick!==null&&shotTick!==usedShot?planNativeKeeperDive(actor,ball,attackPolarity):null;
    const attacker=nativeOpenPlay?physicalPlayers.filter(p=>p.team!==keeper.team).sort((a,b)=>Math.hypot(a.x-ball.position.x,a.y-ball.position.y)-Math.hypot(b.x-ball.position.x,b.y-ball.position.y)||a.id.localeCompare(b.id))[0]:frame.players.find(p=>p.team!==keeper.team&&p.id.endsWith('-10'));
    const challenge=(closeChallengeEnabled||nativeOpenPlay)&&shotTick===null&&tick-lastChallengeTick>=60?
@@ -653,7 +659,7 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
   });
   const pos=body.translation();
   let highHandAction=null,highHandDiagnostic=null;
-  if(hit&&grip&&!grip.active()&&prepared.phase!=='recovering'){
+  if(canSave&&hit&&grip&&!grip.active()&&prepared.phase!=='recovering'){
    const high=prepared.plan?.kind==='high-claim';
    const evidence={contact:true,ballPosition:ballBody.translation(),
     before:prepared.priorVelocity,after:postVelocity,glovePosition:pos,gloveVelocity:body.linvel(),highClaim:high};
