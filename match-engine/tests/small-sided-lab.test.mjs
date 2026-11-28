@@ -21,6 +21,7 @@ import {planSlidingTackle} from '../src/sliding-tackle.mjs';
 import {detectFirstFullyOutBallB05} from '../src/basic-match-referee-b05.mjs';
 import {createNativeFundamentalMask,nativeObservedActionAllowed,nativeLabFundamentalMask,NATIVE_FUNDAMENTALS} from '../src/native-fundamental-mask.mjs';
 import {SOLO_CARRY_PHASES,advanceSoloCarryPhase} from '../src/solo-carry-phases.mjs';
+import {LAB_SHOT_PROFILES} from '../src/lab-shot-calibration.mjs';
 
 test('COL-01 both teams pursue the real ball without a shirt-number runner or inferred possession',()=>{
  for(const side of ['home','away']){
@@ -2701,4 +2702,42 @@ test('ME-01 structural scope: visible action LAB permissions are bounded indepen
  }
  assert.equal(resolveInlineActionLabOptions('dribble-1v1').collectiveApproaches,true);
  assert.deepEqual(nativeLabFundamentalMask({id:'full-field-native',collective:true}),NATIVE_FUNDAMENTALS);
+});
+
+test('ME-01 structural gate: every visible fundamental LAB constructs the current paired world and common capability mask',{timeout:120000},async()=>{
+ const R=await initializeRapier(rapier);
+ const entries=[
+  ...SOLO_CARRY_PHASES.map(phase=>({id:'carry-solo',extra:{carryRunwayStart:true,nativeFixedCarryResearch:true,soloCarryLockedPhase:phase,
+   ...(phase==='sprint'?{soloSprintActiveFootReleaseM:.06,soloSprintPursuitLeadM:.25}:{})}})),
+  ...['pass-pair','cross-pair','lofted-short','lofted-pass','lofted-switch','chest-control','aerial-foot-control'].map(id=>({id})),
+  ...LAB_SHOT_PROFILES.flatMap(shotProfile=>[false,true].map(firstTimeShot=>({id:'shot-solo',extra:{shotProfile,firstTimeShot}}))),
+  ...['header-pair','volley-solo','keeper-1v1','keeper-high-cross','keeper-high-intercept','dribble-1v1','aerial-duel','defender-1v1','overload-2v1','duel-2v2','duel-3v3'].map(id=>({id})),
+  ...['standing','sliding','shoulder'].map(profile=>({id:'dribble-1v1',profile})),
+  {id:'pass-pair',profile:'interception'},{id:'defender-1v1',profile:'block'}
+ ];
+ assert.equal(entries.length,38);
+ let sessions=0;
+ for(const side of ['home','away'])for(const {id,profile='mixed',extra={}} of entries){
+  const options=resolveInlineActionLabOptions(id,{duelTackleProfile:profile});
+  const mask=nativeLabFundamentalMask({id,collective:options.collectiveApproaches,keeperSingleShot:options.keeperSingleShot,
+   directedDribble:options.directedDribble,duelTackleProfile:profile,interceptionStart:profile==='interception',blockStart:profile==='block'});
+  const lab=createControlledActionLab(R,id,{shotSide:side,...options,...extra});
+  try{
+   const zero=lab.snapshot();
+   assert.equal(zero.physicsTick,0,id+' '+profile);
+   assert.equal(zero.nativeContactMaterial.historicalCarryPhysics,false,id);
+   assert.equal(zero.physicalShoeColliderCount,2*zero.genuinePhysicalPlayerCount,id);
+   assert.deepEqual(zero.allowedFundamentals,mask,id);
+   assert.deepEqual(zero.movementFundamentals,mask,id);
+   const one=lab.step();
+   assert.equal(one.physicsTick,1,id);
+   assert.deepEqual(one.allowedFundamentals,mask,id);
+   assert.deepEqual(one.movementFundamentals,mask,id);
+   assert.equal(one.physicalShoeColliderCount,zero.physicalShoeColliderCount,id);
+   assert.ok(one.starts.every(actor=>zero.smallSidedParticipants.includes(actor)),id);
+   sessions++;
+  }finally{lab.dispose();}
+ }
+ assert.equal(sessions,76);
+ process.stdout.write('ME_628_VISIBLE_LAB_STRUCTURAL_GATE '+JSON.stringify({entries:entries.length,sessions,paired:true,commonMask:true})+'\n');
 });
