@@ -2167,12 +2167,26 @@ test('AERIAL-03 LABs use actual mirrored cross/chest and descending foot contact
     assert.ok(Math.hypot(dir*52.5-setup.ball.x,setup.ball.y)>30,'isolated reception starts outside shooting range');
    }
    let hit=null;
-   const trace={reachTicks:0,solverStarts:0,ambiguousStarts:0,exclusiveWithoutImpulse:0,firstStart:null};
+   const trace={reachTicks:0,solverStarts:0,ambiguousStarts:0,exclusiveWithoutImpulse:0,firstStart:null,closestPlanned:null,closestDescending:null,firstCompetingContact:null};
    for(let tick=1;tick<=300;tick++){
     const a=lab.step(),body=a.smallSidedNativeBodyGuard;
     const actorId=side+(id==='chest-control'?'-9':'-10');
     const sample=body.aerial.find(s=>s.actorId===actorId&&s.surface===(id==='chest-control'?'chest':'foot'));
-    if(sample?.reachPlanned)trace.reachTicks++;
+    if(sample){
+     assert.ok(Number.isFinite(sample.centreGapM)&&sample.centreGapM>=0);
+     const detail=()=>({tick,gapM:sample.centreGapM,planned:sample.reachPlanned,preBall:sample.incomingPosition,
+      incoming:sample.incomingVelocity,surface:sample.surfacePosition,ball:sample.ballCentre,
+      actor:a.observedMovementPlayers.find(p=>p.id===actorId),shoeStarts:a.starts,lowerLegContacts:body.lowerLegBallContacts,
+      action:a.action?.action??null});
+     if(sample.reachPlanned){
+      trace.reachTicks++;
+      if(!trace.closestPlanned||sample.centreGapM<trace.closestPlanned.gapM)trace.closestPlanned=detail();
+     }
+     if(sample.incomingVelocity.z<-0.15&&Math.abs(sample.incomingPosition.z-(id==='chest-control'?1.35:0.85))<=0.4){
+      if(!trace.closestDescending||sample.centreGapM<trace.closestDescending.gapM)trace.closestDescending=detail();
+      if(!trace.firstCompetingContact&&(a.starts.length||body.lowerLegBallContacts.length))trace.firstCompetingContact=detail();
+     }
+    }
     if(sample?.contactStarted){
      trace.solverStarts++;
      const ambiguous=body.aerial.filter(s=>s.contact).length!==1||a.starts.length>0||body.lowerLegBallContacts.length>0;

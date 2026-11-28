@@ -156,7 +156,7 @@ export function createNativeAerialControl(R,world,ballCollider,actor,surface){
   const plan=!deadBall&&!headPriority&&tick>=recoverUntil?planNativeAerialControl(player,ball,surface):null;
   collider.setCollisionGroups(plan?(LEG_CATEGORY<<16)|BALL_CATEGORY:0);
   rigid.setNextKinematicTranslation({x:player.x+(plan?.dx??0),y:player.y+(plan?.dy??0),z});
-  prepared={tick,plan,incomingVelocity:freeze({...ball.velocity})};
+  prepared={tick,plan,incomingVelocity:freeze({...ball.velocity}),incomingPosition:freeze({...ball.position})};
  }
  function observe(tick){
   if(prepared?.tick!==tick)throw new TypeError('Native receiving surface needs current solver tick');
@@ -166,8 +166,13 @@ export function createNativeAerialControl(R,world,ballCollider,actor,surface){
   });
   const contactStarted=contact&&!previousContact;
   if(contactStarted)recoverUntil=tick+18;
+  const surfacePosition=freeze({...rigid.translation()}),ballCentre=freeze({...ballCollider.translation()});
+  // Geometric proximity is diagnostic only, never a substitute for a
+  // solver manifold or proof of a receiving action.
   const result=freeze({version:NATIVE_AERIAL_CONTROL_VERSION,surface,tick,actorId:actor.id,team:actor.team,
    contact,contactStarted,actualNativeSolverContact:contact,incomingVelocity:prepared.incomingVelocity,
+   incomingPosition:prepared.incomingPosition,surfacePosition,ballCentre,
+   centreGapM:Math.hypot(ballCentre.x-surfacePosition.x,ballCentre.y-surfacePosition.y,ballCentre.z-surfacePosition.z),
    reachPlanned:prepared.plan!==null,
    sameOriginalRapierWorld:true,officialPossession:false});
   previousContact=contact;lastTick=tick;prepared=null;return result;
