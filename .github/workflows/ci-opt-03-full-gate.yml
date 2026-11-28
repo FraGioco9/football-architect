@@ -98,7 +98,7 @@ jobs:
               files.every(f=>economicRepairPaths.has(f.filename)&&f.status==='modified'&&!f.previous_filename);
             }
             // A second narrowly bounded transition, only from this reviewed main tree.
-            const stackedRepairAnchor='5633690abc6abc278ba62b89100fa7754b2f8da4';
+            const stackedRepairAnchor='1a00b26cd83953eac14853e12a4c1f2b150c000a';
             const stackedRepairBranch='ci/stacked-economic-evidence';
             const stackedRepairPaths=new Set([...economicRepairPaths,'tests/ci-opt-02-workflow-contract.test.mjs']);
             function stackedRepairShape(baseSha,files){
@@ -209,16 +209,19 @@ jobs:
             }
             async function certifyStackedRepair({github,owner,repo,baseSha,headRef,files}){
              if(headRef!==stackedRepairBranch||!stackedRepairShape(baseSha,files)||!stackedRepairPatch(files))return false;
+             // The economic inputs changed in #818, so use its newly executed
+             // full receipt, not the older #814 execution or an inherited rerun.
+             const {data:source}=await github.rest.pulls.get({owner,repo,pull_number:818});
+             if(!source.merged||source.merge_commit_sha!==stackedRepairAnchor||
+                source.head.sha!=='50cb5cac49eaf969d909e22debdecf32b0aff191')return false;
              const {data:anchor}=await github.rest.git.getCommit({owner,repo,commit_sha:stackedRepairAnchor});
-             if(anchor.tree.sha!=='153a72e8f7ff1638d7a60ea96511c2dce2146a10')return false;
-             // Independently verify the immutable main interval contains only the
-             // already-reviewed historical repair and engine/preview files.
-             const {data:comparison}=await github.rest.repos.compareCommitsWithBasehead({owner,repo,basehead:economicRepairAnchor+'...'+stackedRepairAnchor});
-             if(comparison.merge_base_commit?.sha!==economicRepairAnchor||comparison.behind_by!==0||
-                !Array.isArray(comparison.files)||!comparison.files.length||comparison.files.length>=300||
-                !comparison.files.every(f=>['added','modified'].includes(f.status)&&!f.previous_filename&&
-                 (economicRepairPaths.has(f.filename)||f.filename.startsWith('match-engine/')||f.filename==='tools/dev-standings-preview.mjs')))return false;
-             return originalEconomicReceipt({github,owner,repo});
+             const {data:commit}=await github.rest.git.getCommit({owner,repo,commit_sha:source.head.sha});
+             if(anchor.tree.sha!=='b5a75b36106296a4129a9e747ee809cd8adbb20c'||anchor.tree.sha!==commit.tree.sha||
+                anchor.parents[0]?.sha!==source.base.sha)return false;
+             const {data:run}=await github.rest.actions.getWorkflowRun({owner,repo,run_id:46087723530});
+             if(run.id!==46087723530||run.run_attempt!==1)return false;
+             const jobs=await github.paginate(github.rest.actions.listJobsForWorkflowRun,{owner,repo,run_id:run.id,filter:'latest',per_page:100});
+             return certifiedHistoricalAdmin({github,owner,repo,source,tree:commit.tree.sha,baseSha:source.base.sha,run,jobs});
             }
             const economicRepairGuardLines=["          PR_HEAD_REF: $"+"{{ github.event.pull_request.head.ref }}","          if [ \"$PR_HEAD_REF\" = ci/785-historical-economic-source ] && [ \"$"+"{{ steps.economic.outputs.mode }}\" != economic-only ]; then","            echo 'BLOCKED: certified historical economic source unavailable; do not start the rehearsal.' >&2","            exit 1","          fi"];
             const inheritedMarker='Verified unchanged economic scope against executed FULL source';

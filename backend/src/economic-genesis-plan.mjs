@@ -1,6 +1,8 @@
 /** #775 — pure DRAFT genesis plan and receipt preview. No DB writes, clock or activation. */
 import clubs from '../../data/clubs.json' with {type:'json'};
+import seasonOne from '../catalogues/season-1.approval.json' with {type:'json'};
 import {rewardCalendarBudget} from './reward-settlement-plan.mjs';
+const activeClubs=new Set(seasonOne.manifest.bindings.filter(b=>!b.competitionId.startsWith('int-')).flatMap(b=>b.clubIds));
 const LIMIT=1000000000000;
 const actor="economic-genesis-v1";
 const validInt=(x,min)=>Number.isSafeInteger(x)&&x>=min&&x<=LIMIT;
@@ -13,7 +15,7 @@ function buildPlan(input,keys,budget){
  if(!validInt(input.freeReserveArc,0)||!validInt(input.issuanceLimitArc,1)||!validInt(budget.annual,1))fail("invalid_amount");
  const byKey=new Map();
  for(const row of input.clubs){
-  if(!row||!keys.includes(row.clubKey)||byKey.has(row.clubKey)||!validInt(row.amountArc,1))fail("invalid_club");
+  if(!row||!keys.includes(row.clubKey)||byKey.has(row.clubKey)||!validInt(row.amountArc,activeClubs.has(row.clubKey)?1:0))fail("invalid_club");
   byKey.set(row.clubKey,row.amountArc);
  }
  const clubs=[...keys].sort(order).map(clubKey=>Object.freeze({clubKey,amountArc:byKey.get(clubKey)}));
@@ -27,7 +29,7 @@ function buildPlan(input,keys,budget){
   lines:Object.freeze([{accountId:from,amountArc:-amount},{accountId:to,amountArc:amount}].sort((a,b)=>order(a.accountId,b.accountId)).map(Object.freeze))
  });
  const intents=[posting("economic-genesis:reserve","GENESIS_RESERVE","economic-genesis","issuance","reserve",grossGenesisArc),
-  ...clubs.map(c=>posting("economic-genesis:club:"+c.clubKey,"CLUB_OPENING",c.clubKey,"reserve","club:"+c.clubKey,c.amountArc))];
+  ...clubs.filter(c=>c.amountArc>0).map(c=>posting("economic-genesis:club:"+c.clubKey,"CLUB_OPENING",c.clubKey,"reserve","club:"+c.clubKey,c.amountArc))];
  return Object.freeze({version,status:"draft",clubs:Object.freeze(clubs),clubCapitalArc:capital,freeReserveArc:input.freeReserveArc,
   annualRewardsArc:budget.annual,rewardVersion:budget.version,reserveAfterFundingArc,grossGenesisArc,issuanceLimitArc:input.issuanceLimitArc,
   policy:Object.freeze({genesisReserveArc:grossGenesisArc,issuanceLimitArc:input.issuanceLimitArc,
@@ -36,7 +38,7 @@ function buildPlan(input,keys,budget){
   intents:Object.freeze(intents)});
 }
 function inspectReceipts(plan,receipts){
- if(!Array.isArray(receipts)||receipts.length>321)fail("unexpected_journal");
+ if(!Array.isArray(receipts)||receipts.length>plan.intents.length)fail("unexpected_journal");
  const expected=new Map(plan.intents.map(i=>[i.businessKey,i]));
  const seen=new Set(),ids=new Set();let fundedArc=0,genesisPosted=false;
  for(const r of receipts){
@@ -53,10 +55,11 @@ function inspectReceipts(plan,receipts){
   if(i.purpose==="GENESIS_RESERVE")genesisPosted=true;
   else fundedArc+=i.lines.find(l=>l.amountArc>0).amountArc;
  }
+ const expectedFundedClubs=plan.intents.length-1;
  const fundedClubs=seen.size-(genesisPosted?1:0);
  if(!genesisPosted&&fundedClubs>0)fail("missing_genesis");
- return Object.freeze({state:!genesisPosted?"uninitialized":fundedClubs===320?"funded-unverified":"funding",
-  genesisPosted,fundedClubs,fundedArc,pendingClubs:320-fundedClubs,
+ return Object.freeze({state:!genesisPosted?"uninitialized":fundedClubs===expectedFundedClubs?"funded-unverified":"funding",
+  genesisPosted,fundedClubs,fundedArc,pendingClubs:expectedFundedClubs-fundedClubs,
   expectedReserveArc:genesisPosted?plan.grossGenesisArc-fundedArc:0,
   pending:Object.freeze(plan.intents.filter(i=>!seen.has(i.businessKey)))});
 }
