@@ -116,6 +116,15 @@ export function rankNativeKeeperGoalLanes(ball,team,players,attackPolarity=1){
  const lane=distance<=26?candidates.find(c=>c.fieldClearance>=SHOT_LANE_MIN_CLEARANCE_M&&c.keeperClearance>=minimum)??null:null;
  return Object.freeze({lane,best:candidates[0],minimum,distance});
 }
+// Current participants prefer the best eligible keeper lane. The ordinary
+// long-range fallback retains existing outfield and distance guards.
+export function chooseNativeGroundShotLane(ball,team,players,attackPolarity=1){
+ const goalX=attackDirection(team,attackPolarity)*52.5;
+ const ordinary=chooseLiveShotLane(ball,goalX,team,players);
+ const ranked=rankNativeKeeperGoalLanes(ball,team,players,attackPolarity);
+ return Object.freeze({lane:ranked?.lane??ordinary,minimum:ranked?.lane?ranked.minimum:undefined});
+}
+// Historical isolated decision adapter; paired play uses common ranking.
 export function chooseKeeperDuelAttackIntent(ball,velocity,team,keeper,allowedFundamentals=null,attackPolarity=1){
  const mask=createNativeFundamentalMask(allowedFundamentals);
  if(!keeper||!['home','away'].includes(team)||![ball.x,ball.y,velocity.x,velocity.y,keeper.x,keeper.y].every(finite))return null;
@@ -463,14 +472,15 @@ export function selectUniformAutonomousContactAction({
   const goalTarget=Object.freeze({x:goalX,y:0});
   const shotRange=Math.abs(toGoal)<=SHOT_MAX_RANGE_M&&
    Math.abs(ballPosition.y)<=20;
-  const activeKeeperAttacker=keeperSingleShotSide===player.team&&id===player.team+'-10';
+  const keeperExerciseAttacker=keeperSingleShotSide===player.team&&id===player.team+'-10';
+  const activeKeeperAttacker=keeperExerciseAttacker&&!pairedPhysicalSource;
   const duelIntent=activeKeeperAttacker?chooseKeeperDuelAttackIntent(ballPosition,ballVelocity,player.team,
    actors.find(p=>p.team!==player.team&&p.role==='goalkeeper'),mask,attackPolarity):null;
   const blockLane=blockContext&&!blockContext.shotTaken&&pairedPhysicalSource&&shotRange&&permits('shot')?chooseLiveShotLane(ballPosition,goalX,player.team,actors,{minimumClearanceM:0,aimY:ballPosition.y>=0?2.65:-2.65}):null;
-  const keeperLanes=usesNativeLiveActionRanking({nativeActionPolicy,pairedPhysicalSource})&&!blockContext&&!activeKeeperAttacker&&permits('shot')&&shotRange?rankNativeKeeperGoalLanes(ballPosition,player.team,actors,attackPolarity):null;
+  const nativeShot=usesNativeLiveActionRanking({nativeActionPolicy,pairedPhysicalSource})&&!blockContext&&!activeKeeperAttacker&&permits('shot')&&shotRange?chooseNativeGroundShotLane(ballPosition,player.team,actors,attackPolarity):null;
   const ordinaryLane=permits('shot')&&shotRange?chooseLiveShotLane(ballPosition,goalX,player.team,actors):null;
-  const chosenShotLane=activeKeeperAttacker?(duelIntent?.action==='shot'?duelIntent.lane:null):ordinaryLane??keeperLanes?.lane??null;
-  const keeperMinimum=activeKeeperAttacker?duelIntent?.minimum:!ordinaryLane&&keeperLanes?.lane?keeperLanes.minimum:undefined;
+  const chosenShotLane=activeKeeperAttacker?(duelIntent?.action==='shot'?duelIntent.lane:null):nativeShot?.lane??ordinaryLane;
+  const keeperMinimum=activeKeeperAttacker?duelIntent?.minimum:nativeShot?.minimum;
   const shotLaneM=chosenShotLane?.clearance??
    lineClearance(ballPosition,goalTarget,player.team,actors);
   const collective=nativeActionPolicy;
@@ -481,12 +491,13 @@ export function selectUniformAutonomousContactAction({
   if(collective&&(isNativeRecoveryLocked(collectiveControl,id,tick)||nativeSlide?.phase==='recovery'))continue;
   const collectiveTouch=collective?chooseCollectiveDefensiveTouch({player,players:actors,ballPosition,ballVelocity,control:collectiveControl,tick,slide:nativeSlide,ballRadiusM,attackPolarity,allowedFundamentals:mask}):null;
   if(nativeSlide?.phase==='slide'&&!collectiveTouch)continue;
-  const defensiveAttempt=collective?null:chooseBasicDefensiveAttempt({actor:player,players:actors,ball:ballPosition,velocity:ballVelocity});
+  const proposedDefense=collective?null:chooseBasicDefensiveAttempt({actor:player,players:actors,ball:ballPosition,velocity:ballVelocity});
+  const defensiveAttempt=keeperExerciseAttacker&&pairedPhysicalSource&&proposedDefense&&!permits(proposedDefense.kind)?null:proposedDefense;
   // LAB-VAR-02 only: AFTER verified genuine exclusive Rapier shoe START,
   // examine live legitimate affordances. Normal 22-player policy, keeper
   // and defensive priority, and archival V01 remain byte-identical.
   const contextualAttacker=!activeKeeperAttacker&&isolatedDribbleContext===null&&
-   (collective?!opponentControl:smallSidedDecisionContext!==null&&player.team===smallSidedDecisionContext.attackingSide)&&
+   (collective?!opponentControl:keeperExerciseAttacker&&pairedPhysicalSource||smallSidedDecisionContext!==null&&player.team===smallSidedDecisionContext.attackingSide)&&
    player.role!=='goalkeeper'&&!defensiveAttempt&&!collectiveTouch;
   const contextualRecipient=contextualAttacker&&permits('pass')&&requiredLoftedProfile===null?
    chooseRecipient(player,ballPosition,actors,attackPolarity):null;
