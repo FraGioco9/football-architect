@@ -1,6 +1,6 @@
 import {attackDirection,validateAttackPolarity,nativeHalfFormationReady} from './match-directions.mjs';
 import {directedDribbleApproachTarget,planDribbleDefender,resolveDuelActors,isDuelGettingUp,chooseDribbleDefensiveTouch,planShoulderBalanceRecovery,isShoulderCollecting,isSlideCollecting,routeDuelAroundOpponent,planDuelRecoveryApproach,planLooseDuelApproaches,planDuelPostContactAlignment,planDribbleContactRelease,dribbleReleaseApproach,planNativeDefensiveIntervention,isNativeRecoveryLocked} from './isolated-dribble-touches.mjs';
-import {nativeLabFundamentalMask,nativeDefensiveInterventionAllowed,nativePermittedAerialSurfaces,NATIVE_AERIAL_APPROACH_HEIGHTS,selectNativeCrossProfile,nativeCrossTargetHeight,nativeLabAerialSequence} from './native-fundamental-mask.mjs';
+import {createNativeFundamentalMask,nativeLabFundamentalMask,nativeDefensiveInterventionAllowed,nativePermittedAerialSurfaces,NATIVE_AERIAL_APPROACH_HEIGHTS,selectNativeCrossProfile,nativeCrossTargetHeight,nativeLabAerialSequence} from './native-fundamental-mask.mjs';
 import {advanceSlidingTackle,planSlidingTackle,SLIDE_MAX_SPEED_MPS,SLIDE_ACCEL_MPS2,SLIDE_BRAKE_MPS2} from './sliding-tackle.mjs';
 // ME-PLAYER-01/24 — autonomous movement and current handoff-corridor safety.
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
@@ -1705,7 +1705,7 @@ export function createPlayerMovement(options={}){
      k!=='researchB06bNativeShotSide'&&
      k!=='researchSmallSidedSituation'&&k!=='researchSmallSidedSide'&&
      k!=='researchSmallSidedVariantIndex'&&k!=='researchCollectiveApproaches'&&k!=='researchShoulderStart'&&k!=='researchInterceptionStart'&&k!=='researchBlockStart'&&k!=='researchTapInStart'&&k!=='researchFirstTimeShot'&&
-     k!=='researchCarryRunwayStart'&&
+     k!=='researchNativeFundamentals'&&k!=='researchCarryRunwayStart'&&
      k!=='researchNativeFixedCarry'&&
      k!=='researchSoloSprintPursuitLeadM'&&
      k!=='researchSoloCarryLockedPhase'&&
@@ -1867,6 +1867,7 @@ export function createPlayerMovement(options={}){
         (options.researchSmallSidedBodyFeedback===true?1:0)+
         (options.researchSoloCarryLockedPhase===undefined?0:1)+
         (options.researchSoloCarryPlayerAttributes===undefined?0:1)+
+        (options.researchNativeFundamentals===undefined?0:1)+
         (options.researchCarryRunwayStart===true?1:0)+
         (options.researchNativeFixedCarry===true?1:0)+
         (options.researchSoloSprintPursuitLeadM===undefined?0:1)))||
@@ -1940,6 +1941,8 @@ export function createPlayerMovement(options={}){
    {variantIndex:options.researchSmallSidedVariantIndex??0,
     carryRunwayStart:options.researchCarryRunwayStart===true,tapInStart:options.researchTapInStart===true,firstTimeShot:options.researchFirstTimeShot===true,shoulderStart:options.researchShoulderStart===true,interceptionStart:options.researchInterceptionStart===true,blockStart:options.researchBlockStart===true});
  if(smallSided?.fullField&&options.researchCollectiveApproaches!==true)throw new TypeError('Full field requires native open play movement');
+ if(options.researchNativeFundamentals!==undefined&&(!smallSided||!Array.isArray(options.researchNativeFundamentals)))throw new TypeError('Native movement mask requires bounded participants');
+ const boundNativeFundamentals=options.researchNativeFundamentals===undefined?null:createNativeFundamentalMask(options.researchNativeFundamentals);
  const smallActive=smallSided?new Set(smallSided.activeIds):null;
  const initial=smallSided?smallSided.staged:
   options.researchB06bOpeningKickoffEnabled===true?
@@ -2580,7 +2583,7 @@ export function createPlayerMovement(options={}){
     nativeCarryPursuitOffset({phase:currentSoloCarryPhase.phase,configuration:currentSoloCarryPhase,
      player:sprintPursuitRunner,ball,velocity:realBallVelocity,sprintLeadM:options.researchSoloSprintPursuitLeadM??0}):null;
   const duelActors=directedDribble?resolveDuelActors(players,smallSided.side,duelTransition,ball):null;
-  const defensiveMask=nativeLabFundamentalMask({id:smallSided?.id,collective:options.researchCollectiveApproaches===true,interceptionStart:smallSided?.interceptionStart,blockStart:smallSided?.blockStart,directedDribble,duelTackleProfile:duelTransition?.profile??'mixed'});
+  const defensiveMask=boundNativeFundamentals??nativeLabFundamentalMask({id:smallSided?.id,collective:options.researchCollectiveApproaches===true,interceptionStart:smallSided?.interceptionStart,blockStart:smallSided?.blockStart,directedDribble,duelTackleProfile:duelTransition?.profile??'mixed'});
   const permitsDefense=kind=>nativeDefensiveInterventionAllowed(defensiveMask,kind);
   const aerialSurfaces=nativePermittedAerialSurfaces(defensiveMask,smallSided?.aerialSurface??'all',options.researchCollectiveApproaches===true);
   defensiveDecision=null;duelShoulder=null;duelInterception=null;blockApproach=null;
@@ -3510,7 +3513,8 @@ export function createPlayerMovement(options={}){
   return lastPhysicalReconciliation;
  }
  return Object.freeze({
-  snapshot,step,reset:()=>createPlayerMovement(options),
+  snapshot,step,reset:()=>createPlayerMovement(boundNativeFundamentals===null?options:{...options,researchNativeFundamentals:boundNativeFundamentals}),
+  ...(boundNativeFundamentals!==null?{nativeFundamentalsSnapshot:()=>boundNativeFundamentals}:{}),
   ...(options.researchB06bGoalRestartEnabled===true?{
    queueB06bOriginalGoalKickoff,finishB06bOriginalGoalKickoff
   }:{}),

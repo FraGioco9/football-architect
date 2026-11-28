@@ -717,6 +717,7 @@ test('ME-01-QA U-02d2b: modern LAB sessions expose and respect bounded native ca
    assert.equal(initial.physicsTick,0,label);
    assert.deepEqual([...initial.allowedFundamentals].sort(),[...allowed].sort(),label);
    assert.deepEqual(initial.permittedAerialSurfaces,surfaces,label);
+   assert.deepEqual(initial.movementFundamentals,initial.allowedFundamentals,label);
    assert.ok(Object.isFrozen(initial.allowedFundamentals),label);
    assert.ok(Object.isFrozen(initial.permittedAerialSurfaces),label);
    assert.equal(initial.action,null,label);
@@ -724,6 +725,7 @@ test('ME-01-QA U-02d2b: modern LAB sessions expose and respect bounded native ca
     const f=session.step(),a=f.action;
     assert.equal(f.physicsTick,tick,label);
     assert.deepEqual(f.allowedFundamentals,initial.allowedFundamentals,label);
+    assert.deepEqual(f.movementFundamentals,f.allowedFundamentals,label);
     assert.deepEqual(f.permittedAerialSurfaces,surfaces,label);
     assert.equal(f.officialMatchResult,null,label);
     if(a){

@@ -15,6 +15,7 @@ import {advanceGoalkeeperBallOrientation} from '../src/individual-kinematics.mjs
 import {keeperDuelReboundTarget,keeperDuelCloseDownTarget} from '../src/small-sided-lab-scenarios.mjs';
 import {planNativeKeeperDive,planNativeKeeperChallenge,createNativeKeeperDive,eligibleKeeperGrip,createNativeKeeperGrip,planNativeHighHandAction,planNativeKeeperDistribution,NATIVE_KEEPER_DISTRIBUTION_DELAY_TICKS,NATIVE_KEEPER_MAX_HOLD_TICKS,nativeKeeperHoldReleaseDue} from '../src/small-sided-native-body-guard.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
+import {nativeKeeperCompetingContact,nativeKeeperExclusiveGripStart} from '../src/small-sided-native-body-guard.mjs';
 
 function candidate(side,players,ball,active=[side+'-1'],started=active){
  return selectUniformAutonomousContactAction({
@@ -595,3 +596,16 @@ test('ME-01-QA U-01F5: native grip hold has a finite fallback without unauthoriz
  assert.equal(nativeKeeperHoldReleaseDue({tick:300,confirmedTick:null,distributionEnabled:true}),false);
  assert.equal(nativeKeeperHoldReleaseDue({tick:300,confirmedTick:1,distributionEnabled:'true'}),false);
 });
+
+ test('ME-01-QA U-02d4: competing keeper contacts and holds never confer an exclusive grip START',()=>{
+  for(const outfield of [false,true])for(const aHit of [false,true])for(const bHit of [false,true])for(const aHold of [false,true])for(const bHold of [false,true]){
+   const samples=[{hit:aHit,holding:aHold},{hit:bHit,holding:bHold}];
+   assert.equal(nativeKeeperCompetingContact(outfield,samples,0),outfield||bHit||bHold);
+   assert.equal(nativeKeeperCompetingContact(outfield,samples,1),outfield||aHit||aHold);
+   assert.equal(nativeKeeperCompetingContact(outfield,[samples[1],samples[0]],1),outfield||bHit||bHold);
+   for(const prior of [false,true]){
+    assert.equal(nativeKeeperExclusiveGripStart(aHit,prior,nativeKeeperCompetingContact(outfield,samples,0)),aHit&&!prior&&!outfield&&!bHit&&!bHold);
+    assert.equal(nativeKeeperExclusiveGripStart(bHit,prior,nativeKeeperCompetingContact(outfield,samples,1)),bHit&&!prior&&!outfield&&!aHit&&!aHold);
+   }
+  }
+ });

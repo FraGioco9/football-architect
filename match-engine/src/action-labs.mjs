@@ -56,7 +56,8 @@ export function createNativeFullFieldSession(RAPIER,{side='home',variantIndex=0,
  });
  try{
   const mover=createPlayerMovement({researchSmallSidedSituation:id,researchSmallSidedSide:side,
-   researchSmallSidedVariantIndex:variantIndex,researchSmallSidedBodyFeedback:true,researchCollectiveApproaches:true});
+   researchSmallSidedVariantIndex:variantIndex,researchSmallSidedBodyFeedback:true,researchCollectiveApproaches:true,
+   researchNativeFundamentals:engine.nativeFundamentalsSnapshot()});
   const ledger=createBasicMatchTimelineB06({b06bRealHalftimePause:true,nativeHalfTicks:researchHalfTicks});
   let disposed=false,phase='first-half',playedTicks=0,secondHalfStarted=false,latest;
   function observe(physics,frame,restartTake=null){
@@ -84,6 +85,7 @@ export function createNativeFullFieldSession(RAPIER,{side='home',variantIndex=0,
     body:engine.smallSidedBodyGuardSnapshot(),decisions:frame.smallSidedMovementDecisions,
     activeIds:fixture.activeIds,phase,playedTicks,
     allowedFundamentals:engine.nativeFundamentalsSnapshot(),
+    movementFundamentals:mover.nativeFundamentalsSnapshot(),
     permittedAerialSurfaces:engine.nativeAerialSurfacesSnapshot(),
     clock:Object.freeze({...basicMatchClockB06(playedTicks),phase,
      originalPhysicsSourceTick:physics.tick,abbreviatedResearchRun:researchHalfTicks!==B06_HALF_TICKS,
@@ -427,6 +429,7 @@ export function createControlledActionLab(RAPIER,id,{
  });
  const mover=createPlayerMovement(smallSided?{
    researchSmallSidedSituation:id,researchSmallSidedSide:shotSide,
+   researchNativeFundamentals:engine.nativeFundamentalsSnapshot(),
    ...(duelTackleProfile==='shoulder'?{researchShoulderStart:true}:{}),
    ...(duelTackleProfile==='interception'?{researchInterceptionStart:true}:{}),
    ...(duelTackleProfile==='block'?{researchBlockStart:true}:{}),
@@ -1133,6 +1136,7 @@ export function createControlledActionLab(RAPIER,id,{
     ...(smallSided?{smallSidedParticipants:smallSided.activeIds,
      physicalShoeColliderCount:engine.originalSmallSidedPhysicalShoeColliderCount(),
      allowedFundamentals:engine.nativeFundamentalsSnapshot(),
+     movementFundamentals:mover.nativeFundamentalsSnapshot(),
      permittedAerialSurfaces:effectiveAerialSurfaces,
      nativeContactMaterial:engine.nativeContactMaterialSnapshot(),
      smallSidedMovementDecisions:playerFrame.smallSidedMovementDecisions,

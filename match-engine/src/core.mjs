@@ -17,6 +17,7 @@ import {smallSidedSetup,supportsNativeOpenPlay} from './small-sided-lab-scenario
 import {createNativeBallControlObserver,createDribbleTransitionObserver} from './isolated-dribble-touches.mjs';
 import {createSmallSidedNativeBodyGuard,createNativeKeeperDive,createNativeThrowInHands}
  from './small-sided-native-body-guard.mjs';
+import {nativeKeeperCompetingContact} from './small-sided-native-body-guard.mjs';
 import {initialResearchBodyEncounterLineup}
  from './research-body-encounter-initial-lineup.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
@@ -1017,7 +1018,12 @@ export function createEngine(RAPIER, input = {}, {
     const physicalBallConflict=!!(shoeBridge?.snapshot().active.length||smallBodyGuard?.snapshot().lowerLegBallContacts.length||
      smallBodyGuard?.snapshot().headBallContacts?.length||smallBodyGuard?.snapshot().aerialControlContacts?.length);
     const sequenceInterrupted=keeperSequence!==null&&nativeKeeperSequenceInterrupted(keeperSequence,shoeBridge.snapshot().started,shoeBridge.snapshot().active,[...smallBodyGuard.snapshot().lowerLegBallContacts,...(smallBodyGuard.snapshot().headBallContacts??[]),...(smallBodyGuard.snapshot().aerialControlContacts??[])]);
-    for(const controller of keeperDives)controller.observe(tick+1,body.linvel(),{otherBallContact:physicalBallConflict,sequenceInterrupted});
+    // Snapshot every glove and held joint before any keeper can apply an
+    // intentional impulse or release; iteration order cannot confer authority.
+    const handEvidence=keeperDives.map(controller=>controller.contactEvidence(tick+1));
+    const postSolverVelocity=Object.freeze({...body.linvel()});
+    for(let i=0;i<keeperDives.length;i++)keeperDives[i].observe(tick+1,postSolverVelocity,{
+     otherBallContact:nativeKeeperCompetingContact(physicalBallConflict,handEvidence,i),sequenceInterrupted});
     // Exponential airborne-only decay after integration; zero rate preserves
     // the original physics-v4 path without any angular-velocity setter.
     if(diagnosticSpinDecayRatePerS>0 &&

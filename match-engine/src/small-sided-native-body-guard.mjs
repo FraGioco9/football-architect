@@ -578,6 +578,14 @@ export function planNativeKeeperChallenge(keeper,attacker,ball,attackPolarity=1)
  if(gap>1.65||gap<0.08)return null;
  return freeze({kind:'challenge',start:freeze(start),target:freeze(intended),intended:freeze(intended),eta,reachTicks,limited:false});
 }
+// All controllers sample solver contacts before any intentional hand action.
+// A second glove or held ball is a competing source, never an arbitrary winner.
+export function nativeKeeperCompetingContact(outfieldContact,samples,index){
+ return outfieldContact===true||samples.some((sample,i)=>i!==index&&(sample.hit||sample.holding));
+}
+export function nativeKeeperExclusiveGripStart(hit,priorHit,conflict){
+ return hit===true&&priorHit===false&&conflict===false;
+}
 export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null,{closeChallengeEnabled=false,nativeOpenPlayIds=null,allowedFundamentals=null,keeperSequence=null}={}){
  const mask=createNativeFundamentalMask(allowedFundamentals),canSave=nativeFundamentalAllowed(mask,'save');
  if(nativeOpenPlayIds!==null&&(!Array.isArray(nativeOpenPlayIds)||!nativeOpenPlayIds.includes(keeper.id)||new Set(nativeOpenPlayIds).size!==nativeOpenPlayIds.length))throw new TypeError('Native keeper requires explicit physical participants');
@@ -676,14 +684,21 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
   prepared={tick,phase,started,actor,physicalPlayers,priorVelocity:freeze({...ball.velocity}),
    plan:plan?freeze({kind:plan.kind,eta:plan.eta,limited:plan.limited,intended:plan.intended,target:plan.target}):null};
  }
- function observe(tick,postVelocity,{otherBallContact=false,sequenceInterrupted=false}={}){
-  if(typeof otherBallContact!=='boolean'||typeof sequenceInterrupted!=='boolean')throw new TypeError('Boolean competing physical contact required');
-  if(prepared?.tick!==tick||!['x','y','z'].every(k=>finite(postVelocity?.[k])))
-   throw new Error('Keeper dive requires same native world step and observed ball velocity');
+ function contactEvidence(tick){
+  if(prepared?.tick!==tick)throw new Error('Keeper contact evidence requires current prepared tick');
+  if(prepared.contactEvidence)return prepared.contactEvidence;
   let hit=false;
   if(active)world.contactPair(ballCollider,glove,m=>{
    if(m.numContacts()>0&&m.numSolverContacts()>0)hit=true;
   });
+  prepared.contactEvidence=freeze({hit,holding:grip?.active()===true});
+  return prepared.contactEvidence;
+ }
+ function observe(tick,postVelocity,{otherBallContact=false,sequenceInterrupted=false}={}){
+  if(typeof otherBallContact!=='boolean'||typeof sequenceInterrupted!=='boolean')throw new TypeError('Boolean competing physical contact required');
+  if(prepared?.tick!==tick||!['x','y','z'].every(k=>finite(postVelocity?.[k])))
+   throw new Error('Keeper dive requires same native world step and observed ball velocity');
+  const {hit}=contactEvidence(tick);
   const pos=body.translation();
   let highHandAction=null,highHandDiagnostic=null;
   if(keeperSequence!==null&&sequenceInterrupted)sequenceDelivery=null;
@@ -716,13 +731,13 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
       if(!accepted)active=false;
      }
     }
-   }else{
+   }else if(nativeKeeperExclusiveGripStart(hit,priorHit,otherBallContact)){
     const accepted=grip.tryGrip(tick,evidence,attackPolarity);
     if(accepted){plan=null;glove.setCollisionGroups(0);}
    }
   }
   let catchState=grip?.observe(tick)??null;
-  const distribution=nativeOpenPlay&&catchState?.active?grip.distribute(tick,prepared.actor,prepared.physicalPlayers):null;
+  const distribution=nativeOpenPlay&&!otherBallContact&&catchState?.active?grip.distribute(tick,prepared.actor,prepared.physicalPlayers):null;
   // Try normal authorized distribution first, even on the final tick.
   // If it is unavailable, detach the actual joint without a kick, a
   // position/velocity setter or a fabricated distribution event.
@@ -753,7 +768,7 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
    distribution:null,officialSave:false,source:'native-rapier-solver-manifold'});
   return latest;
  }
- return freeze({prepare,observe,clearForDeadBall,snapshot:()=>latest});
+ return freeze({prepare,contactEvidence,observe,clearForDeadBall,snapshot:()=>latest});
 }
 
 // UME-06D2C: two real hand proxies on one kinematic carrier, in the
