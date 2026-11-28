@@ -175,7 +175,8 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  soloShoeLengthScale=1,soloRecoveryStepScale=1,
  soloSprintCadenceScale=1,soloSprintLateralTrackScale=1,
  soloSprintActiveFootReleaseM=0,intentDrivenSoloCarry=false,
- firstTimeShotReleaseId=null,sharedDuelStride=false}={}){
+ firstTimeShotReleaseId=null,sharedDuelStride=false,fullFieldNative=false}={}){
+ if(typeof fullFieldNative!=='boolean'||fullFieldNative&&(activePlayerIds?.length!==22||!isolatedPhysicalBodies||isolatedGroundDribbleBallCentreZ!==null||sharedQueue!==null))throw new TypeError('Full field requires all 22 guarded physical shoe identities');
  if(firstTimeShotReleaseId!==null&&(
     activePlayerIds?.length!==1||activePlayerIds[0]!==firstTimeShotReleaseId||
     !/^(home|away)-10$/.test(firstTimeShotReleaseId)||dribbleAttackerId!==null||
@@ -206,7 +207,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     (isolatedPhysicalBodies&&activePlayerIds===null))
   throw new TypeError('Body-isolated shoe groups require selected small-sided players');
  if(activePlayerIds!==null&&(!Array.isArray(activePlayerIds)||
-   activePlayerIds.length<1||activePlayerIds.length>7||
+   activePlayerIds.length<1||activePlayerIds.length>(fullFieldNative?22:7)||
    new Set(activePlayerIds).size!==activePlayerIds.length||
    activePlayerIds.some(id=>!INITIAL_PLAYERS.some(p=>p.id===id))))
   throw new TypeError('Genuine small-sided source needs 2–7 unique physical shoes');

@@ -1,3 +1,4 @@
+import {attackDirection,validateAttackPolarity} from './match-directions.mjs';
 // #628 D-08: bounded sliding tackle intent, not a successful tackle.
 // Only the active directed 1v1 uses this state. The native shoe and
 // original exclusive START gate remain the physical authority.
@@ -16,11 +17,12 @@ const target=(x,y)=>Object.freeze({x:clamp(x,-51.99,51.99),y:clamp(y,-33.49,33.4
 // Launch only from an exposed, reachable rolling ball, on the goal side,
 // while the defender is already moving toward the ball and facing it.
 // Never launch from behind, through shielding, or from a stationary jam.
-export function planSlidingTackle({attackingSide,attacker,defender,ball:b,velocity:v}={}){
+export function planSlidingTackle({attackingSide,attacker,defender,ball:b,velocity:v,attackPolarity=1}={}){
+ validateAttackPolarity(attackPolarity);
  if(!isOpposingDuelPair(attackingSide,attacker,defender)||
     ![attacker.x,attacker.y,defender.x,defender.y,defender.vx,defender.vy,
       defender.facingRad,b?.x,b?.y,b?.z,v?.x,v?.y].every(Number.isFinite))return null;
- const dir=attackingSide==='home'?1:-1;
+ const dir=attackDirection(attackingSide,attackPolarity);
  const dx=b.x-defender.x,dy=b.y-defender.y,gap=Math.hypot(dx,dy);
  const carrierGap=Math.hypot(b.x-attacker.x,b.y-attacker.y);
  const speed=Math.hypot(v.x,v.y);

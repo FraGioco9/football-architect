@@ -2,7 +2,7 @@
 // This does NOT authorize a native Rapier shoe START or any score/possession.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {chooseSmallSidedContextAction,SMALL_SIDED_CONTEXT_CHOICE_VERSION}
+import {chooseSmallSidedContextAction,chooseNativeFootballAction,SMALL_SIDED_CONTEXT_CHOICE_VERSION}
  from '../src/small-sided-context-choice.mjs';
 const base=Object.freeze({
  situationId:'overload-2v1',tick:12,actorId:'home-10',
@@ -70,4 +70,28 @@ test('#628 seed decision fails closed for untrusted scene, side, index or missin
   {...base,variantIndex:2,shotLaneClearanceM:0.9},
   {...base,variantIndex:2,nearestOpponentM:NaN}
  ])assert.throws(()=>chooseSmallSidedContextAction(input));
+});
+
+ test('COL-03 collective choice is independent of initial shirt and side, including V01',()=>{
+  for(let variantIndex=0;variantIndex<30;variantIndex++){
+   const input={...base,variantIndex,collective:true};
+   const choice=chooseSmallSidedContextAction(input);
+   assert.deepEqual(choice,chooseSmallSidedContextAction({...input,actorId:'home-9'}));
+   assert.deepEqual(choice,chooseSmallSidedContextAction({...input,team:'away',attackingSide:'away',actorId:'away-2'}));
+   assert.equal(choice.sample,null);
+   for(const kind of ['shot','pass','carry']){
+    const only=chooseSmallSidedContextAction({...input,canShoot:kind==='shot',canPass:kind==='pass',canCarry:kind==='carry'});
+    assert.equal(only.selected,kind);
+   }
+  }
+ });
+
+test('UME-02 native scoring matches the validated collective baseline without LAB metadata',()=>{
+ for(const flags of [[true,true,true],[false,true,true],[true,false,false],[false,false,true],[false,false,false]]){
+  const geometry={...base,canShoot:flags[0],canPass:flags[1],canCarry:flags[2]};
+  const {situationId,tick,actorId,team,attackingSide,...affordances}=geometry;
+  const shared=chooseNativeFootballAction(affordances);
+  assert.deepEqual(shared,chooseSmallSidedContextAction({...geometry,variantIndex:0,collective:true}));
+  assert.deepEqual(shared,chooseSmallSidedContextAction({...geometry,variantIndex:29,collective:true}));
+ }
 });

@@ -131,7 +131,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   }
   await send('Fetch.continueRequest',{requestId:pausedModule});
   await send('Fetch.disable');socket.removeEventListener('message',onPaused);
-  await wait("document.querySelector('#status')?.textContent==='Ready'&&document.querySelectorAll('#preset-options [role=option][data-value]').length===24&&!document.querySelector('.me-main-panel').hasAttribute('data-loading')");
+  await wait("document.querySelector('#status')?.textContent==='Ready'&&document.querySelector('#preset-options [data-value=\"action:keeper-high-intercept\"]')!==null&&!document.querySelector('.me-main-panel').hasAttribute('data-loading')");
   for(let i=0;i<sizes.length;i++){
    const [width,height]=sizes[i];
    await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
@@ -145,8 +145,8 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    process.stdout.write('ME_628_ACTIVE_FIRST_PAINT '+JSON.stringify({width,height,first,after})+'\n');
   }
   await send('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
-  const activePage=await evalJs("(()=>{const el=id=>document.getElementById(id),menu=el('preset-options');return {groups:[...menu.querySelectorAll('.me-scenario-group-label')].map(x=>x.textContent),choices:menu.querySelectorAll('[role=option]').length,selected:el('preset-value').textContent,visibleComboboxes:[...document.querySelectorAll('.me-toolbar [role=combobox]')].filter(x=>x.getClientRects().length>0).length,attributesHidden:el('me-inline-rating-control').hidden,diagnosticsClosed:!el('me-observation-details').open,legacyAbsent:!menu.querySelector('[data-value=drop],[data-value=\\\"action:overload-2v1\\\"]'),nestedMenus:el('me-observation-details').querySelectorAll('details,select,[role=combobox]').length,legacyTextHidden:el('me-inline-observation').hidden};})()");
-  assert.deepEqual(activePage,{groups:['Carry phases','Passing','Shooting','Goalkeeping','Dribbling & defending'],choices:24,selected:'Carry · Moderate',visibleComboboxes:3,attributesHidden:true,diagnosticsClosed:true,legacyAbsent:true,nestedMenus:0,legacyTextHidden:true});
+  const activePage=await evalJs("(()=>{const el=id=>document.getElementById(id),menu=el('preset-options');return {groups:[...menu.querySelectorAll('.me-scenario-group-label')].map(x=>x.textContent),choices:menu.querySelectorAll('[role=option]').length,selected:el('preset-value').textContent,visibleComboboxes:[...document.querySelectorAll('.me-toolbar [role=combobox]')].filter(x=>x.getClientRects().length>0).length,attributesHidden:el('me-inline-rating-control').hidden,diagnosticsClosed:!el('me-observation-details').open,legacyAbsent:!menu.querySelector('[data-value=drop]'),nestedMenus:el('me-observation-details').querySelectorAll('details,select,[role=combobox]').length,legacyTextHidden:el('me-inline-observation').hidden};})()");
+  assert.deepEqual(activePage,{groups:['Carry phases','Passing','Shooting','Goalkeeping','Dribbling & defending','Collective situations'],choices:38,selected:'Carry · Moderate',visibleComboboxes:3,attributesHidden:true,diagnosticsClosed:true,legacyAbsent:true,nestedMenus:0,legacyTextHidden:true});
   const toggled=await evalJs("(()=>{const el=id=>document.getElementById(id);el('me-inline-side-trigger').click();el('me-inline-side-options').querySelector('[data-value=away]').click();el('speed-trigger').click();el('speed-opt-2').click();return {side:el('me-inline-side').value,speed:el('speed').value,sideLabel:el('me-inline-side-value').textContent,speedLabel:el('speed-value').textContent,tick:el('tick').textContent};})()");
   assert.deepEqual(toggled,{side:'away',speed:'2',sideLabel:'AWAY',speedLabel:'2×',tick:'Tick 0 · 0.00 s'});
   const flat=await evalJs("(()=>{const el=id=>document.getElementById(id);el('me-observation-details').open=true;for(let i=0;i<60;i++)el('step').click();return {open:el('me-observation-details').open,labels:[...el('me-active-metrics').querySelectorAll('dt')].map(x=>x.textContent),values:[...el('me-active-metrics').querySelectorAll('dd')].map(x=>x.textContent),nested:el('me-observation-details').querySelectorAll('details').length};})()");
@@ -174,6 +174,120 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   assert.deepEqual(actionLog.restored,actionLog.all);
   assert.deepEqual(actionLog.reset,[]);assert.equal(actionLog.empty,true);
   assert.ok(Math.abs(actionLog.beforeReset-actionLog.afterReset)<=1);
+  // AERIAL-02B: exercise the actual active selector, original head action,
+  // step progression and reset/replay on both sides and all three geometries.
+  const headerExceptions=[];
+  const captureHeaderException=e=>{const m=JSON.parse(e.data);if(m.method==='Runtime.exceptionThrown')headerExceptions.push(m.params.exceptionDetails.exception?.description??m.params.exceptionDetails.text);};
+  socket.addEventListener('message',captureHeaderException);
+  // Real requestAnimationFrame path: clicking Play must advance time,
+  // physically perform the cross and allow Pause/Reset/Play again.
+  await evalJs(`(()=>{const el=id=>document.getElementById(id);
+   el('preset-trigger').click();el('preset-options').querySelector('[data-value="action:header-pair"]').click();
+   el('reset').click();el('play').click();})()`);
+  await wait("Number(document.getElementById('tick').textContent.split(' ')[1])>=3");
+  await wait("[...document.querySelectorAll('#me-performed-rows tr')].some(r=>r.dataset.action==='cross')");
+  await evalJs("document.getElementById('pause').click()");
+  const pausedHeaderTick=await evalJs("document.getElementById('tick').textContent");
+  await delay(200);
+  assert.equal(await evalJs("document.getElementById('tick').textContent"),pausedHeaderTick);
+  await evalJs("document.getElementById('reset').click();document.getElementById('play').click()");
+  await wait("Number(document.getElementById('tick').textContent.split(' ')[1])>=3");
+  await evalJs("document.getElementById('pause').click();document.getElementById('reset').click()");
+  const headers=await evalJs(`(()=>{
+   const el=id=>document.getElementById(id);
+   el('preset-trigger').click();
+   el('preset-options').querySelector('[data-value="action:header-pair"]').click();
+   const sample=()=>({tick:el('tick').textContent,summary:el('me-inline-summary').textContent,
+    position:el('position').textContent,height:el('height').textContent,
+    actions:[...el('me-performed-rows').rows].map(r=>({player:r.dataset.player,action:r.dataset.action,label:r.cells[2].textContent,tick:+r.dataset.tick}))});
+   const chooseSide=side=>{el('me-inline-side-trigger').click();el('me-inline-side-options').querySelector('[data-value="'+side+'"]').click();};
+   const chooseVariant=index=>{const current=Number(el('me-inline-variant-display').textContent.split('/')[0])-1;
+    for(let i=0;i<(index-current+30)%30;i++)el('me-inline-variant-next').click();};
+   const advance=()=>{const ticks=[];for(let i=0;i<240;i++){el('step').click();ticks.push(Number(el('tick').textContent.split(' ')[1]));
+    if(el('me-inline-summary').textContent.startsWith('Header · '))break;}
+    return {ticks,...sample()};};
+   const result=[];
+   for(const side of ['home','away'])for(let variant=0;variant<3;variant++){
+    if(el('me-inline-side').value!==side)chooseSide(side);
+    chooseVariant(variant);el('reset').click();
+    const initial=sample(),first=advance();el('reset').click();const reset=sample(),replay=advance();
+    const pitch=el('pitch').getBoundingClientRect();
+    result.push({side,variant,variantLabel:el('me-inline-variant-display').textContent,label:el('preset-value').textContent,
+     players:[...el('me-performed-player-options').querySelectorAll('[role=option]')].map(o=>o.dataset.value),
+     initial,first,reset,replay,pitch:{left:pitch.left,right:pitch.right,width:innerWidth,scroll:document.documentElement.scrollWidth}});
+   }
+   el('me-inline-variant-prev').click();el('me-inline-variant-prev').click();
+   return result;
+  })()`);
+  assert.equal(headers.length,6);
+  for(const h of headers){
+   assert.equal(h.label,'Header · Aerial');
+   assert.equal(h.variantLabel,String(h.variant+1).padStart(2,'0')+' / 30');
+   assert.deepEqual(new Set(h.players),new Set(['',h.side+'-10',h.side+'-9']));
+   assert.equal(h.initial.tick,'Tick 0 · 0.00 s');assert.equal(h.initial.summary,'Waiting for cross');
+   assert.deepEqual(h.initial.actions,[]);assert.deepEqual(h.reset,h.initial);
+   assert.ok(h.first.ticks.length>0&&h.first.ticks.length<=240);
+   assert.ok(h.first.ticks.every((t,i)=>t===i+1),'header must advance consecutive physical ticks');
+   assert.match(h.first.summary,/^Header · (shot|pass|clearance)$/);
+   const action=h.first.summary.split(' · ')[1];
+   const header=h.first.actions.find(x=>x.action==='header-'+action);
+   const cross=h.first.actions.find(x=>x.action==='cross');
+   assert.ok(cross&&header&&cross.tick<header.tick,'cross must precede authentic header');
+   assert.equal(cross.player,h.side+'-10');assert.equal(header.player,h.side+'-9');
+   assert.equal(header.tick,h.first.ticks.at(-1));assert.match(header.label,/^Header · /);
+   assert.deepEqual(h.replay,h.first,'same header must replay identically after Reset');
+   assert.ok(h.pitch.left>=-1&&h.pitch.right<=h.pitch.width+1&&h.pitch.scroll<=h.pitch.width+1);
+   process.stdout.write('ME_628_AERIAL02_BROWSER '+JSON.stringify(h)+'\\n');
+  }
+  await delay(100);socket.removeEventListener('message',captureHeaderException);
+  assert.deepEqual(headerExceptions,[],'Header LAB must not freeze Chrome');
+  // AERIAL-08D: all remaining individual aerial scenes must open,
+  // advance consecutive real ticks, and reset/replay in the live menu.
+  // Outcome certification stays in the mirrored physical core tests.
+  const aerialExceptions=[];
+  const captureAerialException=e=>{const m=JSON.parse(e.data);if(m.method==='Runtime.exceptionThrown')aerialExceptions.push(m.params.exceptionDetails.exception?.description??m.params.exceptionDetails.text);};
+  socket.addEventListener('message',captureAerialException);
+  const aerialScenes=[
+   ['chest-control','Control · Chest',2],['aerial-foot-control','Control · Aerial foot',1],
+   ['aerial-duel','Aerial duel · 1v1',2],['lofted-short','Pass · Lofted short',3],
+   ['lofted-pass','Pass · Lofted long',2],['lofted-switch','Pass · Switch of play',2],
+   ['volley-solo','Shot · Volley',2],['keeper-high-cross','Goalkeeper · High cross',3],
+   ['keeper-high-intercept','Goalkeeper · High interception',3]
+  ];
+  for(const [scene,label,playerCount] of aerialScenes){
+   const journey=await evalJs(`(()=>{
+    const el=id=>document.getElementById(id);
+    el('preset-trigger').click();
+    el('preset-options').querySelector('[data-value="action:${scene}"]').click();
+    el('reset').click();
+    const sample=()=>({tick:el('tick').textContent,summary:el('me-inline-summary').textContent,
+     position:el('position').textContent,height:el('height').textContent,
+     actions:[...el('me-performed-rows').rows].map(r=>({player:r.dataset.player,action:r.dataset.action,tick:+r.dataset.tick}))});
+    const advance=()=>{const ticks=[];for(let i=0;i<12;i++){el('step').click();ticks.push(Number(el('tick').textContent.split(' ')[1]));}return {ticks,...sample()};};
+    const initial=sample(),first=advance();el('reset').click();const reset=sample(),replay=advance();
+    return {label:el('preset-value').textContent,players:[...el('me-performed-player-options').querySelectorAll('[role=option]')].map(o=>o.dataset.value),
+     initial,first,reset,replay};
+   })()`);
+   assert.equal(journey.label,label);
+   assert.equal(new Set(journey.players.filter(Boolean)).size,playerCount,scene);
+   assert.equal(journey.initial.tick,'Tick 0 · 0.00 s',scene);
+   assert.ok(journey.initial.summary,scene);
+   assert.deepEqual(journey.initial.actions,[],scene);
+   assert.deepEqual(journey.reset,journey.initial,scene);
+   assert.deepEqual(journey.first.ticks,Array.from({length:12},(_,i)=>i+1),scene);
+   assert.deepEqual(journey.replay,journey.first,scene);
+   process.stdout.write('ME_628_AERIAL_BROWSER '+JSON.stringify({scene,...journey})+'\\n');
+  }
+  // The newly added keeper scene must also run through the actual Play loop.
+  await evalJs("document.getElementById('reset').click();document.getElementById('play').click()");
+  await wait("Number(document.getElementById('tick').textContent.split(' ')[1])>=3");
+  await evalJs("document.getElementById('pause').click()");
+  const pausedAerialTick=await evalJs("document.getElementById('tick').textContent");
+  await delay(100);
+  assert.equal(await evalJs("document.getElementById('tick').textContent"),pausedAerialTick);
+  await evalJs("document.getElementById('reset').click()");
+  socket.removeEventListener('message',captureAerialException);
+  assert.deepEqual(aerialExceptions,[],'Aerial LABs must not freeze Chrome');
   const keeperUI=await evalJs("(()=>{const el=id=>document.getElementById(id);el('preset-trigger').click();document.querySelector('#preset-options [data-value=\\\"action:keeper-1v1\\\"]').click();el('me-observation-details').open=true;return {label:el('preset-value').textContent,players:[...el('me-performed-player-options').querySelectorAll('[role=option]')].map(x=>x.dataset.value),metrics:[...el('me-active-metrics').querySelectorAll('dt')].map(x=>x.textContent),summary:el('me-inline-summary').textContent};})()");
   assert.equal(keeperUI.label,'1v1 · goalkeeper');
   assert.deepEqual(new Set(keeperUI.players),new Set(['','away-10','home-1']));
@@ -182,14 +296,13 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   const dribbleUI=await evalJs("(()=>{const el=id=>document.getElementById(id);el('preset-trigger').click();document.querySelector('#preset-options [data-value=\\\"action:dribble-1v1\\\"]').click();return {label:el('preset-value').textContent,players:[...el('me-performed-player-options').querySelectorAll('[role=option]')].map(x=>x.dataset.value),metrics:[...el('me-active-metrics').querySelectorAll('dt')].map(x=>x.textContent),summary:el('me-inline-summary').textContent};})()");
   assert.equal(dribbleUI.label,'1v1 · autonomous duel');
   assert.deepEqual(new Set(dribbleUI.players),new Set(['','away-10','home-2']));
-  assert.deepEqual(dribbleUI.metrics,['Ball control','Defensive intent','Touches','Defensive touches','Ball path','Peak ball speed']);
+  assert.deepEqual(dribbleUI.metrics,['Ball control','Carry touches','Passes','Shots','Defensive touches','Keeper saves attempted']);
   assert.equal(dribbleUI.summary,'Loose ball');
   const duelExceptions=[];const captureDuelException=e=>{const m=JSON.parse(e.data);if(m.method==='Runtime.exceptionThrown')duelExceptions.push(m.params.exceptionDetails.exception?.description??m.params.exceptionDetails.text);};
   socket.addEventListener('message',captureDuelException);
   const duelProgress=await evalJs("(()=>{const el=id=>document.getElementById(id);const states=new Set();for(let i=0;i<360;i++){el('step').click();states.add(el('me-inline-summary').textContent);}return {states:[...states],values:[...el('me-active-metrics').querySelectorAll('dd')].map(x=>x.textContent)};})()");
-  assert.ok(duelProgress.states.every(s=>['Loose ball','Ball controlled'].includes(s)));
-  assert.ok(duelProgress.states.includes('Ball controlled'),'actual control should be observable in this replay');
-  assert.ok(Number(duelProgress.values[2])>0,'real carry actions must advance');
+  assert.ok(duelProgress.states.every(s=>['Loose ball','Ball controlled','Shot in flight','Pass in flight','Goal observed','Ball out'].includes(s)));
+  assert.ok(duelProgress.values.slice(1).some(x=>Number(x)>0),'real native actions must advance');
   await delay(100);socket.removeEventListener('message',captureDuelException);assert.deepEqual(duelExceptions,[],'mixed duel must not freeze Chrome');
   for(const [profile,label] of [['standing','Standing tackle'],['sliding','Sliding tackle'],['shoulder','Shoulder challenge']]){
    const selected=await evalJs(`(()=>{const el=id=>document.getElementById(id);el('preset-trigger').click();[...el('preset-options').querySelectorAll('[data-value]')].find(x=>x.dataset.value==='action:dribble-1v1:${profile}').click();el('step').click();return {label:el('preset-value').textContent,summary:el('me-inline-summary').textContent,players:[...el('me-performed-player-options').querySelectorAll('[role=option]')].map(x=>x.dataset.value)};})()`);
@@ -208,6 +321,25 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   const blockUI=await evalJs("(()=>{const el=id=>document.getElementById(id);el('preset-trigger').click();[...el('preset-options').querySelectorAll('[data-value]')].find(x=>x.dataset.value==='action:defender-1v1:block').click();for(let i=0;i<180;i++)el('step').click();return {label:el('preset-value').textContent,summary:el('me-inline-summary').textContent,players:[...el('me-performed-player-options').querySelectorAll('[role=option]')].map(x=>x.dataset.value),values:[...el('me-active-metrics').querySelectorAll('dd')].map(x=>x.textContent)};})()");
   assert.equal(blockUI.label,'Block');assert.deepEqual(new Set(blockUI.players),new Set(['','away-10','home-2','home-1']));assert.equal(blockUI.values[0],'Observed');assert.notEqual(blockUI.summary,'Waiting for shot');
   await delay(100);socket.removeEventListener('message',captureBlockException);assert.deepEqual(blockExceptions,[],'Block must not freeze Chrome');
+  const collectiveExceptions=[];const captureCollectiveException=e=>{const m=JSON.parse(e.data);if(m.method==='Runtime.exceptionThrown')collectiveExceptions.push(m.params.exceptionDetails.exception?.description??m.params.exceptionDetails.text);};
+  socket.addEventListener('message',captureCollectiveException);
+  const collectiveUI=await evalJs("(()=>{const el=id=>document.getElementById(id);el('preset-trigger').click();[...el('preset-options').querySelectorAll('[data-value]')].find(x=>x.dataset.value==='action:overload-2v1').click();for(let i=0;i<240;i++)el('step').click();return {label:el('preset-value').textContent,players:[...el('me-performed-player-options').querySelectorAll('[role=option]')].map(x=>x.dataset.value),metrics:[...el('me-active-metrics').querySelectorAll('dt')].map(x=>x.textContent),values:[...el('me-active-metrics').querySelectorAll('dd')].map(x=>x.textContent),tick:el('tick').textContent};})()");
+  assert.equal(collectiveUI.label,'2v1 · autonomous play');assert.deepEqual(new Set(collectiveUI.players),new Set(['','away-10','away-9','home-2','home-1']));
+  assert.deepEqual(collectiveUI.metrics,['Ball control','Carry touches','Passes','Shots','Defensive touches','Keeper saves attempted']);
+  assert.ok(collectiveUI.values.slice(1).some(x=>Number(x)>0));assert.notEqual(collectiveUI.tick,'Tick 0 · 0.00 s');
+  for(const [id,label,players] of [
+   ['defender-1v1','1v1 + goalkeeper · autonomous play',['','away-10','home-2','home-1']],
+   ['duel-2v2','2v2 · autonomous play',['','away-10','away-9','home-2','home-3','home-1']],
+   ['duel-3v3','3v3 · autonomous play',['','away-10','away-9','away-11','home-2','home-3','home-4','home-1']]
+  ]){
+   const f=await evalJs(`(()=>{const el=id=>document.getElementById(id);el('preset-trigger').click();[...el('preset-options').querySelectorAll('[data-value]')].find(x=>x.dataset.value==='action:${id}').click();const sample=()=>({position:el('position').textContent,tick:el('tick').textContent,values:[...el('me-active-metrics').querySelectorAll('dd')].map(x=>x.textContent),actions:[...el('me-performed-rows').rows].map(r=>[r.dataset.player,r.dataset.action,r.dataset.tick])});const advance=n=>{for(let i=0;i<n;i++)el('step').click();};advance(30);const first=sample();el('reset').click();const reset=sample();advance(30);const replay=sample();advance(90);return {first,reset,replay,label:el('preset-value').textContent,players:[...el('me-performed-player-options').querySelectorAll('[role=option]')].map(x=>x.dataset.value),metrics:[...el('me-active-metrics').querySelectorAll('dt')].map(x=>x.textContent),tick:el('tick').textContent};})()`);
+   assert.equal(f.label,label);assert.deepEqual(new Set(f.players),new Set(players));
+   assert.deepEqual(f.metrics,collectiveUI.metrics);assert.notEqual(f.tick,'Tick 0 · 0.00 s');
+   assert.equal(f.reset.tick,'Tick 0 · 0.00 s');assert.deepEqual(f.reset.actions,[]);
+   assert.deepEqual(f.replay,f.first,'same native scene must replay identically after Reset');
+   process.stdout.write('ME_628_UME06_BROWSER '+JSON.stringify({id,...f})+'\n');
+  }
+  await delay(100);socket.removeEventListener('message',captureCollectiveException);assert.deepEqual(collectiveExceptions,[],'native open play must not freeze Chrome');
   await evalJs("document.getElementById('me-observation-details').open=false");
   for(const [width,height] of [[1440,900],[390,844]]){
    await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});

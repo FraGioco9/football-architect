@@ -1,9 +1,11 @@
+import {exclusiveNativeAerialStart} from './small-sided-native-body-guard.mjs';
 // #628 ACTIONS-B05: original 60Hz Rapier ball crossing and minimal referee
 // restarts. DEV read-only source auditor; never fabricates an action, possession,
 // a touch, or a result in the world competitions database.
 import {BALL_RADIUS,FIXED_DT} from './core.mjs';
 import {PLAYER_PITCH,INITIAL_PLAYERS} from './player-movement.mjs';
 import {FOOT_SOLVER_EVIDENCE_VERSION} from './player-foot-contact-solver.mjs';
+import {validateAttackPolarity,teamAttackingEnd,oppositeTeam} from './match-directions.mjs';
 export const B05_REFEREE_VERSION='actions-b05-native-boundary-referee-v1';
 export const B05_GOAL_WIDTH_M=7.32;
 export const B05_GOAL_HEIGHT_M=2.44;
@@ -12,9 +14,14 @@ const knownIds=new Set(INITIAL_PLAYERS.map(p=>p.id));
 const halfX=PLAYER_PITCH.lengthM/2,halfY=PLAYER_PITCH.widthM/2;
 const inside=(n,min,max)=>Math.max(min,Math.min(max,n));
 const fixed=Object.freeze;
-function restartFor({edge,side,intersection,lastTouchTeam,scoringTeam}){
+export function resolveB05BoundaryRestart({edge,side,intersection,lastTouchTeam,attackPolarity=1}){
+ validateAttackPolarity(attackPolarity);
+ if(!['goal','goal-line','touchline'].includes(edge)||![1,-1].includes(side)||
+    !['x','y','z'].every(k=>finite(intersection?.[k]))||
+    ![null,'home','away'].includes(lastTouchTeam))throw new TypeError('Original boundary geometry and last-touch identity required');
+ const scoringTeam=edge==='goal'?teamAttackingEnd(side,attackPolarity):null;
  if(edge==='goal'){
-  const team=scoringTeam==='home'?'away':'home';
+  const team=oppositeTeam(scoringTeam);
   return freeze({type:'kickoff',team,spot:freeze({x:0,y:0,z:BALL_RADIUS}),
    ready:true,source:'verified-real-goal-line-crossing',
    sameBallRapierRestart:true});
@@ -28,8 +35,8 @@ function restartFor({edge,side,intersection,lastTouchTeam,scoringTeam}){
    ready:team!==null,source:team?'native-sole-shoe-last-touch':'no-verified-last-touch',
    sameBallRapierRestart:team!==null});
  }
- const defending=side===1?'away':'home';
- const attacking=side===1?'home':'away';
+ const attacking=teamAttackingEnd(side,attackPolarity);
+ const defending=oppositeTeam(attacking);
  if(lastTouchTeam===null)
   return freeze({type:'unresolved-goal-line',team:null,spot:null,
    ready:false,candidates:freeze(['corner','goal-kick']),
@@ -78,18 +85,20 @@ export function detectFirstFullyOutBallB05(previous,current){
   edge:goal?'goal':first.axis==='x'?'goal-line':'touchline',
   goal,fullBallCrossed:true,source:'real-consecutive-rapier-centres'});
 }
-export function createBasicMatchRefereeB05(){
- let tick=-1,last=null,previous=null,lastTouch=null,
+export function createBasicMatchRefereeB05({attackPolarity=1}={}){
+ validateAttackPolarity(attackPolarity);
+ let periodSwitched=false,tick=-1,last=null,previous=null,lastTouch=null,
   event=null,restarted=false,score={home:0,away:0};
  function snapshot(){
   return freeze({version:B05_REFEREE_VERSION,tick,
    lastVerifiedTouch:lastTouch,lastEvent:event,
    restartApplied:restarted,provisionalGoals:freeze({...score}),
+   ...(attackPolarity!==1?{attackPolarity}:{}),
    original22Source:true,readOnlyObservation:true,
    matchAuthority:false,officialMatchResult:null,
    officialPossession:false});
  }
- function observe({physics,playerFrame,foot,solver,action=null,keeperDive=null}={}){
+ function observe({physics,playerFrame,foot,solver,action=null,keeperDive=null,aerialEvidence=null,aerialConflict=false}={}){
   const next=physics?.tick,ball=physics?.ball;
   if(!Number.isSafeInteger(next)||next!==tick+1||next<0||
     playerFrame?.tick!==next||foot?.tick!==next||
@@ -117,11 +126,20 @@ export function createBasicMatchRefereeB05(){
       pair.id===id&&pair.beganThisTick&&pair.collisionActive&&
       pair.manifolds.some(m=>m.geometricContacts>0))))
    throw new TypeError('B05 native Rapier solver and collision queue must agree');
+  if(aerialEvidence!==null&&(!Array.isArray(aerialEvidence)||typeof aerialConflict!=='boolean'||
+     aerialEvidence.some(s=>!['me-628-native-aerial-head-v1','me-628-native-aerial-control-v1'].includes(s.version)||s.tick!==next||
+      s.sameOriginalRapierWorld!==true||s.actualNativeSolverContact!==s.contact||
+      s.contactStarted&&!s.contact||!playerFrame.players.some(p=>p.id===s.actorId&&p.team===s.team&&p.role!=='goalkeeper'))))
+   throw new TypeError('B05 head touch requires current original native evidence');
+  const heads=(aerialEvidence??[]).filter(s=>s.contact);
+  const headStart=exclusiveNativeAerialStart(aerialEvidence,foot.started,foot.active,aerialConflict);
+  const headerAction=action?.nativeExclusiveHeadStart===true&&headStart?.version==='me-628-native-aerial-head-v1'&&action.actualNativeSolverContact===true&&headStart?.actorId===action.playerId;
+  const aerialControlAction=action?.nativeExclusiveAerialControlStart===true&&headStart?.version==='me-628-native-aerial-control-v1'&&action.surface===headStart.surface&&action.actualNativeSolverContact===true&&headStart.actorId===action.playerId;
   if(action!==null&&(
     action.tick!==next||action.appliedByRapier!==true||
     action.actualPhysicsImpulseApplied!==true||
     action.officialMatchAction!==false||
-    foot.started.length!==1||foot.started[0]!==action.playerId))
+    (!headerAction&&!aerialControlAction&&(foot.started.length!==1||foot.started[0]!==action.playerId))))
    throw new TypeError('B05 last touch requires authenticated original action');
   // A native sole START is touch evidence even without a uniform kick.
   // Simultaneous STARTs cannot be assigned to either team.
@@ -130,7 +148,9 @@ export function createBasicMatchRefereeB05(){
      keeperDive.contact!==true||keeperDive.source!=='native-rapier-solver-manifold'||
      !playerFrame.players.some(p=>p.id===keeperDive.keeperId&&p.role==='goalkeeper')))
    throw new TypeError('B05 keeper glove touch requires same-tick native evidence');
-  if(gloveStart&&foot.started.length===0)
+  if(heads.length&&(!headStart||gloveStart))lastTouch=null;
+  else if(headStart)lastTouch=freeze({tick:next,playerId:headStart.actorId,team:headStart.team,...(headStart.version==='me-628-native-aerial-head-v1'?{nativeHeadContact:true}:{nativeAerialControlContact:true,surface:headStart.surface})});
+  else if(gloveStart&&foot.started.length===0)
    lastTouch=freeze({tick:next,playerId:keeperDive.keeperId,team:keeperDive.keeperId.split('-')[0],nativeGloveContact:true});
   else if(gloveStart&&foot.started.some(id=>id!==keeperDive.keeperId))lastTouch=null;
   else if(foot.started.length===1)
@@ -145,11 +165,10 @@ export function createBasicMatchRefereeB05(){
    const crossing=detectFirstFullyOutBallB05(previous,ball.position);
    if(crossing){
     restarted=false;
-    const scoringTeam=crossing.edge==='goal'?
-     crossing.side===1?'home':'away':null;
-    const restart=restartFor({edge:crossing.edge,side:crossing.side,
+    const scoringTeam=crossing.edge==='goal'?teamAttackingEnd(crossing.side,attackPolarity):null;
+    const restart=resolveB05BoundaryRestart({edge:crossing.edge,side:crossing.side,
      intersection:crossing.intersection,lastTouchTeam:lastTouch?.team??null,
-     scoringTeam});
+     attackPolarity});
     if(scoringTeam)score={...score,[scoringTeam]:score[scoringTeam]+1};
     event=freeze({
      tick:next,gameClockS:next*FIXED_DT,kind:crossing.edge,
@@ -174,5 +193,22 @@ export function createBasicMatchRefereeB05(){
   lastTouch=null;
   return snapshot();
  }
- return freeze({observe,snapshot,acknowledgeRestart});
+ function clearTouchForPeriod(currentTick,nextPolarity,centre){
+  if(currentTick!==tick||tick<1||event&&!restarted||periodSwitched||attackPolarity!==1||
+     nextPolarity!==-1||!centre||Math.hypot(centre.x,centre.y)>1e-8||Math.abs(centre.z-BALL_RADIUS)>1e-6)
+   throw new TypeError('B05 period reset requires current resolved boundary and original centre placement');
+  lastTouch=null;previous=freeze({...centre});attackPolarity=nextPolarity;periodSwitched=true;
+  return snapshot();
+ }
+ function recordNativeThrowIn(take){
+  if(!restarted||event?.restart?.type!=='throw-in'||take?.sourceEventTick!==event.tick||
+     take.tick!==tick||take.team!==event.restart.team||!knownIds.has(take.actorId)||
+     !take.actorId.startsWith(take.team+'-')||take.originalNativeHandContact!==true||
+     take.nativeTwoHandSolverContact!==true||take.nativeGripReleased!==true||
+     take.physicalImpulseApplied!==true||take.legalThrowConfirmed!==false)
+   throw new TypeError('B05 requires authenticated current native throw release');
+  lastTouch=freeze({tick,playerId:take.actorId,team:take.team,nativeHandRelease:true});
+  return snapshot();
+ }
+ return freeze({observe,snapshot,acknowledgeRestart,recordNativeThrowIn,clearTouchForPeriod});
 }

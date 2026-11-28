@@ -14,7 +14,7 @@ import {reviewLiftInputContributions} from '/__fa_match_engine__/lift-input-qa.m
 import {runContactImpactDiagnostics} from '/__fa_match_engine__/contact-impact-qa.mjs';
 import {mountControlledActionLabs,createControlledActionLab,projectActiveLabDecisions} from '/__fa_match_engine__/action-labs.mjs';
 import {mountControlledMovementLabs,createControlledMovementLab} from '/__fa_match_engine__/movement-labs.mjs';
-import {SMALL_SIDED_VARIANT_COUNT} from '/__fa_match_engine__/small-sided-lab-scenarios.mjs';
+import {SMALL_SIDED_VARIANT_COUNT,supportsNativeOpenPlay} from '/__fa_match_engine__/small-sided-lab-scenarios.mjs';
 import {LAB_SHOT_PROFILES,LAB_SHOT_LABELS} from '/__fa_match_engine__/lab-shot-calibration.mjs';
 import {SOLO_CARRY_PHASES} from '/__fa_match_engine__/solo-carry-phases.mjs';
 import {uniformSoloCarryAttributes}
@@ -38,6 +38,7 @@ const fields = ['x', 'y', 'z', 'vx', 'vy', 'vz'];
 const controls = ['play', 'pause', 'step', 'reset', 'apply', 'compare', 'measure', 'action-labs-open', 'movement-labs-open',
  'preset-trigger','me-inline-side-trigger','speed-trigger','me-inline-variant-prev','me-inline-variant-next'];
 let rapier, engine, history = [], playing = false, lastFrame = 0, accumulator = 0;
+let playbackFailure=null;
 let physicsTickSnapshot = null;
 let playerWorld=createPlayerMovement(),playerSnapshot=playerWorld.snapshot();
 let playersShown=false;
@@ -89,13 +90,15 @@ function recordPerformedActions(frame){
  const action=frame.action;
  if(action?.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true&&
     action.tick===tick&&ids.includes(action.playerId))
-  events.push({id:action.playerId,kind:action.action,
-   label:performedActionLabels[action.action]??action.action});
+  events.push({id:action.playerId,kind:action.nativeVolley===true?'volley':action.passTarget?.deliveryProfile==='lofted'?'lofted-pass':action.nativeExclusiveHeadStart===true?'header-'+action.action:action.nativeExclusiveAerialControlStart===true?action.surface+'-control':action.action,
+   label:action.nativeVolley===true?'Volley':action.passTarget?.deliveryProfile==='lofted'?(action.passTarget.loftedProfile==='switch'?'Switch of play':action.passTarget.loftedProfile==='short'?'Short lofted pass':'Lofted pass'):action.nativeExclusiveHeadStart===true?'Header · '+(performedActionLabels[action.action]??action.action):
+    action.nativeExclusiveAerialControlStart===true?(action.surface==='chest'?'Chest control':'Aerial foot control'):performedActionLabels[action.action]??action.action});
  // First receiving contacts are actual native observations, not inferred
  // completed passes or successful possession. They have their own actor.
  const dive=frame.keeperDive;
- if(dive?.tick===tick&&dive.started)events.push({id:dive.keeperId,kind:dive.plan?.kind==='challenge'?'challenge':'dive',label:dive.plan?.kind==='challenge'?'Challenge':'Dive'});
+ if(dive?.tick===tick&&dive.started)events.push({id:dive.keeperId,kind:dive.plan?.kind==='high-claim'?'high-claim':dive.plan?.kind==='challenge'?'challenge':'dive',label:dive.plan?.kind==='high-claim'?'High claim':dive.plan?.kind==='challenge'?'Challenge':'Dive'});
  if(dive?.tick===tick&&dive.contactStarted)events.push({id:dive.keeperId,kind:'glove-contact',label:'Glove contact'});
+ if(dive?.highHandAction?.tick===tick&&dive.highHandAction.kind==='punch'&&dive.highHandAction.actualPhysicsImpulseApplied===true)events.push({id:dive.keeperId,kind:'punch',label:'Punch'});
  const keeper=frame.keeperShotAudit;
  if(keeper?.deflection?.tick===tick)events.push({id:keeper.keeperId,kind:'deflection',label:'Deflection'});
  if(keeper?.secondShotTick===tick){
@@ -150,7 +153,7 @@ byId('me-performed-player').addEventListener('change',updatePerformedFilter);
 const smallSidedDecisionLabels=Object.freeze({
  'carry-ball':'Carry the ball','approach-ball':'Approach the ball',
  'hold-pass-target':'Hold receiving position',
- 'support-run':'Support the attack','press-ball':'Close down the ball',
+ 'support-run':'Support the attack','press-ball':'Close down the ball','cover-pass':'Cover passing lane',
  'goalkeeping':'Protect the goal','getting-up':'—','shoulder-challenge':'Shoulder challenge','intercept-ball':'Intercept ball','block-shot':'Block shot'
 });
 const humanPlayer=id=>id.replace('home-','HOME #').replace('away-','AWAY #');
@@ -352,12 +355,14 @@ function restart() {
     const {kind,id}=activeScene,side=byId('me-inline-side').value;
     if(!['home','away'].includes(side))
       throw new TypeError('Original small-sided situation requires HOME/AWAY');
+    const nativeOpenPlay=!archiveMode&&kind==='action'&&supportsNativeOpenPlay(id)&&id!=='keeper-1v1'&&(activeScene.duelTackleProfile??'mixed')==='mixed';
     const next=kind==='action'?
       createControlledActionLab(rapier,id,{shotSide:side,
        variantIndex:activeVariantIndex,shotProfile:activeScene.shotProfile??'power',firstTimeShot:activeScene.firstTimeShot===true,
        bodyGuardEnabled:id!=='carry-solo'&&id!=='pass-pair'&&id!=='cross-pair'&&id!=='shot-solo',
+       collectiveApproaches:nativeOpenPlay,
        keeperSingleShot:!archiveMode&&id==='keeper-1v1',
-       directedDribble:!archiveMode&&id==='dribble-1v1',
+       directedDribble:!archiveMode&&id==='dribble-1v1'&&!nativeOpenPlay,
        duelTackleProfile:activeScene.duelTackleProfile??'mixed',
        // Visible fixed Carry now runs in a long open-space native research
        // runway. Only actual same-world Rapier shoe STARTs authorize a push.
@@ -386,7 +391,7 @@ function restart() {
     onFieldDecisionEvents=[];
     physicsTickSnapshot=inlinePhysics(next.snapshot());
     history=[physicsTickSnapshot];
-    accumulator=0;playing=false;inspectedPlayerId=null;
+    accumulator=0;playing=false;playbackFailure=null;inspectedPlayerId=null;
     byId('player-inspect-choice').value='';
     syncScenarioSurface();
     resetPerformedActions();
@@ -409,7 +414,7 @@ function restart() {
   playerWorld=createPlayerMovement();playerSnapshot=playerWorld.snapshot();
   inspectedPlayerId=null;byId('player-inspect-choice').value='';
   accumulator = 0;
-  playing = false;
+  playing = false;playbackFailure=null;
   byId('compare-result').textContent = '';
   byId('compare-result').hidden = true;
   syncScenarioSurface();
@@ -464,13 +469,20 @@ function advance() {
   if (history.length > 1400) history.shift();
 }
 function play() {
+  if(playbackFailure){say(playbackFailure,true);return;}
   if(activeScene?.kind==='action'&&(activeLab?.snapshot().refereeEvidence?.lastEvent||keeperSingleShotFinished(activeLab?.snapshot()))){
     playing=false;say('Exercise complete · Reset to retry');
     return;
   }
   playing = true; say('Running');
 }
-function pause() { playing = false; say('Paused'); }
+function pause() { playing = false; say(playbackFailure??'Paused',playbackFailure!==null); }
+function reportPlaybackFailure(error){
+ playing=false;accumulator=0;
+ playbackFailure='Simulation failed: '+(error?.message??String(error))+' · Reset to retry';
+ say(playbackFailure,true);
+ console.error(error);
+}
 function drawInlinePlayers(ctx,X,Y){
  const frame=activeLab.snapshot();
  const all=frame.observedMovementPlayers??frame.players;
@@ -739,7 +751,7 @@ function render() {
     const shot=f.shotSoloAudit, pass=f.passPairAudit, cross=f.crossPairAudit;
     const keeper=f.keeperShotAudit;
     const mixedControl=f.duelTackleProfile==='mixed'&&f.duelTransition?.ballControl;
-    const summary=f.blockAudit?(f.blockAudit.blocked?'Shot blocked':f.blockAudit.contactTick!==null?'Defender contact':f.blockAudit.phase==='flight'?'Shot in flight':'Waiting for shot'):f.interceptionAudit?({ready:'Waiting for pass',flight:'Pass in flight',intercepted:'Interception contact',collected:'Ball recovered',received:'Pass reached receiver'})[f.interceptionAudit.phase]:keeper?
+    const summary=['keeper-high-cross','keeper-high-intercept'].includes(activeScene.id)?(f.highClaimAudit?.punchTick!=null?'Punch observed':f.highClaimAudit?.confirmedTick!==null&&f.highClaimAudit?.confirmedTick!==undefined?'Catch confirmed':f.highClaimAudit?.contactTick!=null?(f.keeperDive?.catchState?.active?'Securing ball':'Hand contact'):f.highClaimAudit?'High claim attempt':f.headerCrossAudit?'Cross in flight':'Waiting for cross'):activeScene.id==='volley-solo'?(f.volleyAudit?'Volley observed':f.headerCrossAudit?'Waiting for volley':'Waiting for cross'):['lofted-pass','lofted-short','lofted-switch'].includes(activeScene.id)?(f.loftedPassAudit?.receiverContact?'Receiver contact':f.loftedPassAudit?'Lofted pass in flight':'Waiting for lofted pass'):activeScene.id==='aerial-duel'?(f.aerialDuelAudit?(f.aerialDuelAudit.kind==='exclusive-header'?(f.aerialDuelAudit.team==='home'?'HOME':'AWAY')+' · Header':f.aerialDuelAudit.kind==='ambiguous-contact'?'Simultaneous contact':'Contested contact'):'Waiting for aerial duel'):f.aerialControlAudit?(f.aerialControlAudit.surface==='chest'?'Chest control':'Aerial foot control'):activeScene.id==='chest-control'?(f.headerCrossAudit?'Waiting for chest control':'Waiting for cross'):activeScene.id==='aerial-foot-control'?'Waiting for aerial foot control':f.headerAudit?'Header · '+f.headerAudit.action:activeScene.id==='header-pair'?(f.headerCrossAudit?'Waiting for header':'Waiting for cross'):f.blockAudit?(f.blockAudit.blocked?'Shot blocked':f.blockAudit.contactTick!==null?'Defender contact':f.blockAudit.phase==='flight'?'Shot in flight':'Waiting for shot'):f.interceptionAudit?({ready:'Waiting for pass',flight:'Pass in flight',intercepted:'Interception contact',collected:'Ball recovered',received:'Pass reached receiver'})[f.interceptionAudit.phase]:keeper?
       (keeper.crossing?(keeper.crossing.kind==='goal'?'Goal observed':'Ball out'):
        f.keeperDive?.catchState?.active&&f.keeperDive.catchState.confirmedTick!==null?'Ball held':
        f.keeperDive?.catchState?.active?'Securing ball':
@@ -756,6 +768,7 @@ function render() {
         pass.attempted?'Pass observed':'Waiting for pass'):
       cross?(cross.arrival?'Arrival observed':
         cross.attempted?'Cross observed':'Waiting for cross'):
+      f.collectiveControl?(f.refereeEvidence?.lastEvent?(f.refereeEvidence.lastEvent.kind==='goal'?'Goal observed':'Ball out'):f.collectiveControl.keeperHold?'Ball held':f.collectiveControl.kind==='controlled'?'Ball controlled':f.collectiveControl.delivery?.kind==='shot'?'Shot in flight':f.collectiveControl.delivery?'Pass in flight':'Loose ball'):
       mixedControl?(mixedControl.kind==='controlled'?'Ball controlled':'Loose ball'):
       f.nativeDribbleAudit&&!f.nativeDribbleAudit.soloCarry?
         (Object.values(f.duelTransition?.getUpUntil??{}).some(until=>until>=f.physicsTick)?'Loose ball':f.duelTransition?.lastShoulder?.tick===f.physicsTick?'Shoulder challenge':f.defensiveSlide?.phase==='slide'?'Sliding tackle':f.defensiveSlide?.phase==='recovery'?'Defender recovery':f.duelTransition?.phase==='counter'?'Counter carry':f.duelTransition?.phase==='recover'?'Loose ball recovery':f.shieldAudit?.shielding?'Shielding':f.nativeDribbleAudit.defenderShoeStarts>0||f.nativeDribbleAudit.nativeBodyBallContactTicks>0?'Physical contest':f.nativeDribbleAudit.appliedCarryActions>0?'Dribbling':'Waiting for touch'):
@@ -773,7 +786,23 @@ function renderActiveMetrics(f){
  const shot=f.shotSoloAudit,pass=f.passPairAudit,cross=f.crossPairAudit;
  let entries;
  const keeper=f.keeperShotAudit;
- if(f.blockAudit){
+ if(['keeper-high-cross','keeper-high-intercept'].includes(activeScene.id)){
+  const a=f.highClaimAudit;
+  entries=[['Cross',f.headerCrossAudit?'Observed':'—'],['High claim',a?'Attempted':'—'],['Hand contact',a?.contactTick!=null?'Observed':'—'],['Grip',a?.punchTick!=null?'Punched away':a?.confirmedTick!=null?'Confirmed':f.keeperDive?.catchState?.active?'Pending':a?.contactTick!=null?'Not secured':'—']];
+ }else if(activeScene.id==='volley-solo'){
+  const a=f.volleyAudit?.launch;
+  entries=[['Strike height',n(a?.origin.z,' m')],['Shot speed',speed(a?Math.hypot(a.after.x,a.after.y,a.after.z):null)],['Action',a?'Volley observed':'—']];
+ }else if(['lofted-pass','lofted-short','lofted-switch'].includes(activeScene.id)){
+  const a=f.loftedPassAudit;
+  entries=[['Distance',n(a?.launch.passTarget.distanceM,' m')],['Peak height',n(a?.peakZM,' m')],['Receiver contact',a?.receiverContact?n((a.receiverContact.tick-a.launch.tick)*FIXED_DT,' s'):'—'],['Result',a?.receiverContact?'Contact observed':a?'Pass launched':'—']];
+ }else if(activeScene.id==='aerial-duel'){
+  const audit=f.aerialDuelAudit,heads=f.smallSidedNativeBodyGuard?.aerial??[];
+  entries=[['Jumping players',String(heads.filter(h=>h.jumping).length)],['Head contacts',String(audit?.contactIds.length??0)],['First contested contact',n(audit?audit.tick*FIXED_DT:null,' s')],['Exclusive header',audit?.actorId?audit.actorId.replace('home-','HOME #').replace('away-','AWAY #'):'—'],['Result',audit?.kind==='ambiguous-contact'?'Ambiguous':audit?.kind==='exclusive-header'?'Header observed':audit?'Contact observed':'—']];
+ }else if(f.collectiveControl){
+  const control=f.collectiveControl,c=f.collectiveCounts;
+  entries=[['Ball control',control.keeperHold?'Ball held':control.kind==='controlled'?(control.playerId.startsWith('home-')?'HOME #':'AWAY #')+control.playerId.split('-').at(-1):'Loose ball'],
+   ['Carry touches',count(c.carry)],['Passes',count(c.pass)],['Shots',count(c.shot)],['Defensive touches',count(c.tackle+c.interception)],['Keeper saves attempted',count(c.save)]];
+ }else if(f.blockAudit){
   const a=f.blockAudit;
   entries=[['Shot',a.shotTick===null?'—':'Observed'],['Launch speed',speed(a.shotSpeedMps)],['Defender contact',a.contactTick===null?'—':n((a.contactTick-a.shotTick)*FIXED_DT,' s')],['Incoming speed',speed(a.incomingSpeedMps)],['Outgoing speed',speed(a.outgoingSpeedMps)],['Result',a.blocked?'Blocked':a.contactTick!==null?'Contact observed':'—']];
  }else if(f.interceptionAudit){
@@ -2108,17 +2137,24 @@ function compareReplay() {
   } catch (error) { say(error.message, true); }
 }
 function frame(now) {
-  if ((engine||activeLab) && playing) {
-    accumulator += Math.min(Math.max(0, now - lastFrame) / 1000, 0.08) * Number(byId('speed').value);
-    let iterations = 0;
-    while (accumulator >= FIXED_DT && iterations < 24) {
-      advance(); accumulator -= FIXED_DT; iterations++;
+  try {
+    if ((engine||activeLab) && playing) {
+      accumulator += Math.min(Math.max(0, now - lastFrame) / 1000, 0.08) * Number(byId('speed').value);
+      let iterations = 0;
+      while (playing && accumulator >= FIXED_DT && iterations < 24) {
+        advance(); accumulator -= FIXED_DT; iterations++;
+      }
+      if (!playing || iterations === 24) accumulator = 0;
+      render();
     }
-    if (iterations === 24) accumulator = 0;
-    render();
+  } catch(error) {
+    // Fail closed on a real simulation exception, but keep the UI's
+    // animation loop alive so a successful Reset can recover playback.
+    reportPlaybackFailure(error);
+  } finally {
+    lastFrame = now;
+    requestAnimationFrame(frame);
   }
-  lastFrame = now;
-  requestAnimationFrame(frame);
 }
 // Use the same language-trigger / language-menu patterns as the site.
 // A hidden input preserves the existing engine API and emits the same change event.
@@ -2297,8 +2333,9 @@ byId('play').addEventListener('click', play);
 byId('pause').addEventListener('click', pause);
 byId('step').addEventListener('click', () => {
   playing=false;
+  if(playbackFailure){say(playbackFailure,true);return;}
   const before=physicsTickSnapshot?.tick;
-  advance();render();
+  try{advance();render();}catch(error){reportPlaybackFailure(error);return;}
   if(activeScene?.kind==='action'&&activeLab?.snapshot().refereeEvidence?.lastEvent)
     say('Observed real full-ball crossing · dead ball · Reset to retry');
   else say(physicsTickSnapshot?.tick===before?
@@ -2334,25 +2371,35 @@ function setupUnifiedScenarioMenu(){
   ]],
   ['Passing',[
    ['action:pass-pair','Pass · Ground'],
-    ['action:cross-pair','Cross · Lofted']
+    ['action:cross-pair','Cross · Lofted'],
+   ...(!archiveMode?[['action:lofted-short','Pass · Lofted short'],['action:lofted-pass','Pass · Lofted long'],['action:lofted-switch','Pass · Switch of play'],['action:chest-control','Control · Chest'],['action:aerial-foot-control','Control · Aerial foot']]:[])
   ]],
   ['Shooting',[
    ...LAB_SHOT_PROFILES.map(profile=>[profile==='power'?'action:shot-solo':'action:shot-solo:'+profile,'Shot · '+LAB_SHOT_LABELS[profile]]),
-   ...LAB_SHOT_PROFILES.map(profile=>['action:shot-solo:'+profile+':first-time','First-time · '+LAB_SHOT_LABELS[profile]])
+   ...LAB_SHOT_PROFILES.map(profile=>['action:shot-solo:'+profile+':first-time','First-time · '+LAB_SHOT_LABELS[profile]]),
+   ...(!archiveMode?[['action:header-pair','Header · Aerial'],['action:volley-solo','Shot · Volley']]:[])
   ]],
   ...(archiveMode?[['Small-sided situations',[
    ['action:keeper-1v1','1v1 · goalkeeper'],
    ['action:overload-2v1','2v1 · attack and defend'],
    ['action:duel-3v3','3v3 · team decisions']
   ]]]:[['Goalkeeping',[
-   ['action:keeper-1v1','1v1 · goalkeeper']
+   ['action:keeper-1v1','1v1 · goalkeeper'],
+   ['action:keeper-high-cross','Goalkeeper · High cross'],
+   ['action:keeper-high-intercept','Goalkeeper · High interception']
   ]],['Dribbling & defending',[
    ['action:dribble-1v1','1v1 · autonomous duel'],
    ['action:dribble-1v1:standing','Standing tackle'],
    ['action:dribble-1v1:sliding','Sliding tackle'],
    ['action:dribble-1v1:shoulder','Shoulder challenge'],
+   ['action:aerial-duel','Aerial duel · 1v1'],
    ['action:pass-pair:interception','Interception'],
    ['action:defender-1v1:block','Block']
+  ]],['Collective situations',[
+   ['action:defender-1v1','1v1 + goalkeeper · autonomous play'],
+   ['action:overload-2v1','2v1 · autonomous play'],
+   ['action:duel-2v2','2v2 · autonomous play'],
+   ['action:duel-3v3','3v3 · autonomous play']
   ]]])
  ];
  const available=new Set([...byId('action-labs-choice').options].map(x=>x.value));
@@ -2388,8 +2435,15 @@ function setupUnifiedScenarioMenu(){
   root.dataset.selectedScene='action:carry-solo:moderate';
   // Detailed research panels stay in the archive surface.
  }
- if(menu.querySelectorAll('[role="option"][data-value]').length!==(archiveMode?24:24)||
-    menu.querySelectorAll('.me-scenario-group-label').length!==5)
+ // Validate rendered options against the actual catalog, not a stale
+ // hard-coded total that prevents startup whenever a new LAB is added.
+ const expectedValues=[...groups.flatMap(([,choices])=>choices.map(([value])=>value)),
+  ...(archiveMode?physics.map(node=>node.dataset.value):[])];
+ const renderedValues=[...menu.querySelectorAll('[role="option"][data-value]')].map(node=>node.dataset.value);
+ if(new Set(expectedValues).size!==expectedValues.length||
+    renderedValues.length!==expectedValues.length||
+    renderedValues.some((value,index)=>value!==expectedValues[index])||
+    menu.querySelectorAll('.me-scenario-group-label').length!==groups.length+(archiveMode?1:0))
   throw new Error('Unexpected active or archived LAB catalog');
 }
 function restoreOriginalScenario(){
@@ -2436,6 +2490,7 @@ function launchSelectedScenario(value){
   try{restart();}catch{}
  }
 }
+try {
 setupUnifiedScenarioMenu();
 setupDropdowns();
 setupNumericFields();
@@ -2452,7 +2507,6 @@ mountControlledMovementLabs({
 loadPreset();
 topDown(); // Show the complete static pitch while the WASM physics module loads.
 requestAnimationFrame(frame);
-try {
   const moduleNamespace = await import('/__fa_match_engine__/rapier.es.js');
   rapier = await initializeRapier(moduleNamespace);
   if(archiveMode)restart();
@@ -2466,5 +2520,7 @@ try {
     byId('preset-options').querySelector('[data-value="movement:post-pass"]')?.click();
   }
 } catch (error) {
-  say('Physics library failed to initialize: ' + error.message + '. Run npm --prefix match-engine ci locally.', true);
+  document.querySelector('.me-main-panel').removeAttribute('data-loading');
+  say('LAB failed to initialize: '+error.message,true);
+  console.error(error);
 }

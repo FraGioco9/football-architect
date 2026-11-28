@@ -1,4 +1,5 @@
-import {directedDribbleApproachTarget,planDribbleDefender,resolveDuelActors,isDuelGettingUp,planDuelShoulderApproach,chooseDribbleDefensiveTouch,planDuelInterception,planShoulderBalanceRecovery,isShoulderCollecting,isSlideCollecting,routeDuelAroundOpponent,planDuelRecoveryApproach,planLooseDuelApproaches,planDuelPostContactAlignment,planDribbleContactRelease,dribbleReleaseApproach} from './isolated-dribble-touches.mjs';
+import {attackDirection,validateAttackPolarity,nativeHalfFormationReady} from './match-directions.mjs';
+import {directedDribbleApproachTarget,planDribbleDefender,resolveDuelActors,isDuelGettingUp,planDuelShoulderApproach,chooseDribbleDefensiveTouch,planDuelInterception,planNativePassInterception,planShoulderBalanceRecovery,isShoulderCollecting,isSlideCollecting,routeDuelAroundOpponent,planDuelRecoveryApproach,planLooseDuelApproaches,planDuelPostContactAlignment,planDribbleContactRelease,dribbleReleaseApproach,planNativeDefensiveIntervention,isNativeRecoveryLocked} from './isolated-dribble-touches.mjs';
 import {selectDefensiveIntervention} from './defensive-intervention-selection.mjs';
 import {advanceSlidingTackle,planSlidingTackle,SLIDE_MAX_SPEED_MPS,SLIDE_ACCEL_MPS2,SLIDE_BRAKE_MPS2} from './sliding-tackle.mjs';
 // ME-PLAYER-01/24 — autonomous movement and current handoff-corridor safety.
@@ -12,7 +13,7 @@ import {projectNativeShoeBodyStep,projectNativeShoeBodyFacing}
  from './native-shoe-body-handoff.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
 import {smallSidedSetup,keeperDuelAttackerTarget,keeperDuelReboundTarget,
- keeperDuelGoalkeeperTarget,keeperDuelCloseDownTarget} from './small-sided-lab-scenarios.mjs';
+ keeperDuelGoalkeeperTarget,keeperDuelCloseDownTarget,planNativeKeeperCloseDown,planNativeKeeperHighIntercept,planNativeFootballMovement,planNativeAerialContest,supportsNativeOpenPlay} from './small-sided-lab-scenarios.mjs';
 import {basicSourcePositiveRestartSetup}
  from './basic-restart-source-lineup-b05b.mjs';
 import {initialB06bOpeningLineup} from './basic-opening-kickoff-lineup-b06b.mjs';
@@ -184,15 +185,14 @@ function ballXY(input){
 // Position-only goalkeeper intent: choose a conservative goal-line depth and
 // cover the angle towards the REAL ball XY, never claiming a save, interception
 // or goalkeeper ball touch. Both goals use the same mirrored 105 m pitch.
-export function goalkeeperPosition(team,ballPosition){
+export function goalkeeperPosition(team,ballPosition,attackPolarity=1){
  if(team!=='home'&&team!=='away')throw new TypeError('Known goalkeeper team required');
- const ball=ballXY(ballPosition),goalX=team==='home'?
-  -PLAYER_PITCH.lengthM/2:PLAYER_PITCH.lengthM/2;
+ const dir=attackDirection(team,attackPolarity),ball=ballXY(ballPosition),goalX=-dir*PLAYER_PITCH.lengthM/2;
  const distanceX=Math.abs(ball.x-goalX);
  const depthM=clamp(
   PLAYER_KEEPER_MIN_DEPTH_M+distanceX*PLAYER_KEEPER_DEPTH_GAIN,
   PLAYER_KEEPER_MIN_DEPTH_M,PLAYER_KEEPER_MAX_DEPTH_M);
- const x=goalX+(team==='home'?depthM:-depthM);
+ const x=goalX+dir*depthM;
  // Project the direction goal-centre -> ball onto the keeper's depth
  // and cap lateral patrol. Never let the target pass the goal line.
  const y=clamp(ball.y*depthM/Math.max(distanceX,PLAYER_KEEPER_MIN_DEPTH_M),
@@ -1686,7 +1686,7 @@ export function createPlayerMovement(options={}){
      k!=='researchB06bGoalRestartEnabled'&&
      k!=='researchB06bNativeShotSide'&&
      k!=='researchSmallSidedSituation'&&k!=='researchSmallSidedSide'&&
-     k!=='researchSmallSidedVariantIndex'&&k!=='researchShoulderStart'&&k!=='researchInterceptionStart'&&k!=='researchBlockStart'&&k!=='researchTapInStart'&&k!=='researchFirstTimeShot'&&
+     k!=='researchSmallSidedVariantIndex'&&k!=='researchCollectiveApproaches'&&k!=='researchShoulderStart'&&k!=='researchInterceptionStart'&&k!=='researchBlockStart'&&k!=='researchTapInStart'&&k!=='researchFirstTimeShot'&&
      k!=='researchCarryRunwayStart'&&
      k!=='researchNativeFixedCarry'&&
      k!=='researchSoloSprintPursuitLeadM'&&
@@ -1840,6 +1840,7 @@ export function createPlayerMovement(options={}){
       options.researchBodyEncounter!==undefined||
       Reflect.ownKeys(options).length!==
        (options.researchSmallSidedVariantIndex===undefined?2:3)+
+        (options.researchCollectiveApproaches===true?1:0)+
         (options.researchShoulderStart===true?1:0)+
         (options.researchInterceptionStart===true?1:0)+
         (options.researchBlockStart===true?1:0)+
@@ -1863,6 +1864,7 @@ export function createPlayerMovement(options={}){
      options.researchNativeFixedCarry!==true||
      options.researchSoloCarryLockedPhase!=='sprint'||
      options.researchCarryRunwayStart!==true))||
+    (options.researchCollectiveApproaches!==undefined&&(options.researchCollectiveApproaches!==true||!supportsNativeOpenPlay(options.researchSmallSidedSituation)||options.researchSmallSidedBodyFeedback!==true||options.researchBlockStart!==undefined||options.researchShoulderStart!==undefined||options.researchInterceptionStart!==undefined))||
     (options.researchBlockStart!==undefined&&(options.researchBlockStart!==true||options.researchSmallSidedSituation!=='defender-1v1'||options.researchSmallSidedBodyFeedback!==true))||
     (options.researchInterceptionStart!==undefined&&(options.researchInterceptionStart!==true||options.researchShoulderStart!==undefined||options.researchSmallSidedSituation!=='pass-pair'))||
     (options.researchShoulderStart!==undefined&&(options.researchShoulderStart!==true||options.researchSmallSidedSituation!=='dribble-1v1'||options.researchSmallSidedBodyFeedback!==true))||
@@ -1919,6 +1921,7 @@ export function createPlayerMovement(options={}){
    options.researchSmallSidedSide,INITIAL_PLAYERS,
    {variantIndex:options.researchSmallSidedVariantIndex??0,
     carryRunwayStart:options.researchCarryRunwayStart===true,tapInStart:options.researchTapInStart===true,firstTimeShot:options.researchFirstTimeShot===true,shoulderStart:options.researchShoulderStart===true,interceptionStart:options.researchInterceptionStart===true,blockStart:options.researchBlockStart===true});
+ if(smallSided?.fullField&&options.researchCollectiveApproaches!==true)throw new TypeError('Full field requires native open play movement');
  const smallActive=smallSided?new Set(smallSided.activeIds):null;
  const initial=smallSided?smallSided.staged:
   options.researchB06bOpeningKickoffEnabled===true?
@@ -1955,6 +1958,8 @@ export function createPlayerMovement(options={}){
  let lastSmallSidedMovementDecisions=Object.freeze([]);
  let currentSoloCarryPhase=null;
  let duelSlide=null,duelShoulder=null,duelInterception=null,blockApproach=null,defensiveDecision=null;
+ let nativeSlides=Object.freeze({}),nativeShoulders=Object.freeze({}),nativeAttackPolarity=1,nativePeriodSwitched=false;
+ let nativeHalfRoutes=null,nativeHalfFormationPhase=null;
  const players=initial.map(p=>({...p}));
  let b06bGoalKickoffTarget=null;
  function queueB06bOriginalGoalKickoff(event){
@@ -2073,6 +2078,7 @@ export function createPlayerMovement(options={}){
    // choice. The target remains original; velocity is the final observed value.
    ...(smallSided?.id==='carry-solo'?{soloCarryPhase:currentSoloCarryPhase}:{}),
    ...(duelSlide?{duelSlide}:{}),
+   ...(options.researchCollectiveApproaches===true?{nativeSlides,nativeShoulders,...(smallSided?.fullField?{attackPolarity:nativeAttackPolarity,nativeHalfFormationPhase}:{})}:{}),
    ...(duelShoulder?{duelShoulder}:{}),
    ...(duelInterception?{duelInterception}:{}),
    ...(blockApproach?{blockApproach}:{}),
@@ -2239,7 +2245,12 @@ export function createPlayerMovement(options={}){
  }
  let directedContactRelease=null,directedStallTicks=0,directedBlockedTicks=0,directedLastBall=null,directedBallAnchor=null,directedAnchorTick=0;
  function step(ballPosition={x:0,y:0},priorRealPass=null,
-  priorRealTap=null,realBallVelocity=null,priorKeeperRebound=null,keeperCloseDown=false,directedDribble=false,duelTransition=null,interceptionState=null,blockState=null){
+  priorRealTap=null,realBallVelocity=null,priorKeeperRebound=null,keeperCloseDown=false,directedDribble=false,duelTransition=null,interceptionState=null,blockState=null,collectiveControl=null,restartPlacement=null,attackPolarity=1){
+  validateAttackPolarity(attackPolarity);
+  if(attackPolarity!==1&&(!smallSided?.fullField||options.researchCollectiveApproaches!==true||
+     (!restartPlacement&&!nativePeriodSwitched)))
+   throw new TypeError('Reversed movement requires full-field placement or authenticated period transition');
+  if(nativePeriodSwitched&&attackPolarity!==-1)throw new TypeError('Native second-half direction cannot revert');
   if(options.researchUnstagedNativeBodyFeedback===true&&
      lastFeedbackReconciledTick!==tick)
    throw new TypeError('M13 requires previous same-world Rapier feedback acknowledgment');
@@ -2247,6 +2258,28 @@ export function createPlayerMovement(options={}){
      smallBodyFeedbackTick!==tick)
    throw new TypeError('LAB native feedback requires the prior tick acknowledgment');
   const ball=ballXY(ballPosition);
+  if(restartPlacement!==null&&(!smallSided?.fullField||options.researchCollectiveApproaches!==true||
+   !['kickoff','corner','goal-kick','throw-in'].includes(restartPlacement.kind)||restartPlacement.deadBallPlacementOnly!==true||
+   !players.some(p=>p.id===restartPlacement.takerId&&p.team===restartPlacement.assignedTeam)||
+   ![restartPlacement.spot?.x,restartPlacement.spot?.y].every(finite)||
+   !Number.isSafeInteger(restartPlacement.tick)||restartPlacement.tick>tick))
+   throw new TypeError('Original full-field restart placement required');
+  if(restartPlacement?.periodRestart==='second-half'&&attackPolarity===-1){
+   if(restartPlacement.attackPolarity!==-1||restartPlacement.assignedTeam!=='away'||restartPlacement.takerId!=='away-10')
+    throw new TypeError('Native period transition requires original away kickoff placement');
+   if(!nativePeriodSwitched){
+    nativeSlides=Object.freeze({});nativeShoulders=Object.freeze({});nativePeriodSwitched=true;
+    // Assign one distinct longitudinal lane to every original player.
+    // Preserve initial lateral order to avoid crossing during lane entry.
+    const ordered=[...players].sort((p,q)=>p.y-q.y||p.x-q.x||p.id.localeCompare(q.id));
+    nativeHalfRoutes=Object.freeze(Object.fromEntries(ordered.map((p,i)=>[p.id,Object.freeze({
+     startX:p.x,laneY:(i-(ordered.length-1)/2)*2.7,
+     endX:-INITIAL_PLAYERS.find(q=>q.id===p.id).x
+    })])));
+    nativeHalfFormationPhase='enter-lanes';
+   }
+  }
+  if(collectiveControl!==null&&(options.researchCollectiveApproaches!==true||collectiveControl.tick!==tick||!['controlled','loose'].includes(collectiveControl.kind)||collectiveControl.officialPossession!==false))throw new TypeError('Previous native collective control required');
   if(blockState!==null&&(!smallSided?.blockStart||!realBallVelocity||!['ready','flight','blocked'].includes(blockState.phase)))throw new TypeError('Original shot-block state required');
   if(interceptionState!==null&&(!smallSided?.interceptionStart||!realBallVelocity||!['ready','flight','intercepted','collected','received'].includes(interceptionState.phase)))throw new TypeError('Original pass interception state required');
   if(typeof directedDribble!=='boolean'||(directedDribble&&(smallSided?.id!=='dribble-1v1'||
@@ -2542,7 +2575,8 @@ export function createPlayerMovement(options={}){
    planDuelInterception({...duelActors,ballPosition:ball,ballVelocity:realBallVelocity}):null;
   if(smallSided?.interceptionStart&&interceptionState?.phase==='flight'){
    const defender=players.find(p=>p.id===smallSided.opponent+'-2'),attacker=players.find(p=>p.id===smallSided.side+'-10');
-   duelInterception=planDuelInterception({attackingSide:smallSided.side,attacker,defender,ballPosition:ball,ballVelocity:realBallVelocity});
+   const recipient=players.find(p=>p.id===smallSided.side+'-9');
+   duelInterception=planNativePassInterception({passer:attacker,recipient,defender,ballPosition:ball,ballVelocity:realBallVelocity});
   }
   blockApproach=null;
   if(smallSided?.blockStart&&blockState?.phase==='flight'){
@@ -2599,11 +2633,9 @@ export function createPlayerMovement(options={}){
     const unavailable=gettingUp||!!directedContactRelease||duelSlide?.phase==='recovery'||!!planShoulderBalanceRecovery(defender,duelTransition,tick+1);
     const loose=duelTransition.ballControl?.kind==='loose';
     const available=!unavailable&&!loose&&!duelActors.candidateId;
-    const shoulder=available?planDuelShoulderApproach(source):null;
-    const standing=available?chooseDribbleDefensiveTouch(source):null;
     const sliding=available?planSlidingTackle({attackingSide,attacker,defender,ball:ballPosition,velocity:realBallVelocity}):null;
-    const interception=available?planDuelInterception(source):null;
-    defensiveDecision=selectDefensiveIntervention({actorId:defender.id,unavailable,recovering:loose||!!duelActors.candidateId,activeSlide:duelSlide?.phase==='slide',shoulder,standing,sliding,interception,ballGapM:Math.hypot(defender.x-ball.x,defender.y-ball.y)});
+    const {decision,shoulder,interception}=planNativeDefensiveIntervention({...source,unavailable,recovering:loose||!!duelActors.candidateId,activeSlide:duelSlide?.phase==='slide',available,sliding});
+    defensiveDecision=decision;
     duelShoulder=defensiveDecision.kind==='shoulder-challenge'&&!duelSlide?shoulder:null;
     duelInterception=defensiveDecision.kind==='interception'&&interception?.reachable?interception:null;
    }
@@ -2614,7 +2646,107 @@ export function createPlayerMovement(options={}){
     contact:duelTransition?.lastIntervention??null});
   }
   const shoulderBalance=directedDribble?Object.fromEntries(players.map(p=>[p.id,planShoulderBalanceRecovery(p,duelTransition,tick+1)])):{};
+  const collectiveApproaches=options.researchCollectiveApproaches===true?planNativeFootballMovement(players.filter(p=>smallActive.has(p.id)&&p.role!=='goalkeeper'),ball,realBallVelocity??{x:0,y:0},collectiveControl,players.filter(p=>smallActive.has(p.id)&&p.role==='goalkeeper'),attackPolarity):null;
+  // Actual delivery provenance permits trajectory-based positioning for
+  // any active outfielder. It does not manufacture a block or interception.
+  const nativeDeliveryPlans={};
+  const delivery=collectiveControl?.delivery;
+  if(collectiveApproaches&&collectiveControl.kind==='loose'&&delivery&&Number.isSafeInteger(delivery.tick)&&tick>=delivery.tick&&tick-delivery.tick<180){
+   const attacker=players.find(p=>smallActive.has(p.id)&&p.id===delivery.playerId&&p.team===delivery.team);
+   const recipient=players.find(p=>smallActive.has(p.id)&&p.id===delivery.recipientId&&p.team===delivery.team);
+   // Predict the descending crossing point from the live ball, not the
+   // fixture. The receiving player runs there using normal acceleration.
+   if((delivery.kind==='cross'||delivery.lofted===true)&&recipient&&[ballPosition.z,realBallVelocity.z].every(Number.isFinite)){
+    const h=delivery.lofted===true?0.85:smallSided.aerialSurface==='chest'?1.35:smallSided.aerialSurface==='foot'?0.85:1.95,z=ballPosition.z,vz=realBallVelocity.z;
+    const discriminant=vz*vz+19.62*(z-h);
+    if(discriminant>=0){
+     const t=(vz+Math.sqrt(discriminant))/9.81;
+     if(t>0&&t<=3){
+      const px=ball.x+realBallVelocity.x*t,py=ball.y+realBallVelocity.y*t;
+      // Receive a descending ball in front of the raised foot, not under
+      // the torso/lower-leg proxy. Keep ordinary movement acceleration.
+      const speed=Math.hypot(realBallVelocity.x,realBallVelocity.y);
+      const offset=h===0.85&&speed>0.15?0.42/speed:0;
+      const target=Object.freeze({x:Math.max(-51.99,Math.min(51.99,px+realBallVelocity.x*offset)),
+       y:Math.max(-33.49,Math.min(33.49,py+realBallVelocity.y*offset))});
+      nativeDeliveryPlans[recipient.id]=Object.freeze({kind:'aerial-approach',plan:Object.freeze({target})});
+     }
+    }
+   }
+   if(attacker)for(const defender of players.filter(p=>smallActive.has(p.id)&&p.role!=='goalkeeper'&&p.team!==attacker.team)){
+    const plan=planNativeDefensiveIntervention({attacker,recipient,defender,ballPosition,ballVelocity:realBallVelocity,context:delivery.kind,attackPolarity});
+    if(plan?.decision?.plan)nativeDeliveryPlans[defender.id]=plan.decision;
+   }
+  }
+  if(collectiveApproaches&&collectiveControl?.kind==='loose'&&(smallSided.aerialSurface||options.researchNativeAerialEnabled===true)){
+   const height=smallSided.aerialSurface==='chest'?1.35:smallSided.aerialSurface==='foot'?0.85:1.95;
+   const aerial=planNativeAerialContest(players.filter(p=>smallActive.has(p.id)&&!isNativeRecoveryLocked(collectiveControl,p.id,tick+1)),ballPosition,realBallVelocity,height);
+   for(const [id,plan] of Object.entries(aerial))if(!nativeDeliveryPlans[id]){
+    let receivePlan=plan;
+    // A slow, descending loose ball is received in front of the body,
+    // not by running underneath its centre. The direction comes from
+    // the original player-to-ball geometry, not the LAB or team.
+    if(height===0.85&&Math.hypot(realBallVelocity.x,realBallVelocity.y)<2){
+     const actor=players.find(p=>p.id===id);
+     const dx=plan.target.x-actor.x,dy=plan.target.y-actor.y,gap=Math.hypot(dx,dy);
+     if(gap>0.05){
+      const offset=Math.min(0.42,gap);
+      receivePlan=Object.freeze({...plan,target:Object.freeze({x:plan.target.x-dx/gap*offset,y:plan.target.y-dy/gap*offset})});
+     }
+    }
+    nativeDeliveryPlans[id]=Object.freeze({kind:receivePlan.kind,plan:receivePlan});
+   }
+  }
+  const nextNativeSlides={},nextNativeShoulders={},nativeBalance={};
+  if(collectiveApproaches){
+   const owner=players.find(p=>p.id===collectiveControl?.playerId);
+   for(const defender of players.filter(p=>smallActive.has(p.id)&&p.role!=='goalkeeper')){
+    const previous=nativeSlides[defender.id]??null;
+    const priorOpponent=previous?players.find(p=>p.id===previous.opponentId):null;
+    const opponent=owner&&owner.team!==defender.team?owner:priorOpponent;
+    const locked=isNativeRecoveryLocked(collectiveControl,defender.id,tick+1);
+    const impact=collectiveControl?.shoulderByPlayer?.[defender.id];
+    if(impact)nativeBalance[defender.id]=planShoulderBalanceRecovery(defender,{lastShoulder:impact},tick+1);
+    if(!opponent)continue;
+    const source={attackingSide:opponent.team,attacker:opponent,defender,ball:ballPosition,velocity:realBallVelocity,attackPolarity};
+    const available=!!owner&&owner.id===opponent.id&&!locked;
+    const sliding=available?planSlidingTackle(source):null;
+    const planned=planNativeDefensiveIntervention({attacker:opponent,defender,ballPosition,ballVelocity:realBallVelocity,unavailable:locked,activeSlide:previous?.phase==='slide',available,sliding,attackPolarity});
+    const contact=collectiveControl?.lastInterventions?.[defender.id]??null;
+    const next=advanceSlidingTackle({tick:tick+1,previous,source,allowLaunch:available&&planned?.decision.kind==='sliding-tackle',cancel:!available||!!previous&&previous.opponentId!==opponent.id,contact});
+    if(next)nextNativeSlides[defender.id]=Object.freeze({...next,opponentId:previous?.opponentId??opponent.id});
+    else if(available&&planned?.decision.kind==='shoulder-challenge')nextNativeShoulders[defender.id]=planned.shoulder;
+   }
+  }
+  nativeSlides=Object.freeze(nextNativeSlides);nativeShoulders=Object.freeze(nextNativeShoulders);
+  nativeAttackPolarity=attackPolarity;
+  const halfPreparation=restartPlacement?.periodRestart==='second-half';
+  if(halfPreparation){
+   const aligned=(p,x,y)=>Math.hypot(p.x-x,p.y-y)<=0.35&&Math.hypot(p.vx,p.vy)<=0.35;
+   if(nativeHalfFormationPhase==='enter-lanes'&&players.every(p=>{
+    const route=nativeHalfRoutes[p.id];return aligned(p,route.startX,route.laneY);
+   }))nativeHalfFormationPhase='cross-field';
+   if(nativeHalfFormationPhase==='cross-field'&&players.every(p=>{
+    const route=nativeHalfRoutes[p.id];return aligned(p,route.endX,route.laneY);
+   }))nativeHalfFormationPhase='restore-shape';
+   if(nativeHalfFormationPhase==='restore-shape'&&nativeHalfFormationReady(players))
+    nativeHalfFormationPhase='ready';
+  }
+  const halfReady=halfPreparation&&nativeHalfFormationPhase==='ready'&&nativeHalfFormationReady(players);
   const targets=players.map(p=>{
+   if(restartPlacement){
+    const at=restartPlacement.spot,dir=attackDirection(restartPlacement.assignedTeam,attackPolarity);
+    if(p.id===restartPlacement.takerId&&restartPlacement.kind==='throw-in')return Object.freeze({x:clamp(at.x,-PLAYER_KINEMATIC_LIMITS.maxX,PLAYER_KINEMATIC_LIMITS.maxX),y:at.y-Math.sign(at.y)*0.85});
+    if(p.id===restartPlacement.takerId&&(!halfPreparation||halfReady))return Object.freeze({x:clamp(at.x+dir*0.10,-PLAYER_KINEMATIC_LIMITS.maxX,PLAYER_KINEMATIC_LIMITS.maxX),y:clamp(at.y,-PLAYER_KINEMATIC_LIMITS.maxY,PLAYER_KINEMATIC_LIMITS.maxY)});
+    // First align laterally at the original X, then traverse in separate
+    // lanes, then restore the mirrored shape. No crossing traffic head-on.
+    if(halfPreparation&&['enter-lanes','cross-field'].includes(nativeHalfFormationPhase)){
+     const route=nativeHalfRoutes[p.id];
+     return Object.freeze({x:nativeHalfFormationPhase==='enter-lanes'?route.startX:route.endX,y:route.laneY});
+    }
+    const base=INITIAL_PLAYERS.find(q=>q.id===p.id);
+    return Object.freeze({x:attackPolarity*base.x,y:base.y});
+   }
    if(smallSided){
     // A genuine reduced-player session: only selected physical shoes can
     // touch the ball; all others retain their own base positions.
@@ -2656,8 +2788,18 @@ export function createPlayerMovement(options={}){
        y:smallSided.ball.y}):
       Object.freeze({x:p.baseX,y:p.baseY});
     }
+    if(collectiveApproaches&&p.role==='goalkeeper'){
+     if(collectiveControl?.keeperHold?.keeperId===p.id)return Object.freeze({x:p.x,y:p.y});
+     const rival=players.filter(q=>smallActive.has(q.id)&&q.team!==p.team).sort((a,b)=>Math.hypot(a.x-ball.x,a.y-ball.y)-Math.hypot(b.x-ball.x,b.y-ball.y)||a.id.localeCompare(b.id))[0];
+     const delivery=collectiveControl?.delivery;
+     const high=delivery?.team!==p.team&&(delivery?.kind==='cross'||delivery?.lofted===true)?planNativeKeeperHighIntercept(p,ballPosition,realBallVelocity,attackPolarity):null;
+     if(high)return high.target;
+     const close=delivery?.kind!=='shot'?planNativeKeeperCloseDown(p,rival,ballPosition,realBallVelocity,attackPolarity):null;
+     return close??goalkeeperPosition(p.team,ball,attackPolarity);
+    }
     if(p.id===smallSided.opponent+'-1'){
      const baseline=goalkeeperPosition(p.team,ball);
+     if(collectiveApproaches)return baseline;
      const attacker=players.find(a=>a.id===smallSided.side+'-10');
      if(keeperCloseDown){
       const challenge=keeperDuelCloseDownTarget(smallSided.side,p,attacker,
@@ -2668,6 +2810,16 @@ export function createPlayerMovement(options={}){
       keeperDuelGoalkeeperTarget(smallSided.side,smallSided.variantIndex,
        attacker,ball,baseline):baseline;
     }
+    if(collectiveApproaches?.[p.id]){
+     if(nativeBalance[p.id])return nativeBalance[p.id].target;
+     if(isDuelGettingUp(collectiveControl,p.id,tick+1))return Object.freeze({x:p.x,y:p.y});
+     const slide=nativeSlides[p.id];
+     if(slide?.phase==='slide')return slide.plan.target;
+     if(slide?.phase==='recovery'&&!slide.canPursueDuringRecovery)return Object.freeze({x:p.x,y:p.y});
+     if(nativeShoulders[p.id])return nativeShoulders[p.id].target;
+    }
+    if(nativeDeliveryPlans[p.id]?.plan?.target)return nativeDeliveryPlans[p.id].plan.target;
+    if(collectiveApproaches?.[p.id])return collectiveApproaches[p.id].target;
     const attack=smallSided.side==='home'?1:-1;
     if(duelActors){
      if(duelShoulder?.actorId===p.id)return duelShoulder.target;
@@ -2854,10 +3006,10 @@ export function createPlayerMovement(options={}){
   // Fixed ordering and collision rejection make every replay byte-stable.
   for(let i=0;i<players.length;i++){
    const p=players[i],target=targets[i];
-   const recoveringDribbleBall=(smallSided?.id==='dribble-1v1'||smallSided?.id==='carry-solo')&&
+   const recoveringDribbleBall=!collectiveApproaches&&(smallSided?.id==='dribble-1v1'||smallSided?.id==='carry-solo')&&
      (duelActors?p.id===duelActors.attacker.id:p.id===smallSided.side+'-10')&&
      Math.hypot(ball.x-p.x,ball.y-p.y)>1.5;
-   const sliding=directedDribble&&!directedContactRelease&&duelSlide?.actorId===p.id&&duelSlide.phase==='slide';
+   const sliding=nativeSlides[p.id]?.phase==='slide'||directedDribble&&!directedContactRelease&&duelSlide?.actorId===p.id&&duelSlide.phase==='slide';
    const shoulderPursuit=duelShoulder?.actorId===p.id&&Math.hypot(ball.x-p.x,ball.y-p.y)>1.25;
    const recoveringEffective=directedDribble&&!directedContactRelease&&duelActors.candidateId===p.id&&
     duelTransition?.lastIntervention?.actorId===p.id&&duelTransition.lastIntervention.effective&&
@@ -2865,8 +3017,8 @@ export function createPlayerMovement(options={}){
     (duelSlide?.actorId!==p.id||duelSlide.canPursueDuringRecovery);
    const loosePursuit=looseDuel&&smallActive.has(p.id)&&!directedContactRelease&&
     (duelSlide?.actorId!==p.id||duelSlide.canPursueDuringRecovery);
-   const gettingUp=directedDribble&&isDuelGettingUp(duelTransition,p.id,tick+1);
-   const balance=shoulderBalance[p.id];
+   const gettingUp=directedDribble&&isDuelGettingUp(duelTransition,p.id,tick+1)||!!collectiveApproaches&&isDuelGettingUp(collectiveControl,p.id,tick+1);
+   const balance=nativeBalance[p.id]??shoulderBalance[p.id];
    const shoulderCollection=directedDribble&&(isShoulderCollecting(duelTransition,p.id,tick+1)||isSlideCollecting(duelTransition,p.id,tick+1));
    const limits=gettingUp?{...D01_KINEMATIC_LIMITS,braking:15}:balance?{...D01_KINEMATIC_LIMITS,maxSpeed:balance.maxSpeed,acceleration:12,braking:32}:shoulderCollection?D09_RECOVERY_KINEMATIC_LIMITS:sliding?D08_SLIDE_KINEMATIC_LIMITS:(recoveringEffective||loosePursuit)?D09_RECOVERY_KINEMATIC_LIMITS:(shoulderPursuit||blockApproach?.actorId===p.id||duelInterception?.actorId===p.id||smallSided?.interceptionStart&&p.id===smallSided.opponent+'-2')?D01_CHASE_KINEMATIC_LIMITS:smallSided?.id==='carry-solo'&&smallActive.has(p.id)?
      // The old generic 6m/s/9m/s² recovery overrides the fixed phase
@@ -2877,10 +3029,10 @@ export function createPlayerMovement(options={}){
       soloKinematicLimits(currentSoloCarryPhase):
       recoveringDribbleBall?D01_CHASE_KINEMATIC_LIMITS:
        soloKinematicLimits(currentSoloCarryPhase):
-    smallSided?.id==='dribble-1v1'&&smallActive.has(p.id)?
+    !collectiveApproaches&&smallSided?.id==='dribble-1v1'&&smallActive.has(p.id)?
      recoveringDribbleBall?D01_CHASE_KINEMATIC_LIMITS:D01_KINEMATIC_LIMITS:
      PLAYER_KINEMATIC_LIMITS;
-    const free=advanceFreePlayerKinematics(p,target,limits);
+    const free=advanceFreePlayerKinematics(p,target,restartPlacement?PLAYER_KINEMATIC_LIMITS:limits);
    const shoe=lastNativeShoeFrame?.[i];
    if(shoe&&shoe.id!==p.id)
     throw new TypeError('M16 original shoe/player order mismatch');
@@ -2899,12 +3051,13 @@ export function createPlayerMovement(options={}){
    p.blockedBy=blocker?.id??null;
    if(blocker){p.vx=0;p.vy=0;}
    else{p.x=candidate.x;p.y=candidate.y;p.vx=candidate.vx;p.vy=candidate.vy;}
-   const keeperDuel=(smallSided?.id==='keeper-1v1'||smallSided?.blockStart)&&p.id===smallSided.opponent+'-1';
+   const keeperDuel=collectiveApproaches?p.role==='goalkeeper'&&smallActive.has(p.id):(smallSided?.id==='keeper-1v1'||smallSided?.blockStart)&&p.id===smallSided.opponent+'-1';
    const duelBallGap=Math.hypot(ball.x-p.x,ball.y-p.y);
    const detouring=duelAlignment?.[p.id]?.detour===true&&!directedContactRelease&&duelSlide?.actorId!==p.id;
    const faceDuelBall=directedDribble&&smallActive.has(p.id)&&duelBallGap<1.65&&
     (!detouring||duelBallGap<0.70||Math.hypot(p.vx,p.vy)<0.15);
-   const wantedFacing=keeperDuel?
+   const wantedFacing=restartPlacement&&p.id===restartPlacement.takerId&&duelBallGap<1.65?
+    advancePlayerOrientation(p.facingRad,ball.x-p.x,ball.y-p.y,PLAYER_KINEMATIC_LIMITS):keeperDuel?
     advanceGoalkeeperBallOrientation(p,ball,PLAYER_KINEMATIC_LIMITS):
     faceDuelBall?advancePlayerOrientation(p.facingRad,ball.x-p.x,ball.y-p.y,PLAYER_KINEMATIC_LIMITS):
     advancePlayerOrientation(p.facingRad,p.vx,p.vy,PLAYER_KINEMATIC_LIMITS);
@@ -3022,11 +3175,11 @@ export function createPlayerMovement(options={}){
   if(smallSided)lastSmallSidedMovementDecisions=Object.freeze(players
    .filter(p=>smallActive.has(p.id)).map(p=>{
     const target=targets[players.indexOf(p)];
-    const kind=smallSided.blockStart&&p.id===smallSided.opponent+'-2'?(blockState?.phase==='blocked'?'press-ball':'block-shot'):smallSided.interceptionStart&&p.id===smallSided.opponent+'-2'?(interceptionState?.phase==='flight'?'intercept-ball':['intercepted','collected'].includes(interceptionState?.phase)?'carry-ball':'press-ball'):duelActors?(isDuelGettingUp(duelTransition,p.id,tick+1)?'getting-up':duelShoulder?.actorId===p.id&&duelShoulder.sideOn?'shoulder-challenge':duelInterception?.actorId===p.id?'intercept-ball':duelTransition?.profile==='mixed'&&duelTransition.ballControl?.kind==='loose'?'press-ball':p.id===duelActors.attacker.id?'carry-ball':'press-ball'):p.id===smallSided.opponent+'-1'?'goalkeeping':
+    const kind=(collectiveApproaches&&p.role==='goalkeeper'?'goalkeeping':null)??(collectiveApproaches?.[p.id]&&(isDuelGettingUp(collectiveControl,p.id,tick+1)?'getting-up':nativeShoulders[p.id]?'shoulder-challenge':nativeSlides[p.id]?.phase==='slide'?'press-ball':null)||null)??(nativeDeliveryPlans[p.id]?.kind==='block'?'block-shot':nativeDeliveryPlans[p.id]?.kind==='interception'?'intercept-ball':nativeDeliveryPlans[p.id]?.kind==='aerial-approach'?'aerial-approach':null)??collectiveApproaches?.[p.id]?.kind??(smallSided.blockStart&&p.id===smallSided.opponent+'-2'?(blockState?.phase==='blocked'?'press-ball':'block-shot'):smallSided.interceptionStart&&p.id===smallSided.opponent+'-2'?(interceptionState?.phase==='flight'?'intercept-ball':['intercepted','collected'].includes(interceptionState?.phase)?'carry-ball':'press-ball'):duelActors?(isDuelGettingUp(duelTransition,p.id,tick+1)?'getting-up':duelShoulder?.actorId===p.id&&duelShoulder.sideOn?'shoulder-challenge':duelInterception?.actorId===p.id?'intercept-ball':duelTransition?.profile==='mixed'&&duelTransition.ballControl?.kind==='loose'?'press-ball':p.id===duelActors.attacker.id?'carry-ball':'press-ball'):p.id===smallSided.opponent+'-1'?'goalkeeping':
      p.team!==smallSided.side?'press-ball':
      p.id===smallSided.side+'-10'?
       ((smallSided.id==='dribble-1v1'||smallSided.id==='carry-solo')?'carry-ball':'approach-ball'):
-      ['pass-pair','cross-pair','shot-solo'].includes(smallSided.id)?'hold-pass-target':'support-run';
+      ['pass-pair','cross-pair','shot-solo'].includes(smallSided.id)?'hold-pass-target':'support-run');
     return Object.freeze({
      tick:tick+1,id:p.id,team:p.team,kind,
      ...(shoulderBalance[p.id]?{shoulderBalanceRecovery:true,shoulderBalancePhase:shoulderBalance[p.id].phase}:{}),
@@ -3249,7 +3402,7 @@ export function createPlayerMovement(options={}){
    p.vy=(n.y-old.y)/PLAYER_DT;
    // The keeper already used its one capped ball-facing turn this tick.
    // A solver translation must not rotate it back towards velocity.
-   if(!(smallSided.id==='keeper-1v1'&&p.id===smallSided.opponent+'-1'))
+   if(!(options.researchCollectiveApproaches===true&&p.role==='goalkeeper')&&!(smallSided.id==='keeper-1v1'&&p.id===smallSided.opponent+'-1'))
     p.facingRad=advancePlayerOrientation(p.facingRad,p.vx,p.vy,
      PLAYER_KINEMATIC_LIMITS);
   }

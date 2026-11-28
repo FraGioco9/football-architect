@@ -5,6 +5,7 @@
 // or permission to bypass the real half-time restart.
 import {FIXED_DT,ENGINE_VERSION,BALL_RADIUS} from './core.mjs';
 import {FOOT_SOLVER_EVIDENCE_VERSION} from './player-foot-contact-solver.mjs';
+import {validateAttackPolarity,teamAttackingEnd,oppositeTeam} from './match-directions.mjs';
 import {FOOT_CONTACT_VERSION} from './player-foot-contact.mjs';
 import {UNIFORM_AUTONOMOUS_ACTION_VERSION} from './player-ball-uniform-autonomous-action.mjs';
 import {B05_REFEREE_VERSION,detectFirstFullyOutBallB05,
@@ -37,11 +38,15 @@ export function basicMatchClockB06(tick){
   readOnlyClock:true
  });
 }
-export function createBasicMatchTimelineB06({b06bRealHalftimePause=false}={}){
+export function createBasicMatchTimelineB06({b06bRealHalftimePause=false,nativeHalfTicks=null,attackPolarity=1}={}){
+ validateAttackPolarity(attackPolarity);
+ if(nativeHalfTicks!==null&&(!b06bRealHalftimePause||!positiveInteger(nativeHalfTicks)||nativeHalfTicks<120||nativeHalfTicks>B06_HALF_TICKS))
+  throw new TypeError('B06 native period ledger requires bounded real physical half');
  if(typeof b06bRealHalftimePause!=='boolean')
   throw new TypeError('B06b half-time pause is exclusively boolean');
  let tick=-1,lastBall=null,lastEvent=null,lastRestart=null,
   lastSetPiece=null,lastGoalKickoff=null,lastNativeShot=null,
+  nativeHalfPlacement=null,nativeHalfTake=null,nativeFullTime=null,
   events=freeze([]),
   score=freeze({home:0,away:0});
  const eventTicks=new Set();
@@ -51,6 +56,7 @@ export function createBasicMatchTimelineB06({b06bRealHalftimePause=false}={}){
   return freeze({
    version:B06_TIMELINE_VERSION,tick,
    clock,provisionalScore:score,
+   ...(attackPolarity!==1?{attackPolarity}:{}),
    matchEvents:events,matchEventCount:events.length,
    lastNativeBoundaryEvent:lastEvent,
    lastPhysicalRestart:lastRestart,lastPhysicalSetPiece:lastSetPiece,
@@ -60,7 +66,8 @@ export function createBasicMatchTimelineB06({b06bRealHalftimePause=false}={}){
     clock.phase,
    outstandingDeadBall:deadBall,
    scoreSource:'original-full-ball-rapier-crossing-only',
-   halfTimeRestartVerified:false,fullTimeVerified:false,
+   halfTimeRestartVerified:nativeHalfTake!==null,fullTimeVerified:nativeFullTime!==null,
+   ...(nativeHalfTicks!==null?{nativeHalfPlacement,nativeHalfTake,nativeFullTime}:{}),
    officialMatchScore:null,officialMatchResult:null,
    officialPossession:false,matchAuthority:false,readOnly:true
   });
@@ -80,6 +87,7 @@ export function createBasicMatchTimelineB06({b06bRealHalftimePause=false}={}){
     physics?.version!==ENGINE_VERSION||!ballXYZ(b)||
     refereeEvidence?.version!==B05_REFEREE_VERSION||
     refereeEvidence.tick!==n||
+    (refereeEvidence.attackPolarity??1)!==attackPolarity||
     refereeEvidence.original22Source!==true||
     refereeEvidence.readOnlyObservation!==true||
     refereeEvidence.matchAuthority!==false||
@@ -109,9 +117,19 @@ export function createBasicMatchTimelineB06({b06bRealHalftimePause=false}={}){
       Math.abs(latest.gameClockS-n*FIXED_DT)>1e-7)
     throw new TypeError('B06 must independently re-observe true fully crossed original Rapier ball');
    const goal=latest.kind==='goal';
-   const scorer=goal?(crossing.side===1?'home':'away'):null;
+   const scorer=goal?teamAttackingEnd(crossing.side,attackPolarity):null;
+   const lastTeam=latest.lastVerifiedTouch?.team??null;
+   const attacking= crossing.axis==='x'?teamAttackingEnd(crossing.side,attackPolarity):null;
+   const expectedKind=goal?'kickoff':crossing.edge==='touchline'?
+    lastTeam===null?'unresolved-throw-in':'throw-in':
+    lastTeam===null?'unresolved-goal-line':lastTeam===attacking?'goal-kick':'corner';
+   const expectedTeam=goal?oppositeTeam(scorer):lastTeam===null?null:
+    crossing.edge==='touchline'?oppositeTeam(lastTeam):
+    expectedKind==='corner'?attacking:oppositeTeam(attacking);
    const restart=latest.restart;
    if(!restart||typeof restart.type!=='string'||
+      (lastTeam!==null&&!validTeam(lastTeam))||
+      restart.type!==expectedKind||restart.team!==expectedTeam||restart.ready!==(expectedTeam!==null)||
       latest.provisionalGoalScored!==goal||
       latest.goalCountedOnlyInDevLab!==goal||
       latest.scoringTeam!==scorer||
@@ -330,18 +348,68 @@ export function createBasicMatchTimelineB06({b06bRealHalftimePause=false}={}){
       take.type==='throw-in'&&
       take.originalNativeShoeStart===false&&
       take.provisionalHandReleaseWithoutHandCollider===true&&
-      take.legalThrowConfirmed===false))
-   throw new TypeError('B06 physical restart must use current genuine original shoe or explicit unmodelled hand proxy');
+      take.legalThrowConfirmed===false||
+      take.type==='throw-in'&&take.originalNativeShoeStart===false&&
+      take.provisionalHandReleaseWithoutHandCollider===false&&take.originalNativeHandContact===true&&
+      take.nativeTwoHandSolverContact===true&&take.nativeGripReleased===true&&
+      take.sameOriginalRapierWorld===true&&take.sourceEventTick===lastEvent.tick&&
+      Number.isSafeInteger(take.gripTick)&&take.gripTick>lastRestart.tick&&take.tick-take.gripTick>=30&&
+      take.confirmedTicks>=6&&take.legalThrowConfirmed===false))
+   throw new TypeError('B06 physical restart must use current genuine original shoe or authenticated hand source');
   lastSetPiece=take;
   add(freeze({
    type:'set-piece-physical-attempt',tick,kind:take.type,
    team:take.team,actorId:take.actorId,
    originalNativeShoeStart:take.originalNativeShoeStart,
    unmodelledHandRelease:take.provisionalHandReleaseWithoutHandCollider,
+   ...(take.originalNativeHandContact===true?{nativeHandRelease:true,legalThrowConfirmed:false}:{}),
    sameOriginalRapierBall:true,officialMatchEvent:false
   }));
   return snapshot();
  }
+ function recordNativeHalfPlacement({physicsTick,playedTicks,placement}={}){
+  if(nativeHalfTicks===null||nativeHalfPlacement||physicsTick!==tick||playedTicks!==nativeHalfTicks||
+     lastEvent&&lastRestart?.sourceEventTick!==lastEvent.tick||
+     placement?.tick!==tick||placement.playedTicks!==playedTicks||placement.periodRestart!=='second-half'||
+     placement.kind!=='kickoff'||placement.assignedTeam!=='away'||placement.takerId!=='away-10'||
+     attackPolarity!==1||placement.attackPolarity!==-1||
+     placement.originalRapierBallRepositioned!==true||placement.sameOriginalRapierWorld!==true||
+     placement.realShoeContact!==false||placement.playerTeleports!==false||
+     placement.officialMatchResult!==null||placement.sourceEventTick!==null||
+     !ballXYZ(placement.ball?.position)||Math.hypot(placement.ball.position.x,placement.ball.position.y)>1e-6||
+     Math.abs(placement.ball.position.z-BALL_RADIUS)>1e-6||
+     !ballXYZ(placement.ball?.velocity)||Math.hypot(...Object.values(placement.ball.velocity))!==0)
+   throw new TypeError('B06 refuses second-half placement without exact native period source');
+  nativeHalfPlacement=placement;attackPolarity=-1;lastBall=freeze({...placement.ball.position});
+  add(freeze({type:'half-time-placement',tick,playedTicks,team:'away',sameOriginalRapierBall:true,officialMatchEvent:false}));
+  return snapshot();
+ }
+ function recordNativeHalfTake({physicsTick,playedTicks,take,foot,solver}={}){
+  if(nativeHalfTicks===null||!nativeHalfPlacement||nativeHalfTake||physicsTick!==tick||
+     playedTicks!==nativeHalfTicks||take?.tick!==tick||tick<=nativeHalfPlacement.tick||
+     take.periodRestart!=='second-half'||take.playedTicks!==playedTicks||take.sourceEventTick!==null||
+     take.type!=='kickoff'||take.actorId!=='away-10'||take.team!=='away'||
+     attackPolarity!==-1||take.attackPolarity!==-1||take.formationReady!==true||!(take.impulseNs?.x>0)||
+     take.originalNativeShoeStart!==true||take.currentRapierContactManifold!==true||
+     take.physicalImpulseApplied!==true||take.sameOriginalRapierWorld!==true||
+     take.officialMatchResult!==null||take.officialPossession!==false||
+     foot?.tick!==tick||foot.started?.length!==1||foot.active?.length!==1||
+     foot.started[0]!==take.actorId||foot.active[0]!==take.actorId||
+     solver?.version!==FOOT_SOLVER_EVIDENCE_VERSION||solver.tick!==tick||
+     !solver.pairs?.some(p=>p.id===take.actorId&&p.beganThisTick&&p.collisionActive&&p.manifolds?.some(m=>m.geometricContacts>0)))
+   throw new TypeError('B06 refuses second-half kickoff without exact native shoe/solver evidence');
+  nativeHalfTake=take;
+  add(freeze({type:'second-half-physical-kickoff',tick,playedTicks,actorId:take.actorId,team:take.team,officialMatchEvent:false}));
+  return snapshot();
+ }
+ function recordNativeFullTime({physicsTick,playedTicks}={}){
+  if(nativeHalfTicks===null||!nativeHalfTake||nativeFullTime||physicsTick!==tick||playedTicks!==2*nativeHalfTicks)
+   throw new TypeError('B06 requires two completed native physical periods');
+  nativeFullTime=freeze({tick,playedTicks,abbreviatedResearchRun:nativeHalfTicks!==B06_HALF_TICKS,
+   matchAuthority:false,officialMatchResult:null});
+  add(freeze({type:'full-time',tick,playedTicks,officialMatchEvent:false}));
+  return snapshot();
+ }
  return freeze({observe,recordRestart,recordNativeLiveShot,
-  recordGoalKickoff,recordSetPiece,snapshot});
+  recordGoalKickoff,recordSetPiece,recordNativeHalfPlacement,recordNativeHalfTake,recordNativeFullTime,snapshot});
 }

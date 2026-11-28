@@ -1,4 +1,6 @@
+import {observeNativeAerialDuel} from './small-sided-native-body-guard.mjs';
 import {createDribbleShieldObserver,planDribbleDefender,resolveDuelActors} from './isolated-dribble-touches.mjs';
+import {observeNativeShotBlock} from './defensive-intervention-selection.mjs';
 // #620 — controlled actions on the CLEAN canonical same-world Rapier core.
 // No legacy universal match session, opponent-lane tactical simulator or fake
 // action event. Exactly one core engine and one existing 22-player mover.
@@ -18,13 +20,13 @@ import {createNativeControlEvidenceGateM29}
  from './native-control-evidence-gate-m29.mjs';
 import {createRealBallReleaseAuditM30} from './real-ball-release-audit-m30.mjs';
 import {createBasicMatchRefereeB05} from './basic-match-referee-b05.mjs';
-import {createBasicMatchTimelineB06} from './basic-match-clock-score-b06.mjs';
+import {createBasicMatchTimelineB06,basicMatchClockB06,B06_HALF_TICKS} from './basic-match-clock-score-b06.mjs';
 import {createBasicReceiveDribbleObserverB04}
  from './basic-receive-dribble-b04.mjs';
 import {createRealOpponentBallContestAuditM31}
  from './real-opponent-ball-contest-m31.mjs';
 import {createPlayerMovement,INITIAL_PLAYERS} from './player-movement.mjs';
-import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup}
+import {SMALL_SIDED_LAB_SCENARIOS,AERIAL_LAB_SCENARIOS,smallSidedSetup,supportsNativeOpenPlay}
  from './small-sided-lab-scenarios.mjs';
 import {SOLO_CARRY_PHASES} from './solo-carry-phases.mjs';
 import {uniformSoloCarryAttributes,validateSoloCarryAttributes}
@@ -36,11 +38,130 @@ import {ACTION_LAB_SCENARIOS,SHOT_LAB_STARTS,CROSS_LAB_STARTS,SAVE_LAB_STARTS,DE
  CHALLENGE_LAB_STARTS,CONTROL_LAB_STARTS,
  getActionLabScenario,classifyActionLabEvidence} from './action-lab-scenarios.mjs';
 
+// UME-06D: a private match lifecycle adapter, not another movement or
+// action engine. Every live tick uses the same guarded full-field native
+// policy. Existing B05/B06 independently observe the original ball.
+// A dead ball or half-time closes the live gate until physical restart
+// support is authenticated; this adapter never fabricates a restart.
+export function createNativeFullFieldSession(RAPIER,{side='home',variantIndex=0,researchHalfTicks=B06_HALF_TICKS}={}){
+ if(!RAPIER||typeof RAPIER.World!=='function'||!Number.isSafeInteger(researchHalfTicks)||
+    researchHalfTicks<120||researchHalfTicks>B06_HALF_TICKS)
+  throw new TypeError('Native full-field session requires Rapier and bounded physical half');
+ const id='full-field-native',fixture=smallSidedSetup(id,side,INITIAL_PLAYERS,{variantIndex});
+ const engine=createEngine(RAPIER,fixture.ball,{
+  diagnosticSmallSidedSituation:id,diagnosticSmallSidedSide:side,diagnosticSmallSidedVariantIndex:variantIndex,
+  diagnosticPlayerFootContactsEnabled:true,diagnosticAutonomousFixtureActionEnabled:true,
+  diagnosticSmallSidedBodyGuardEnabled:true,diagnosticSmallSidedBodyFeedbackEnabled:true,
+  diagnosticCollectiveActions:true,diagnosticLatestLabDynamics:true,diagnosticNativeHalfTicks:researchHalfTicks
+ });
+ try{
+  const mover=createPlayerMovement({researchSmallSidedSituation:id,researchSmallSidedSide:side,
+   researchSmallSidedVariantIndex:variantIndex,researchSmallSidedBodyFeedback:true,researchCollectiveApproaches:true});
+  const ledger=createBasicMatchTimelineB06({b06bRealHalftimePause:true,nativeHalfTicks:researchHalfTicks});
+  let disposed=false,phase='first-half',playedTicks=0,secondHalfStarted=false,latest;
+  function observe(physics,frame,restartTake=null){
+   const placement=latest?.physicalRestart??null;
+   const foot=engine.footContactSnapshot(),raw=engine.uniformAutonomousActionSnapshot();
+   const action=raw?.tick===physics.tick&&physics.tick>0?raw:null;
+   const keepers=engine.nativeKeeperSnapshots();
+   const evidence=engine.nativeMatchRefereeSnapshot();
+   let timeline=ledger.observe({physics,refereeEvidence:evidence});
+   if(engine.nativePlayedTicksSnapshot()!==playedTicks)throw new Error('Native physical and session clocks disagree');
+   if(restartTake){
+    if(restartTake.periodRestart==='second-half'){
+     timeline=ledger.recordNativeHalfTake({physicsTick:physics.tick,playedTicks,take:restartTake,foot,solver:engine.footContactSolverSnapshot()});
+     secondHalfStarted=true;
+    }else timeline=ledger.recordSetPiece({physicsTick:physics.tick,take:restartTake});
+    phase=secondHalfStarted?'second-half':'first-half';
+   }
+   if(playedTicks===2*researchHalfTicks&&secondHalfStarted){
+    timeline=ledger.recordNativeFullTime({physicsTick:physics.tick,playedTicks});phase='full-time';
+   }else if(timeline.outstandingDeadBall)phase='dead-ball-awaiting-native-restart';
+   else if(playedTicks===researchHalfTicks&&!secondHalfStarted&&phase!=='dead-ball-placed-awaiting-native-take')phase='half-time-awaiting-native-restart';
+   latest=Object.freeze({
+    tick:physics.tick,ball:physics.ball,players:frame.players,starts:foot.started,action,
+    control:engine.collectiveControlSnapshot(),keepers,reception:engine.latestLabReceptionSnapshot(),
+    body:engine.smallSidedBodyGuardSnapshot(),decisions:frame.smallSidedMovementDecisions,
+    activeIds:fixture.activeIds,phase,playedTicks,
+    clock:Object.freeze({...basicMatchClockB06(playedTicks),phase,
+     originalPhysicsSourceTick:physics.tick,abbreviatedResearchRun:researchHalfTicks!==B06_HALF_TICKS,
+     halfTimeRestartVerified:secondHalfStarted,completedMatchVerified:false}),
+    referee:evidence,timeline,provisionalScore:timeline.provisionalScore,
+    pendingRestart:phase==='full-time'?null:phase==='dead-ball-placed-awaiting-native-take'&&placement?.periodRestart==='second-half'?null:
+     timeline.outstandingDeadBall||phase==='dead-ball-placed-awaiting-native-take'?evidence.lastEvent.restart:null,
+    physicalRestart:placement,restartTake:restartTake??latest?.restartTake??null,throwHands:engine.nativeThrowHandsSnapshot(),
+    matchAuthority:false,officialMatchResult:null,officialPossession:false,
+    completeFootballGameplayVerified:false,realFull90MinutesVerified:false,
+    boundedTwoPeriodsVerified:phase==='full-time',attackPolarity:engine.nativeAttackPolaritySnapshot(),nativeHalfFormationPhase:frame.nativeHalfFormationPhase??null,
+    directionSwitchVerified:secondHalfStarted&&engine.nativeAttackPolaritySnapshot()===-1
+   });
+   return latest;
+  }
+  observe(engine.snapshot(),mover.snapshot());
+  function snapshot(){if(disposed)throw new Error('Native full-field session disposed');return latest;}
+  function step(){
+   if(disposed)throw new Error('Native full-field session disposed');
+   if(!['first-half','second-half'].includes(phase))throw new Error('Native full-field live play paused pending authenticated restart or full-time');
+   const prior=engine.snapshot(),control=engine.collectiveControlSnapshot();
+   let frame=mover.step(prior.ball.position,null,null,prior.ball.velocity,null,false,false,null,null,null,control,null,engine.nativeAttackPolaritySnapshot());
+   const physics=engine.step(frame);
+   mover.reconcileSmallSidedNativeBodyResponse(engine.smallSidedBodyGuardSnapshot());
+   frame=mover.snapshot();engine.acknowledgeSmallSidedBodyFeedback(frame);
+   if(physics.tick!==latest.tick+1||frame.tick!==physics.tick)throw new Error('Native match requires consecutive physical 60Hz ticks');
+   playedTicks++;
+   return observe(physics,frame);
+  }
+  function placeRestart(){
+   if(disposed)throw new Error('Native full-field session disposed');
+   if(phase!=='dead-ball-awaiting-native-restart'||!latest.pendingRestart?.ready)
+    throw new Error('Native restart placement requires a verified ready boundary ticket');
+   const event=latest.referee.lastEvent,placement=engine.applyBasicRestartAtBoundary(event);
+   const referee=engine.nativeMatchRefereeSnapshot();
+   const timeline=ledger.recordRestart({physicsTick:latest.tick,refereeEvidence:referee,physicalRestart:placement});
+   phase='dead-ball-placed-awaiting-native-take';
+   latest=Object.freeze({...latest,ball:engine.snapshot().ball,
+    control:engine.collectiveControlSnapshot(),keepers:engine.nativeKeeperSnapshots(),
+    action:null,starts:Object.freeze([]),reception:null,phase,
+    clock:Object.freeze({...latest.clock,phase}),referee,timeline,
+    provisionalScore:timeline.provisionalScore,physicalRestart:placement,
+    pendingRestart:event.restart});
+   return latest;
+  }
+  function placeSecondHalf(){
+   if(disposed)throw new Error('Native full-field session disposed');
+   if(phase!=='half-time-awaiting-native-restart')throw new Error('Native second-half placement requires exact half-time');
+   const placement=engine.placeNativeSecondHalf(),timeline=ledger.recordNativeHalfPlacement({physicsTick:latest.tick,playedTicks,placement});
+   phase='dead-ball-placed-awaiting-native-take';
+   latest=Object.freeze({...latest,ball:engine.snapshot().ball,
+    control:engine.collectiveControlSnapshot(),keepers:engine.nativeKeeperSnapshots(),
+    action:null,starts:Object.freeze([]),reception:null,phase,
+    clock:Object.freeze({...latest.clock,phase}),referee:engine.nativeMatchRefereeSnapshot(),timeline,
+    physicalRestart:placement,pendingRestart:null,attackPolarity:engine.nativeAttackPolaritySnapshot()});
+   return latest;
+  }
+  function advanceRestart(){
+   if(disposed)throw new Error('Native full-field session disposed');
+   if(phase!=='dead-ball-placed-awaiting-native-take'||!latest.physicalRestart)
+    throw new Error('Native restart requires a placed ready ticket');
+   const placement=latest.physicalRestart,prior=engine.snapshot(),control=engine.collectiveControlSnapshot();
+   let frame=mover.step(prior.ball.position,null,null,prior.ball.velocity,null,false,false,null,null,null,control,placement,engine.nativeAttackPolaritySnapshot());
+   const physics=engine.step(frame,placement);
+   mover.reconcileSmallSidedNativeBodyResponse(engine.smallSidedBodyGuardSnapshot());
+   frame=mover.snapshot();engine.acknowledgeSmallSidedBodyFeedback(frame);
+   if(physics.tick!==latest.tick+1||frame.tick!==physics.tick)throw new Error('Native restart requires consecutive physical 60Hz ticks');
+   const take=engine.nativeRestartTakeSnapshot();
+   return observe(physics,frame,take?.tick===physics.tick?take:null);
+  }
+  function dispose(){if(!disposed){disposed=true;engine.dispose();}}
+  return Object.freeze({snapshot,step,placeRestart,placeSecondHalf,advanceRestart,dispose});
+ }catch(error){engine.dispose();throw error;}
+}
+
 export function createControlledActionLab(RAPIER,id,{
  shotSide='home',shotLane='open',carrySide='home',controlScene='receive',
  controlSide='home',controlDecisionEnabled=true,
  challengeSide='away',challengeScene='contact',variantIndex=0,
- bodyGuardEnabled=false,keeperSingleShot=false,directedDribble=false,duelTackleProfile='mixed',soloShoeWidthScale=1,
+ bodyGuardEnabled=false,collectiveApproaches=false,keeperSingleShot=false,directedDribble=false,duelTackleProfile='mixed',soloShoeWidthScale=1,
  soloShoeLengthScale=1,soloRecoveryStepScale=1,
  soloSprintCadenceScale=1,soloSprintLateralTrackScale=1,
  soloSprintActiveFootReleaseM=0,intentDrivenSoloCarry=false,soloCarryLockedPhase=null,
@@ -50,6 +171,10 @@ export function createControlledActionLab(RAPIER,id,{
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
+ const aerialLab=['header-pair','chest-control','aerial-foot-control','aerial-duel','lofted-pass','volley-solo','keeper-high-cross','keeper-high-intercept','lofted-short','lofted-switch'].includes(id);
+ if(aerialLab){bodyGuardEnabled=true;collectiveApproaches=true;}
+ if(typeof collectiveApproaches!=='boolean'||(collectiveApproaches&&(!supportsNativeOpenPlay(id)||!bodyGuardEnabled||keeperSingleShot||directedDribble||duelTackleProfile!=='mixed')))
+  throw new TypeError('Native open play requires guarded participants without isolated overrides');
  if(typeof carryRunwayStart!=='boolean'||
     (carryRunwayStart&&id!=='carry-solo'))
   throw new TypeError('Long-running pre-kickoff runway only for Solo Carry');
@@ -250,6 +375,7 @@ export function createControlledActionLab(RAPIER,id,{
     diagnosticNativeFixedSprintLongStrideEnabled:nativeFixedSprintLongStride
    }:{}),
    diagnosticSmallSidedBodyGuardEnabled:bodyGuardEnabled,
+   diagnosticCollectiveActions:collectiveApproaches,diagnosticNativeAerialEnabled:aerialLab,
    diagnosticKeeperSingleShot:keeperSingleShot,diagnosticDirectedDribble:directedDribble,diagnosticDuelTackleProfile:duelTackleProfile,
     diagnosticSmallSidedBodyFeedbackEnabled:bodyGuardEnabled
   }:{}),
@@ -295,6 +421,7 @@ export function createControlledActionLab(RAPIER,id,{
    ...(soloCarryLockedPhase!==null?{
     researchSoloCarryLockedPhase:soloCarryLockedPhase,
     researchSoloCarryPlayerAttributes:selectedCarryAttributes}:{}),
+   ...(collectiveApproaches?{researchCollectiveApproaches:true}:{}),
    ...(bodyGuardEnabled?{researchSmallSidedBodyFeedback:true}:{})
   }:sourceRestart?{
    researchBasicRestartSource:id,
@@ -375,27 +502,34 @@ export function createControlledActionLab(RAPIER,id,{
   createBasicMatchRefereeB05():null;
  const matchTimelineObserver=(refereeMode||smallSided)?
   createBasicMatchTimelineB06():null;
- const isolatedDribbleAudit=(!intentDrivenSoloCarry&&
+ const isolatedDribbleAudit=(!collectiveApproaches&&!intentDrivenSoloCarry&&
   ['dribble-1v1','carry-solo'].includes(id))?
   createIsolatedDribbleNativeAudit({side:shotSide,variantIndex,solo:id==='carry-solo',directed:directedDribble}):null;
  const baseFootworkObserver=basicFootwork?
   createBasicReceiveDribbleObserverB04({side:selectedControlSide,kind:id}):null;
+ const collectiveCounts=collectiveApproaches?{carry:0,pass:0,shot:0,tackle:0,interception:0,save:0,other:0}:null;
+ let headerAudit=null,headerCrossAudit=null,aerialControlAudit=null,aerialDuelAudit=null,loftedPassAudit=null,volleyAudit=null,highClaimAudit=null;
+ let priorRecordedBallVelocity=null;
  function record(physics,playerFrame){
+  const incomingVelocity=priorRecordedBallVelocity;
+  priorRecordedBallVelocity=Object.freeze({...physics.ball.velocity});
   const foot=engine.footContactSnapshot();
   const starts=Object.freeze([...foot.started]);
   if(foot.tick!==physics.tick||playerFrame.tick!==physics.tick)
    throw new Error('Only genuine same-tick Rapier and canonical mover allowed');
   const raw=engine.uniformAutonomousActionSnapshot?.()??null;
   const action=raw?.tick===physics.tick?raw:null;
+  const collectiveControl=collectiveApproaches?engine.collectiveControlSnapshot():null;
+  if(collectiveCounts&&action?.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true&&action.tick===physics.tick){
+   const kind=Object.hasOwn(collectiveCounts,action.action)?action.action:'other';collectiveCounts[kind]++;
+  }
   if(blockAudit){
    const ball=physics.ball,defender=(shotSide==='home'?'away':'home')+'-2';
    const body=engine.smallSidedBodyGuardSnapshot();
    if(action?.action==='shot'&&blockAudit.phase==='ready')blockAudit=Object.freeze({...blockAudit,phase:'flight',shotTick:physics.tick,shotSpeedMps:Math.hypot(ball.velocity.x,ball.velocity.y,ball.velocity.z)});
    else if(blockAudit.phase==='flight'&&previousBlockBall&&physics.tick>blockAudit.shotTick&&(starts.includes(defender)||body.lowerLegBallStarts.includes(defender))){
-    const before=previousBlockBall.velocity,after=ball.velocity,pre=Math.hypot(before.x,before.y,before.z),post=Math.hypot(after.x,after.y,after.z);
-    const change=Math.hypot(before.x-after.x,before.y-after.y,before.z-after.z);
-    const blocked=change>=0.6&&(post<pre*0.85||(before.x*after.x+before.y*after.y+before.z*after.z)<pre*post*0.92);
-    blockAudit=Object.freeze({...blockAudit,phase:blocked?'blocked':'flight',contactTick:physics.tick,actorId:defender,contactSource:body.lowerLegBallStarts.includes(defender)?'native-leg-solver':'native-shoe-start',incomingSpeedMps:pre,outgoingSpeedMps:post,velocityChangeMps:change,blocked,officialPossession:false});
+    const observed=observeNativeShotBlock({tick:physics.tick,delivery:{kind:'shot',tick:blockAudit.shotTick,team:shotSide},players:playerFrame.players,starts,bodyStarts:body.lowerLegBallStarts,before:previousBlockBall.velocity,after:ball.velocity});
+    if(observed?.actorId===defender)blockAudit=Object.freeze({...blockAudit,...observed,phase:observed.blocked?'blocked':'flight'});
    }
    previousBlockBall=ball;
   }
@@ -500,7 +634,41 @@ export function createControlledActionLab(RAPIER,id,{
   // A gameplay-proximity impulse is NOT native shoe evidence. Keep the
   // actual Rapier ball action visible, but do not feed it to any observer
   // whose proofs require a genuine shoe START.
-  const nativeAction=intentDrivenSoloCarry?null:action;
+  const nativeAction=intentDrivenSoloCarry||action?.nativeExclusiveHeadStart===true||action?.nativeExclusiveAerialControlStart===true?null:action;
+  if(id==='volley-solo'&&!volleyAudit&&headerCrossAudit&&action?.nativeVolley===true&&action.nativeExclusiveAerialControlStart===true&&action.actualPhysicsImpulseApplied===true&&
+     action.playerId===headerCrossAudit.recipientId&&action.tick>headerCrossAudit.tick)
+   volleyAudit=Object.freeze({cross:headerCrossAudit,launch:action,crossing:null});
+  if(['lofted-pass','lofted-short','lofted-switch'].includes(id)){
+   if(!loftedPassAudit&&action?.action==='pass'&&action.passTarget?.deliveryProfile==='lofted'&&action.actualPhysicsImpulseApplied===true&&starts.length===1&&starts[0]===action.playerId)
+    loftedPassAudit=Object.freeze({launch:action,peakZM:physics.ball.position.z,receiverContact:null});
+   if(loftedPassAudit&&!loftedPassAudit.receiverContact){
+    const launch=loftedPassAudit.launch,body=engine.smallSidedBodyGuardSnapshot();
+    const receiver=launch.recipientId;
+    const receivingSurface=body.aerial?.find(s=>s.actorId===receiver&&s.surface==='foot'&&s.contactStarted&&s.actualNativeSolverContact);
+    // The solver may reverse vertical velocity at the very contact being
+    // measured. Use real incoming velocity and exclusive contact evidence.
+    const sole=starts.length===1&&starts[0]===receiver&&foot.active.length===1&&foot.active[0]===receiver&&!body.aerialControlContacts?.length&&!body.lowerLegBallContacts.length;
+    const raised=receivingSurface&&body.aerialControlStarts.length===1&&body.aerialControlContacts.length===1&&!foot.active.length&&!body.lowerLegBallContacts.length;
+    const hit=physics.tick>launch.tick&&((sole&&incomingVelocity?.z<0)||(raised&&receivingSurface.incomingVelocity.z<0));
+    loftedPassAudit=Object.freeze({...loftedPassAudit,peakZM:Math.max(loftedPassAudit.peakZM,physics.ball.position.z),
+     receiverContact:hit?Object.freeze({tick:physics.tick,actorId:launch.recipientId,officialPossession:false}):null});
+   }
+  }
+  if(id==='aerial-duel'&&physics.tick>0&&!aerialDuelAudit)aerialDuelAudit=observeNativeAerialDuel({tick:physics.tick,evidence:engine.smallSidedBodyGuardSnapshot().aerial,players:playerFrame.players.filter(p=>focus.includes(p.id)),action});
+  if(aerialLab&&action?.action==='aerial-control'&&action.nativeExclusiveAerialControlStart===true&&!aerialControlAudit&&
+     (id==='aerial-foot-control'||headerCrossAudit&&action.playerId===headerCrossAudit.recipientId&&action.tick>headerCrossAudit.tick))aerialControlAudit=action;
+  if(aerialLab&&action?.action==='cross'&&action.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true&&
+     starts.length===1&&starts[0]===action.playerId&&!headerCrossAudit)headerCrossAudit=action;
+  if(['keeper-high-cross','keeper-high-intercept'].includes(id)&&headerCrossAudit){
+   const k=engine.nativeKeeperSnapshots().find(k=>k.keeperId===smallSided.opponent+'-1');
+   if(k?.plan?.kind==='high-claim'&&k.started&&!highClaimAudit)highClaimAudit=Object.freeze({cross:headerCrossAudit,attemptTick:k.tick,keeperId:k.keeperId,contactTick:null,confirmedTick:null,punchTick:null,gripReleased:false});
+   if(highClaimAudit&&k){
+    const contactTick=highClaimAudit.contactTick??(k.contactStarted&&k.plan?.kind==='high-claim'?k.tick:null);
+    highClaimAudit=Object.freeze({...highClaimAudit,contactTick,confirmedTick:highClaimAudit.confirmedTick??(contactTick!==null?k.catchState?.confirmedTick??null:null),punchTick:highClaimAudit.punchTick??(contactTick!==null&&k.highHandAction?.kind==='punch'&&k.highHandAction.actualPhysicsImpulseApplied===true?k.tick:null),gripReleased:highClaimAudit.gripReleased||k.catchState?.released===true});
+   }
+  }
+  if(aerialLab&&action?.nativeExclusiveHeadStart===true&&headerCrossAudit&&
+     action.tick>headerCrossAudit.tick&&action.playerId===headerCrossAudit.recipientId&&!headerAudit)headerAudit=action;
   const evidence=classifyActionLabEvidence(spec,{
    tick:physics.tick,action:nativeAction,starts,priorPass:firstRealPass,
    opponentEarlier:firstOpposingShoe!==null,
@@ -810,10 +978,12 @@ export function createControlledActionLab(RAPIER,id,{
     tick:physics.tick,kind:id,actorId:baseFootworkAudit.actorId
    })].slice(-12));
   }
-  const keeperDive=engine.keeperDiveSnapshot?.()??null;
+  const keeperDive=engine.keeperDiveSnapshot?.()??(['keeper-high-cross','keeper-high-intercept'].includes(id)?engine.nativeKeeperSnapshots()[0]??null:null);
   const refereeEvidence=refereeObserver?.observe({
    physics,playerFrame,foot,solver:engine.footContactSolverSnapshot(),
-   action:nativeAction,...(keeperDive?{keeperDive}: {})
+   action:aerialLab?action:nativeAction,...(keeperDive?{keeperDive}: {}),
+   ...(aerialLab&&physics.tick>0?{aerialEvidence:engine.smallSidedBodyGuardSnapshot().aerial,
+    aerialConflict:engine.smallSidedBodyGuardSnapshot().lowerLegBallContacts.length>0}:{})
   })??null;
   if(refereeEvidence?.lastEvent?.tick===physics.tick){
    count++;
@@ -887,6 +1057,8 @@ export function createControlledActionLab(RAPIER,id,{
    // velocity and no authority outside the existing closed Action LAB.
    observedMovementPlayers:playerFrame.players,
    starts,action,evidence,decisionEvidence,contactContinuity,
+   ...(aerialLab?{headerAudit,headerCrossAudit,aerialControlAudit,aerialDuelAudit,loftedPassAudit,volleyAudit,highClaimAudit}:{}),
+   ...(collectiveControl?{collectiveControl,collectiveCounts:Object.freeze({...collectiveCounts}),nativeKeeperStates:engine.nativeKeeperSnapshots()}:{}),
     labDynamicsVersion:currentDynamics?CURRENT_LAB_DYNAMICS_VERSION:null,
     latestOrientedReception:currentDynamics?(engine.latestLabReceptionSnapshot?.()??null):null,
    ...(passPairAudit?{passPairAudit}:{}),
@@ -972,12 +1144,12 @@ export function createControlledActionLab(RAPIER,id,{
   let frame=mover.step(prior.ball.position,
    spec.mode==='control'?firstPhysicalPassAction:null,
    reachExperiment?engine.researchReceiverTapSnapshot():null,
-   (goalkeeperSave||id==='carry-solo'||id==='keeper-1v1'||directedDribble||interceptionAudit||blockAudit)?prior.ball.velocity:null,
+   (goalkeeperSave||id==='carry-solo'||id==='keeper-1v1'||directedDribble||collectiveApproaches||interceptionAudit||blockAudit)?prior.ball.velocity:null,
    id==='keeper-1v1'&&!keeperSingleShot&&bodyGuardEnabled&&latest.keeperShotAudit?.reboundTick!=null&&
     !latest.keeperShotAudit.crossing&&!latest.keeperDive?.catchState?.active?
      {tick:prior.tick,reboundTick:latest.keeperShotAudit.reboundTick}:null,
    keeperSingleShot&&latest.keeperShotAudit?.shots===0&&!latest.keeperDive?.catchState?.active,directedDribble,
-   latest.duelTransition??null,latest.interceptionAudit??null,latest.blockAudit??null);
+   latest.duelTransition??null,latest.interceptionAudit??null,latest.blockAudit??null,latest.collectiveControl??null);
   const initialAfter=engine.step(frame);
    if(smallSided&&bodyGuardEnabled){
     // Only post-step original native manifolds feed the canonical mover.
@@ -1062,7 +1234,7 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
     !go||!pause||!step||!reset||
     !by('action-labs-open')||!by('action-labs-close'))
   throw new Error('Action LAB controls are missing');
- const all=[...ACTION_LAB_SCENARIOS,...SMALL_SIDED_LAB_SCENARIOS];
+ const all=[...ACTION_LAB_SCENARIOS,...SMALL_SIDED_LAB_SCENARIOS,...AERIAL_LAB_SCENARIOS];
  if(select.options.length!==all.length||
     all.some((s,i)=>select.options[i].value!==s.id))
   throw new Error('Action LAB menu must match the single scenario catalog');
@@ -1343,16 +1515,16 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
  function resetSession(){
   stop();step.disabled=false;if(session)session.dispose();
   shotSideLabel.hidden=!(['shot','cross','save','tackle','interception','trap','dribble','goal','touchline','goal-line-out','throw-in','corner','goal-kick','carry','challenge'].includes(select.value)||
-    SMALL_SIDED_LAB_SCENARIOS.some(x=>x.id===select.value));
+    [...SMALL_SIDED_LAB_SCENARIOS,...AERIAL_LAB_SCENARIOS].some(x=>x.id===select.value));
   shotLaneLabel.hidden=select.value!=='shot';
   controlSceneLabel.hidden=select.value!=='control';
   challengeSceneLabel.hidden=select.value!=='challenge';
   by('action-labs-title').textContent=select.selectedOptions[0].textContent.trim();
   session=createControlledActionLab(getRapier(),select.value,{
    // Hidden original research comparator, not a selectable gameplay LAB.
-   historicalEvidenceBaseline:!SMALL_SIDED_LAB_SCENARIOS.some(x=>x.id===select.value),
+   historicalEvidenceBaseline:![...SMALL_SIDED_LAB_SCENARIOS,...AERIAL_LAB_SCENARIOS].some(x=>x.id===select.value),
    shotSide:(['shot','cross','save','tackle','interception','trap','dribble','goal','touchline','goal-line-out','throw-in','corner','goal-kick'].includes(select.value)||
-    SMALL_SIDED_LAB_SCENARIOS.some(x=>x.id===select.value))?shotSide.value:'home',
+    [...SMALL_SIDED_LAB_SCENARIOS,...AERIAL_LAB_SCENARIOS].some(x=>x.id===select.value))?shotSide.value:'home',
    shotLane:select.value==='shot'?shotLaneChoice.value:'open',
    carrySide:select.value==='carry'?shotSide.value:'home',
    controlScene:select.value==='control'?controlSceneChoice.value:'receive',
@@ -1469,7 +1641,7 @@ export function projectActiveLabDecisions(frame,focus){
   if(!ids.includes(decision.id)||byId.has(decision.id)||
      decision.tick!==frame.physicsTick||decision.originalCanonicalMover!==true||
      decision.readOnly!==true||decision.actionConfirmed!==false||
-     !['goalkeeping','press-ball','carry-ball','approach-ball','support-run','hold-pass-target','getting-up','shoulder-challenge','intercept-ball','block-shot'].includes(decision.kind)||
+     !['goalkeeping','press-ball','cover-pass','carry-ball','approach-ball','support-run','hold-pass-target','getting-up','shoulder-challenge','intercept-ball','block-shot'].includes(decision.kind)||
      ![decision.target?.x,decision.target?.y,decision.speedMps].every(Number.isFinite))
    throw new TypeError('Invalid current authoritative mover intent');
   byId.set(decision.id,decision);

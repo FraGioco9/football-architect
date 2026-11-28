@@ -538,3 +538,120 @@ test('C3.3m real Rapier-origin pass distance is valid on both 3m and 25m edges, 
   assert.equal(a.action,'carry');assert.equal(a.playerId,defender);assert.equal(a.decisionContext.rule,'interception-recovery-native-carry');assert.equal(a.officialMatchPossession,false);
  }
  });
+
+test('UME-05I native carry uses the same live opponent geometry in open play and directed duel',async()=>{
+ const {planNativeCarryTouch,chooseDirectedDribbleTouch}=await import('../src/isolated-dribble-touches.mjs');
+ for(const attackingSide of ['home','away']){
+  const dir=attackingSide==='home'?1:-1,other=attackingSide==='home'?'away':'home';
+  const attacker={id:attackingSide+'-7',team:attackingSide,x:-dir*0.5,y:0};
+  const ballPosition={x:0,y:0,z:0.11},ballVelocity={x:dir,y:0,z:0};
+  for(const y of [-0.7,0.7]){
+   const defender={id:other+'-4',team:other,x:dir*2,y};
+   const args={attackingSide,attacker,defender,ballPosition,ballVelocity};
+   const common=planNativeCarryTouch({...args,maxImpulseNs:0.30});
+   const locked=chooseDirectedDribbleTouch({...args,variantIndex:0,tick:1});
+   assert.deepEqual(common.desiredVelocity,locked.desiredVelocity);
+   assert.equal(common.magnitudeNs,locked.magnitudeNs);
+   assert.equal(Math.sign(common.dy),-Math.sign(y));
+   assert.ok(common.magnitudeNs<=0.30);assert.equal(common.officialPossession,false);
+  }
+  const unopposed=planNativeCarryTouch({attackingSide,attacker,ballPosition,ballVelocity:{x:dir*3,y:0,z:0}});
+  assert.equal(unopposed.magnitudeNs,0);
+  assert.equal(unopposed.fromLiveOpponent,false);
+ }
+});
+test('UME-02 same native contact selector for pair, overload and full participant set',()=>{
+ const field=mover(Object.fromEntries(INITIAL_PLAYERS.map(p=>[p.id,{x:p.team==='home'?-45:45,y:25}]).concat([['home-10',{x:-5,y:0}],['away-2',{x:-1,y:0}]])));
+ const source={tick:1,contactStarted:['home-10'],contactActive:['home-10'],playerFrame:field,ballPosition:ball,ballVelocity:quiet,ballRadiusM:0.11,allowPhysicalCarry:true,nativeActionPolicy:true,collectiveControl:{tick:0,kind:'loose',playerId:null,sourceTick:null,officialPossession:false}};
+ const sets=[['home-10','away-2'],['home-10','away-2','home-9'],INITIAL_PLAYERS.map(p=>p.id)];
+ for(const activePlayerIds of sets){
+  const action=selectUniformAutonomousContactAction({...source,activePlayerIds});
+  assert.equal(action?.action,'carry');assert.equal(action.decisionContext.smallSidedChoice.selected,'carry');
+  assert.ok(action.decisionContext.nativeCarryTouch);assert.ok(Math.hypot(...Object.values(action.impulseNs))<=0.42+1e-9);
+  assert.equal(selectUniformAutonomousContactAction({...source,activePlayerIds,contactStarted:[],contactActive:[]}),null);
+  assert.equal(selectUniformAutonomousContactAction({...source,activePlayerIds,contactActive:['home-10','away-2']}),null);
+ }
+ assert.throws(()=>selectUniformAutonomousContactAction({...source,activePlayerIds:sets[0],collectiveControl:null}),/control observation/);
+});
+
+test('UME-05J native interception correction is shared and bounded across mirrored actors',async()=>{
+ const {planNativeInterceptionCushion,chooseDuelInterceptionTouch}=await import('../src/isolated-dribble-touches.mjs');
+ for(const side of ['home','away']){
+  const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+  const attacker={id:side+'-7',team:side,x:-dir*4,y:0};
+  const defender={id:other+'-4',team:other,x:dir*0.2,y:0.3};
+  const ballPosition={x:0,y:0,z:0.11},ballVelocity={x:dir*6,y:0,z:0};
+  const args={attackingSide:side,attacker,defender,ballPosition,ballVelocity};
+  const duel=chooseDuelInterceptionTouch(args);
+  assert.ok(duel);
+  const common=planNativeInterceptionCushion({...args,desiredVelocity:duel.desiredVelocity,maxImpulseNs:2.2});
+  for(const key of ['dx','dy','magnitudeNs','carrierGapM','defenderGapM','actorId','opponentId'])assert.equal(common[key],duel[key]);
+  assert.equal(common.interceptionConfirmed,false);assert.equal(common.officialPossession,false);
+  assert.equal(common.nativeExclusiveShoeRequired,true);assert.ok(Object.isFrozen(common.desiredVelocity));
+  assert.equal(planNativeInterceptionCushion({...args,desiredVelocity:ballVelocity,maxImpulseNs:2.2}),null);
+  assert.equal(planNativeInterceptionCushion({...args,attacker:{...attacker,x:0.2},desiredVelocity:duel.desiredVelocity,maxImpulseNs:2.2}),null);
+  assert.equal(planNativeInterceptionCushion({...args,desiredVelocity:duel.desiredVelocity,maxImpulseNs:6}),null);
+  // The isolated delivery keeps its existing provisional target and
+  // ceiling; the common correction must match the actual selector.
+  const passerId=side+'-10',recipientId=side+'-9',defenderId=other+'-2';
+  const frame=mover({[passerId]:{x:attacker.x,y:0},[recipientId]:{x:dir*5,y:0},[defenderId]:{x:defender.x,y:defender.y}},25);
+  const input={tick:25,contactStarted:[defenderId],contactActive:[defenderId],playerFrame:frame,ballPosition,ballVelocity,ballRadiusM:0.11,activePlayerIds:[passerId,recipientId,defenderId],interceptionContext:{side,phase:'flight'}};
+  const action=selectUniformAutonomousContactAction(input);
+  assert.equal(action?.action,'interception');
+  const expected=planNativeInterceptionCushion({...args,attacker:{...attacker,id:passerId},defender:{...defender,id:defenderId},desiredVelocity:action.defensiveTarget.desiredVelocity,maxImpulseNs:5.8});
+  assert.equal(action.defensiveTarget.magnitudeNs,expected.magnitudeNs);
+  assert.ok(Math.abs(Math.hypot(action.impulseNs.x,action.impulseNs.y)-expected.magnitudeNs)<1e-9);
+  assert.equal(action.officialMatchPossession,false);
+  assert.equal(selectUniformAutonomousContactAction({...input,contactStarted:[],contactActive:[]}),null);
+  assert.equal(selectUniformAutonomousContactAction({...input,contactActive:[defenderId,passerId]}),null);
+ }
+});
+
+test('UME-05K one bounded ground correction preserves defensive attempt geometry and ceilings',async()=>{
+ const {chooseDribbleDefensiveTouch,planNativeDefensiveGroundTouch,SLIDING_TACKLE_MAX_IMPULSE_NS}=await import('../src/isolated-dribble-touches.mjs');
+ for(const attackingSide of ['home','away']){
+  const dir=attackingSide==='home'?1:-1,other=attackingSide==='home'?'away':'home';
+  const defender={id:other+'-6',team:other,x:dir*0.6,y:0.2};
+  const ballPosition={x:0,y:0,z:0.11},ballVelocity={x:dir*1.4,y:0,z:0};
+  for(const [carrierX,kind,sliding,cap] of [[-0.6,'tackle',false,1.25],[-0.6,'tackle',true,SLIDING_TACKLE_MAX_IMPULSE_NS],[-4,'interception',false,1.25]]){
+   const attacker={id:attackingSide+'-8',team:attackingSide,x:dir*carrierX,y:0};
+   const source={attackingSide,attacker,defender,ballPosition,ballVelocity};
+   const touch=chooseDribbleDefensiveTouch({...source,sliding});
+   assert.equal(touch?.kind,kind);
+   const common=planNativeDefensiveGroundTouch({...source,kind,desiredVelocity:touch.desiredVelocity,maxImpulseNs:cap});
+   assert.ok(common);
+   assert.equal(common.magnitudeNs,Math.min(cap,0.43*Math.hypot(touch.desiredVelocity.x-ballVelocity.x,touch.desiredVelocity.y-ballVelocity.y)));
+   for(const key of ['dx','dy','magnitudeNs','actorId','opponentId','carrierGapM','defenderGapM'])assert.equal(common[key],touch[key]);
+   assert.equal(common.officialPossession,false);assert.equal(common.nativeExclusiveShoeRequired,true);
+   assert.equal(planNativeDefensiveGroundTouch({...source,kind:kind==='tackle'?'interception':'tackle',desiredVelocity:touch.desiredVelocity,maxImpulseNs:cap}),null);
+  }
+ }
+});
+
+test('UME-05L identical witnessed pass interception in free play and isolated exercise, including backward and fast passes',()=>{
+ for(const side of ['home','away']){
+  const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+  const passerId=side+'-10',recipientId=side+'-9',defenderId=other+'-2';
+  const frame=mover(Object.fromEntries(INITIAL_PLAYERS.map(p=>[p.id,p.id===passerId?{x:-dir*4,y:0}:p.id===recipientId?{x:dir*5,y:0}:p.id===defenderId?{x:dir*0.2,y:0.3}:{x:p.team===side?-40:40,y:25}])),25);
+  const ballPosition={x:0,y:0,z:0.11},activePlayerIds=[passerId,recipientId,defenderId];
+  const delivery={kind:'pass',team:side,playerId:passerId,recipientId,tick:12};
+  const common={tick:25,contactStarted:[defenderId],contactActive:[defenderId],playerFrame:frame,ballPosition,ballRadiusM:0.11,activePlayerIds};
+  for(const ballVelocity of [{x:dir*12,y:0,z:0},{x:-dir*5,y:0,z:0},{x:0,y:4,z:0}]){
+   const input={...common,ballVelocity};
+   const isolated=selectUniformAutonomousContactAction({...input,interceptionContext:{side,phase:'flight'}});
+   const open={...input,allowPhysicalCarry:true,nativeActionPolicy:true,collectiveControl:{tick:24,kind:'loose',playerId:null,officialPossession:false,delivery}};
+   const native=selectUniformAutonomousContactAction(open);
+   assert.equal(isolated?.action,'interception');assert.equal(native?.action,'interception');
+   assert.deepEqual(native.defensiveTarget,isolated.defensiveTarget);
+   assert.deepEqual(native.impulseNs,isolated.impulseNs);
+   assert.equal(native.officialMatchPossession,false);
+   assert.equal(selectUniformAutonomousContactAction({...open,contactStarted:[],contactActive:[]}),null);
+   const noRecipient=selectUniformAutonomousContactAction({...open,collectiveControl:{...open.collectiveControl,delivery:{...delivery,recipientId:'missing'}}});
+   assert.notEqual(noRecipient?.action,'interception');
+   const expired=selectUniformAutonomousContactAction({...open,collectiveControl:{...open.collectiveControl,delivery:{...delivery,tick:-200}}});
+   assert.notEqual(expired?.action,'interception');
+   const close=mover({[passerId]:{x:-dir*4,y:0},[recipientId]:{x:dir*0.5,y:0},[defenderId]:{x:dir*0.2,y:0.3}},25);
+   assert.equal(selectUniformAutonomousContactAction({...input,playerFrame:close,interceptionContext:{side,phase:'flight'}}),null);
+  }
+ }
+});
