@@ -143,3 +143,13 @@ export function nativeCrossTargetHeight(profile,originZ){
  if(!NATIVE_CROSS_PROFILES.includes(profile)||!Number.isFinite(originZ))throw new TypeError('Known cross profile and finite origin required');
  return profile==='landing'?originZ:NATIVE_AERIAL_APPROACH_HEIGHTS[profile];
 }
+
+// A pending delivery can survive the launch shoe's continued contact,
+// never a new intervening contact or an unbounded time window.
+export function nativePendingDeliveryValid(delivery,tick,{shoeStarts=[],shoeActive=[],conflict=false}={}){
+ if(!delivery||!Number.isSafeInteger(tick)||!Number.isSafeInteger(delivery.tick)||
+    tick<=delivery.tick||tick-delivery.tick>180||conflict)return false;
+ // A new shoe START consumes the delivery in the receiving branch below.
+ // Without a START, only the original launch actor may remain in contact.
+ return shoeStarts.length>0||shoeActive.every(id=>id===delivery.actorId);
+}

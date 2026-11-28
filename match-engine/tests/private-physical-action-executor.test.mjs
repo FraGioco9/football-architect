@@ -7,7 +7,7 @@ import {initializeRapier,createEngine,BALL_RADIUS,canonicalSnapshot}
  from '../src/core.mjs';
 import {INITIAL_PLAYERS,createPlayerMovement} from '../src/player-movement.mjs';
 import {footProxyTransform} from '../src/player-foot-contact.mjs';
-import {NATIVE_FUNDAMENTALS,createNativeFundamentalMask,nativeFundamentalAllowed,nativeLabFundamentalMask,nativeAerialSurfaceAllowed,createNativeDuelFundamentalMask,nativeDefensiveInterventionAllowed,nativePhysicalActionAllowed,nativeLabAerialSequence,nativeSequenceDeliveryAllowed,nativeSequenceAerialAllowed,nativeSequenceGroundMask,nativeKeeperSequenceDeliveryAllowed,nativeKeeperSequenceClaimAllowed,nativeKeeperSequenceInterrupted,selectNativeCrossProfile,nativeCrossTargetHeight} from '../src/native-fundamental-mask.mjs';
+import {NATIVE_FUNDAMENTALS,createNativeFundamentalMask,nativeFundamentalAllowed,nativeLabFundamentalMask,nativeAerialSurfaceAllowed,createNativeDuelFundamentalMask,nativeDefensiveInterventionAllowed,nativePhysicalActionAllowed,nativeLabAerialSequence,nativeSequenceDeliveryAllowed,nativeSequenceAerialAllowed,nativeSequenceGroundMask,nativeKeeperSequenceDeliveryAllowed,nativeKeeperSequenceClaimAllowed,nativeKeeperSequenceInterrupted,selectNativeCrossProfile,nativeCrossTargetHeight,nativePendingDeliveryValid} from '../src/native-fundamental-mask.mjs';
 import {selectDefensiveIntervention} from '../src/defensive-intervention-selection.mjs';
 import {createNativeActionRestriction,evaluateNativeActionRestriction,calculateNativeCrossImpulse} from '../src/private-physical-action-executor.mjs';
 
@@ -281,4 +281,19 @@ test('ME-01-QA U-02c1: shared cross profile and range formula',()=>{
   assert.equal(calculateNativeCrossImpulse({...args,profile:null}),null);
   assert.equal(calculateNativeCrossImpulse({...args,profile:'head',originalImpulseNs:{x:0,y:0,z:1}}),null);
  }
+});
+
+test('ME-01-QA U-02d5: pending delivery expires and cannot survive competing contact',()=>{
+ for(const actorId of ['home-10','away-10']){
+  const recipientId=actorId.replace('-10','-9'),delivery={tick:20,actorId,recipientId};
+  for(const offset of [-1,0,1,179,180,181]){
+   const valid=offset>0&&offset<=180;
+   assert.equal(nativePendingDeliveryValid(delivery,20+offset),valid);
+   assert.equal(nativePendingDeliveryValid(delivery,20+offset,{shoeActive:[actorId]}),valid);
+   assert.equal(nativePendingDeliveryValid(delivery,20+offset,{shoeActive:[recipientId]}),false);
+   assert.equal(nativePendingDeliveryValid(delivery,20+offset,{shoeStarts:[recipientId],shoeActive:[recipientId]}),valid);
+   assert.equal(nativePendingDeliveryValid(delivery,20+offset,{shoeStarts:[recipientId],shoeActive:[recipientId],conflict:true}),false);
+  }
+ }
+ assert.equal(nativePendingDeliveryValid(null,21),false);
 });

@@ -2560,3 +2560,21 @@ test('ME-01-QA U-02d3: observed aerial kind is distinct from ground permission',
  assert.equal(nativeObservedActionAllowed(['header','header-shot'],{...head,nativeVolley:true}),false);
  assert.equal(nativeObservedActionAllowed(['shot'],{}),false);
 });
+
+test('ME-01-QA U-02d5: simultaneous surfaces of one actor cannot authorize control or delivery',()=>{
+ for(const side of ['home','away']){
+  const dir=side==='home'?1:-1,a={id:side+'-10',team:side,x:dir*29.6,y:0},b={id:side+'-9',team:side,x:dir*27,y:2};
+  const ids=[a.id,b.id],players=[a,b],ball={position:{x:dir*30,y:0,z:.11},velocity:{x:dir,y:0,z:0}};
+  const make=()=>createNativeBallControlObserver(ids,ids);
+  const base={tick:1,players,ball,starts:[a.id],active:[a.id],action:{tick:1,playerId:a.id,team:side,action:'carry',appliedByRapier:true,actualPhysicsImpulseApplied:true}};
+  assert.equal(make().observe(base).playerId,a.id);
+  for(const extra of [{bodyStarts:[a.id],bodyActive:[a.id]},{otherSurfaceContact:true},{exclusiveShoeStart:false}])assert.equal(make().observe({...base,...extra}).kind,'loose');
+  const head={...base,starts:[],active:[],bodyStarts:[a.id],bodyActive:[a.id],headStarts:[a.id],headActive:[a.id],action:{...base.action,action:'pass',recipientId:b.id,nativeExclusiveHeadStart:true,actualNativeSolverContact:true}};
+  assert.equal(make().observe(head).delivery.recipientId,b.id);
+  for(const extra of [{aerialControlStarts:[a.id],aerialControlActive:[a.id]},{otherSurfaceContact:true},{starts:[a.id],active:[a.id]}])assert.equal(make().observe({...head,...extra}).delivery,null);
+  const obs=make(),pass={...base,action:{...base.action,action:'pass',recipientId:b.id}};
+  assert.equal(obs.observe(pass).delivery.recipientId,b.id);
+  assert.equal(obs.observe({...base,tick:2,starts:[],active:[a.id],action:null}).delivery.recipientId,b.id);
+  assert.equal(obs.observe({...base,tick:3,action:null}).delivery,null);
+ }
+});

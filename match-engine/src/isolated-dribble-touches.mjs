@@ -34,25 +34,26 @@ export function createNativeBallControlObserver(activeIds,outfieldIds,allowedFun
     new Set(activeIds).size!==activeIds.length||new Set(outfieldIds).size!==outfieldIds.length||
     !outfieldIds.every(id=>activeIds.includes(id)))throw new TypeError('Active physical participants required');
  let witness=null,delivery=null,getUpUntil={},shoulderByPlayer={},lastInterventions={},lastBlock=null,blockCount=0,latest=Object.freeze({tick:0,...observeDuelBallControl(),delivery:null,getUpUntil:Object.freeze({}),shoulderByPlayer:Object.freeze({}),lastInterventions:Object.freeze({}),lastBlock:null,blockCount:0,keeperHold:null,keeperDistribution:null});
- function observe({tick,players,ball,starts,active,bodyStarts=[],bodyActive=[],action,physicalChallengeReleased=false,shoulderPlans=[],torsoPairs=[],bodies=[],beforeBallVelocity=null,afterSolverVelocity=null,keeperStates=[],attackPolarity=1,headStarts=[],headActive=[],aerialControlStarts=[],aerialControlActive=[]}){
+ function observe({tick,players,ball,starts,active,bodyStarts=[],bodyActive=[],action,physicalChallengeReleased=false,shoulderPlans=[],torsoPairs=[],bodies=[],beforeBallVelocity=null,afterSolverVelocity=null,keeperStates=[],attackPolarity=1,headStarts=[],headActive=[],aerialControlStarts=[],aerialControlActive=[],otherSurfaceContact=false,exclusiveShoeStart=true}){
   validateAttackPolarity(attackPolarity);
   if(attackPolarity!==1&&activeIds.length!==22)throw new TypeError('Reversed control observation requires full-field native participants');
   if(tick!==latest.tick+1)throw new TypeError('Consecutive native control ticks required');
   const participants=players.filter(p=>outfieldIds.includes(p.id));
   const touching=[...new Set([...active,...bodyActive])].filter(id=>activeIds.includes(id));
   const started=[...new Set([...starts,...bodyStarts])].filter(id=>activeIds.includes(id));
-  const header=action?.nativeExclusiveHeadStart===true&&action.actualNativeSolverContact===true&&
+  const header=!otherSurfaceContact&&action?.nativeExclusiveHeadStart===true&&action.actualNativeSolverContact===true&&
    headStarts.length===1&&headStarts[0]===action.playerId&&headActive.length===1&&headActive[0]===action.playerId&&
-   starts.length===0&&active.length===0;
-  const aerialControl=action?.nativeExclusiveAerialControlStart===true&&action.actualNativeSolverContact===true&&aerialControlStarts.length===1&&aerialControlStarts[0]===action.playerId&&aerialControlActive.length===1&&aerialControlActive[0]===action.playerId&&!headActive.length&&!starts.length&&!active.length;
+   starts.length===0&&active.length===0&&aerialControlActive.length===0&&aerialControlStarts.length===0;
+  const aerialControl=!otherSurfaceContact&&action?.nativeExclusiveAerialControlStart===true&&action.actualNativeSolverContact===true&&aerialControlStarts.length===1&&aerialControlStarts[0]===action.playerId&&aerialControlActive.length===1&&aerialControlActive[0]===action.playerId&&!headActive.length&&!starts.length&&!active.length;
+  const ground=!otherSurfaceContact&&bodyActive.length===0&&bodyStarts.length===0&&headActive.length===0&&aerialControlActive.length===0&&exclusiveShoeStart&&action?.nativeExclusiveHeadStart!==true&&action?.nativeExclusiveAerialControlStart!==true&&starts.length===1&&starts[0]===action?.playerId&&active.length===1&&active[0]===action?.playerId;
   const physical=action?.tick===tick&&activeIds.includes(action.playerId)&&
-   (header||aerialControl||starts.length===1&&starts[0]===action.playerId&&active.length===1&&active[0]===action.playerId)&&
+   (header||aerialControl||ground)&&
    touching.length===1&&touching[0]===action.playerId&&action.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true;
   const real=physical&&nativeObservedActionAllowed(mask,action);
-  if(witness&&(headActive.length||aerialControlActive.length||started.some(id=>id!==witness.playerId)||touching.some(id=>id!==witness.playerId)||physical&&(!real||action.action!=='carry')))witness=null;
+  if(witness&&(otherSurfaceContact||headActive.length||aerialControlActive.length||started.some(id=>id!==witness.playerId)||touching.some(id=>id!==witness.playerId)||physical&&(!real||action.action!=='carry')))witness=null;
   const block=nativeDefensiveInterventionAllowed(mask,'block')?observeNativeShotBlock({tick,delivery,players:participants,starts,bodyStarts,before:beforeBallVelocity,after:afterSolverVelocity,attackPolarity}):null;
   if(block){lastBlock=block;if(block.blocked)blockCount++;}
-  if(delivery&&(tick-delivery.tick>180||started.some(id=>id!==delivery.playerId)||touching.some(id=>id!==delivery.playerId)||physical&&!real))delivery=null;
+  if(delivery&&(tick-delivery.tick>180||otherSurfaceContact||headActive.length||aerialControlActive.length||started.length>0||touching.some(id=>id!==delivery.playerId)||physical&&!real))delivery=null;
   if(real){
    const source=players.find(p=>p.id===action.playerId);
    const receiver=['pass','cross'].includes(action.action)?players.find(p=>p.id===action.recipientId&&p.team===source?.team&&p.id!==source.id&&activeIds.includes(p.id)):null;

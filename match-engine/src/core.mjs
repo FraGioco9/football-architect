@@ -1060,6 +1060,7 @@ export function createEngine(RAPIER, input = {}, {
      collectiveObserver.observe({tick,players:playerFrame.players,ball:{position:body.translation(),velocity:body.linvel()},starts:shoe.started,active:shoe.active,
       bodyStarts:[...physical.lowerLegBallStarts,...(physical.headBallStarts??[]),...(physical.aerialControlStarts??[]),...handStarts],bodyActive:[...physical.lowerLegBallContacts,...(physical.headBallContacts??[]),...(physical.aerialControlContacts??[]),...handContacts],
       ...(nativeAerialEnabled?{headStarts:physical.headBallStarts,headActive:physical.headBallContacts,aerialControlStarts:physical.aerialControlStarts,aerialControlActive:physical.aerialControlContacts}:{}),
+      otherSurfaceContact:physical.lowerLegBallContacts.length>0||handContacts.length>0||hands.some(k=>k.distribution?.tick===tick||k.boundedRelease?.tick===tick),exclusiveShoeStart:hasExclusiveNativeShoeStart(shoe,shoe.started[0]),
       action:actionExecutor?.actionSnapshot()??null,shoulderPlans:Object.values(playerFrame.nativeShoulders??{}),torsoPairs:physical.nativeOpposingTorsoPairs,bodies:physical.bodies,beforeBallVelocity:preStepBall.velocity,afterSolverVelocity:collectiveSolverVelocity,keeperStates:hands,attackPolarity:nativeAttackPolarity});
     }
     if(duelTransition){

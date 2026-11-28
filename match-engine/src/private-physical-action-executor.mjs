@@ -8,7 +8,7 @@ import {inspectPhysicalActionRejection,selectUniformAutonomousContactAction,choo
  from './player-ball-uniform-autonomous-action.mjs';
 import {FOOT_CONTACT_VERSION,footProxyTransform} from './player-foot-contact.mjs';
 import {hasExclusiveNativeShoeStart} from './rapier-foot-contact-bridge.mjs';
-import {createNativeFundamentalMask,nativeFundamentalAllowed,nativePhysicalActionAllowed,nativeSequenceDeliveryAllowed,nativeSequenceAerialAllowed,nativeSequenceGroundMask,selectNativeCrossProfile,nativeCrossTargetHeight} from './native-fundamental-mask.mjs';
+import {createNativeFundamentalMask,nativeFundamentalAllowed,nativePhysicalActionAllowed,nativeSequenceDeliveryAllowed,nativeSequenceAerialAllowed,nativeSequenceGroundMask,selectNativeCrossProfile,nativeCrossTargetHeight,nativePendingDeliveryValid} from './native-fundamental-mask.mjs';
 import {chooseIntentSoloCarryTouch} from './intent-driven-solo-carry.mjs';
 import {chooseNativeFixedCarryImpulse}
  from './native-fixed-carry-impulse.mjs';
@@ -352,7 +352,7 @@ export function createPrivatePhysicalActionExecutor({
     interceptionContext:interceptionPassSide===null?null:{side:interceptionPassSide,phase:interceptionPhase},
     blockContext:blockShotSide===null?null:{side:blockShotSide,shotTaken:blockShotTaken}});
   let orientedCandidate=null,orientedDelivery=null;
-  if(aerialSequence!==null&&pendingDelivery&&suppressPhysicalBodyContact)pendingDelivery=null;
+  if(pendingDelivery&&!nativePendingDeliveryValid(pendingDelivery,nextTick,{shoeStarts:contact.started,shoeActive:contact.active,conflict:suppressPhysicalBodyContact||suppressOriginalAction}))pendingDelivery=null;
   if(sharedDynamics&&pendingDelivery&&nextTick>pendingDelivery.tick){
    const d=pendingDelivery,pos=ballBody.translation(),v=ballBody.linvel();
    const eligible=d.kind==='pass'&&!d.lofted||(d.airborne&&d.descending);
