@@ -7,6 +7,7 @@ import {inspectPhysicalActionRejection,selectUniformAutonomousContactAction,choo
  UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS}
  from './player-ball-uniform-autonomous-action.mjs';
 import {FOOT_CONTACT_VERSION,footProxyTransform} from './player-foot-contact.mjs';
+import {hasExclusiveNativeShoeStart} from './rapier-foot-contact-bridge.mjs';
 import {chooseIntentSoloCarryTouch} from './intent-driven-solo-carry.mjs';
 import {chooseNativeFixedCarryImpulse}
  from './native-fixed-carry-impulse.mjs';
@@ -328,8 +329,9 @@ export function createPrivatePhysicalActionExecutor({
    contact.nativeSoloFeet?.actorId===isolatedDribbleContext.attackingSide+'-10'&&
    contact.nativeSoloFeet?.independentColliders===2&&
    contact.nativeSoloFeet?.exclusivePhysicalStart===true);
+  const pairedSourceValid=contact.nativePairedFeet===undefined||hasExclusiveNativeShoeStart(contact,contact.started[0]);
   const originalChoice=suppressOriginalAction||suppressPhysicalBodyContact||
-   !isolatedNativeShoeSourceValid?null:
+   !isolatedNativeShoeSourceValid||!pairedSourceValid?null:
    selectUniformAutonomousContactAction({...input,activePlayerIds,
     smallSidedDecisionContext,isolatedDribbleContext,keeperSingleShotSide,duelTransition,collectiveControl,nativeActionPolicy,attackPolarity,
     interceptionContext:interceptionPassSide===null?null:{side:interceptionPassSide,phase:interceptionPhase},
@@ -344,7 +346,7 @@ export function createPrivatePhysicalActionExecutor({
     pendingDelivery=null;
     if(eligible&&!suppressOriginalAction&&!suppressPhysicalBodyContact&&
        contact.started.length===1&&contact.active.length===1&&
-       contact.started[0]===d.recipientId&&contact.active[0]===d.recipientId){
+       contact.started[0]===d.recipientId&&contact.active[0]===d.recipientId&&pairedSourceValid){
      const p=playerFrame.players.find(x=>x.id===d.recipientId);
      const opponents=playerFrame.players.filter(x=>x.team!==p.team&&
       (activePlayerIds===null||activePlayerIds.includes(x.id)));
@@ -352,7 +354,7 @@ export function createPrivatePhysicalActionExecutor({
       ballVelocity:v,playerVelocity:{x:p.vx,y:p.vy},ballCentreZ:pos.z,
       ballRadiusM,ballMassKg:ballBody.mass(),
       realBallPlayerGapM:Math.hypot(pos.x-p.x,pos.y-p.y),
-      ballPosition:pos,receiverPosition:p,shoePosition:footProxyTransform(p),
+      ballPosition:pos,receiverPosition:p,shoePosition:contact.nativePairedFeet?.[p.id]?.exclusiveFootPosition??footProxyTransform(p),
       attackingSide:p.team,deliveryKind:d.kind,opponents
      });
      if(orientedCandidate)orientedDelivery=d;
@@ -446,7 +448,7 @@ export function createPrivatePhysicalActionExecutor({
     nativeFixedSprintLongStride
    }):null;
   const chosen=nativeTune?.impulseNs===null?null:originalChosen;
-  if(chosen&&(!gates.passedInputGates||
+  if(chosen&&(!gates.passedInputGates||!pairedSourceValid||
      gates.actorId!==chosen.playerId||
      !contact.started.includes(chosen.playerId)||
      contact.started.length!==1||contact.active.length!==1||
@@ -458,7 +460,8 @@ export function createPrivatePhysicalActionExecutor({
     'small-sided-native-body-ball-contact-no-extra-shoe-impulse':
     suppressOriginalAction?
     'b06b-referee-physical-dead-ball-original-action-suppressed':
-    !isolatedNativeShoeSourceValid?'solo-ambiguous-real-foot-contact':orientedCandidate?
+    !isolatedNativeShoeSourceValid?'solo-ambiguous-real-foot-contact':
+    !pairedSourceValid&&contact.started.length?'native-paired-foot-contact-not-exclusive':orientedCandidate?
     'current-lab-oriented-first-touch-preempts-uniform-action':researchCandidate?
     'experimental-receiving-cushion-preempts-uniform-action':
     deferOriginal?'m27-native-decision-defers-original-clearance':

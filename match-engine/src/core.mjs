@@ -4,7 +4,7 @@ import {speedDependentDragCd} from './aerodynamics.mjs';
 import {magnusLift,MAGNUS_SPIN_LIMIT_RAD_S} from './magnus.mjs';
 import {LAB_SHOT_PROFILES} from './lab-shot-calibration.mjs';
 import {literatureCandidateForces} from './literature-aero-candidate.mjs';
-import {createPrivateRapierFootContactBridge}
+import {createPrivateRapierFootContactBridge,hasExclusiveNativeShoeStart}
  from './rapier-foot-contact-bridge.mjs';
 import {createPrivateRapier22BodyBridge} from './rapier-22-body-bridge.mjs';
 import {createPrivatePhysicalActionExecutor}
@@ -1048,8 +1048,7 @@ export function createEngine(RAPIER, input = {}, {
     if(restarting){
      const placement=nativeRestartPending,at=placement.spot,id=placement.takerId;
      const foot=shoeBridge.snapshot(),solver=shoeBridge.solver(),p=body.translation();
-     const exclusive=foot.tick===tick&&solver?.tick===tick&&foot.started.length===1&&foot.active.length===1&&
-      foot.started[0]===id&&foot.active[0]===id&&solver.pairs.some(pair=>pair.id===id&&pair.beganThisTick&&pair.collisionActive&&pair.manifolds.some(m=>m.geometricContacts>0));
+     const exclusive=foot.tick===tick&&solver?.tick===tick&&hasExclusiveNativeShoeStart(foot,id)&&solver.pairs.some(pair=>pair.id===id&&pair.beganThisTick&&pair.collisionActive&&pair.manifolds.some(m=>m.geometricContacts>0));
      const otherBody=smallBodyGuard.snapshot().lowerLegBallContacts.some(actor=>actor!==id);
      if(placement.kind==='throw-in'){
       const take=nativeThrowHands.observe(tick,foot,smallBodyGuard.snapshot().lowerLegBallContacts);

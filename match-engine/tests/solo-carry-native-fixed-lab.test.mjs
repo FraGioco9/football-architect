@@ -4,7 +4,7 @@ import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {uniformSoloCarryAttributes} from '../src/solo-carry-attribute-calibration.mjs';
-import {advanceD01LiveShoeGait,selectNativeCarryStridePhase,nativeShoeContactProfile,summarizeNativeFootTransition} from '../src/rapier-foot-contact-bridge.mjs';
+import {advanceD01LiveShoeGait,selectNativeCarryStridePhase,nativeShoeContactProfile,summarizeNativeFootTransition,hasExclusiveNativeShoeStart} from '../src/rapier-foot-contact-bridge.mjs';
 import {planNativeCarryTouch} from '../src/isolated-dribble-touches.mjs';
 import {planNativeCarryPhaseImpulse,advanceSoloCarryPhase,nativeReferenceCarryKinematics,planNativeOpenCarryMotion,hasNativeOpenCarrySpace,nearestNativeCarryOpponent,nativeCarryMotionHasPriority} from '../src/solo-carry-phases.mjs';
 import {chooseNativeFixedCarryImpulse}
@@ -708,4 +708,23 @@ test('ME-01-QA U-01E1: shared native shoe geometry and exclusive contact reducti
   assert.deepEqual([...p],prev);assert.deepEqual([...n],next);assert.deepEqual([...s],starts);
  }
  assert.throws(()=>summarizeNativeFootTransition(new Set(['other']),new Set(),new Set()),/foot sets/);
+});
+
+test('ME-01-QA U-01E2: paired physical contact authorization never equates two shoes to one exclusive foot',()=>{
+ for(const team of ['home','away']){
+  const id=team+'-10',other=(team==='home'?'away':'home')+'-2';
+  const masks=[[],['left'],['right'],['left','right']];
+  for(const started of masks)for(const active of masks)for(const exclusivePhysicalStart of [false,true]){
+   const pair={started,active,exclusivePhysicalStart};
+   const c={started:[id],active:[id],nativePairedFeet:{[id]:pair}};
+   const expected=exclusivePhysicalStart&&started.length===1&&active.length===1&&started[0]===active[0];
+   assert.equal(hasExclusiveNativeShoeStart(c,id),expected);
+   assert.equal(hasExclusiveNativeShoeStart({...c,active:[id,other]},id),false);
+   assert.equal(hasExclusiveNativeShoeStart({...c,started:[]},id),false);
+   assert.equal(hasExclusiveNativeShoeStart({...c,nativePairedFeet:{}},id),false);
+   assert.equal(hasExclusiveNativeShoeStart({started:[id],active:[id],nativeSoloFeet:{...pair,actorId:id}},id),expected);
+  }
+  assert.equal(hasExclusiveNativeShoeStart({started:[id],active:[id]},id),true);
+  assert.equal(hasExclusiveNativeShoeStart({started:[id],active:[other]},id),false);
+ }
 });

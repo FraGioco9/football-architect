@@ -196,6 +196,20 @@ export function summarizeNativeFootTransition(previous,next,starts){
   exclusivePhysicalStart:starts.size===1&&next.size===1&&[...starts].every(f=>next.has(f))});
 }
 
+// A canonical actor START alone is insufficient when two feet exist.
+export function hasExclusiveNativeShoeStart(contact,id){
+ if(!id||contact?.started?.length!==1||contact?.active?.length!==1||
+    contact.started[0]!==id||contact.active[0]!==id)return false;
+ if(contact.nativePairedFeet!==undefined){
+  const pair=contact.nativePairedFeet[id];
+  return pair?.exclusivePhysicalStart===true&&pair.started.length===1&&pair.active.length===1&&pair.started[0]===pair.active[0];
+ }
+ if(contact.nativeSoloFeet!==undefined){
+  const pair=contact.nativeSoloFeet;
+  return pair.actorId===id&&pair.exclusivePhysicalStart===true&&pair.started.length===1&&pair.active.length===1&&pair.started[0]===pair.active[0];
+ }
+ return true;
+}
 export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  initialPlayers=INITIAL_PLAYERS,{sharedQueue=null,activePlayerIds=null,
  isolatedPhysicalBodies=false,isolatedGroundDribbleBallCentreZ=null,
@@ -302,7 +316,8 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     y:p.y+swingM*s+lateralM*c});
   }));
  }
- const stagedFeet=shoeFeet(initialPlayers,0);
+ const nativePairs=new Map();
+ const stagedFeet=nativeCarryStride?Object.freeze(initialPlayers.map(p=>physicalIds.has(p.id)?soloCarryTwoFootPositions(p).left:p)):shoeFeet(initialPlayers,0);
  for(const p of stagedFeet){
   const pose=footProxyTransform(p);
   const groundPose=isolatedGroundDribbleBallCentreZ===null?pose:
@@ -320,7 +335,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
    world.createCollider(shoeShape,body):null;
   bodies.push(body);colliders.push(collider);
   if(collider)idsByCollider.set(collider.handle,
-   Object.freeze({id:p.id,foot:soloCarry&&p.id===dribbleAttackerId?'left':null}));
+   Object.freeze({id:p.id,foot:nativeCarryStride||soloCarry&&p.id===dribbleAttackerId?'left':null}));
  }
  // Add exactly one additional REAL Rapier kinematic shoe/collider for the
  // selected solo player. It shares the ball world and native event queue.
@@ -343,6 +358,16 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   idsByCollider.set(rightCollider.handle,
    Object.freeze({id:dribbleAttackerId,foot:'right'}));
  }
+ // All physically active open-play actors receive an independent right
+ // shoe in the same world. Inactive schema placeholders have no collider.
+ if(nativeCarryStride)for(const p of initialPlayers.filter(p=>physicalIds.has(p.id))){
+  const actual=soloCarryTwoFootPositions(p).right,pose=footProxyTransform(actual);
+  const body=world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased()
+   .setTranslation(pose.x,pose.y,pose.z).setRotation(pose.rotation));
+  const collider=world.createCollider(shoeColliderDesc(baseShoeProfile).setCollisionGroups(0x00010001),body);
+  idsByCollider.set(collider.handle,Object.freeze({id:p.id,foot:'right'}));
+  nativePairs.set(p.id,{body,collider,actual,active:new Set()});
+ }
  const timeline=createFootContactTimeline(stagedFeet);
  let positions=Object.freeze(initialPlayers.map(p=>
   Object.freeze({x:p.x,y:p.y,facingRad:p.facingRad}))),
@@ -350,7 +375,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  let actualShoeFeet=stagedFeet;
  let gaitPhaseRad=0,lastGaitFrequencyHz=null;
  const duelPhases=Object.fromEntries([...strideIds].map(id=>[id,0]));
- const nativeStridePhases=new Map(),nativeStrideReturning=new Set();
+ const nativeStridePhases=new Map();
  const shotReleaseIndex=firstTimeShotReleaseId===null?-1:
   initialPlayers.findIndex(p=>p.id===firstTimeShotReleaseId);
  let shotRelease=null,releasePreviousNativePose=null;
@@ -397,7 +422,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   // to 1.6 m/s in the solo research source; forward running retains the
   // original 7 m/s whole-shoe continuity bound and Rapier collision solver.
   const limitSoloFootLateralMotion=(desired,previous)=>{
-   if(!soloCarry)return desired;
+   if(!soloCarry&&!nativeCarryStride)return desired;
    const before=footProxyTransform(previous);
    const after=footProxyTransform(desired);
    const si=Math.sin(desired.facingRad),c=Math.cos(desired.facingRad);
@@ -470,24 +495,25 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     y:prior.y+dy*ratio-
      FOOT_CONTACT_FORWARD_OFFSET_M*Math.sin(desired.facingRad)});
   };
-  // Carry uses the common phase cadence and stroke. The existing single
-  // collider remains authoritative in open play; returning to the normal
-  // pose uses the same continuous speed bound, never a teleport.
+  // Paired open-play shoes use the same live phase-dependent geometry
+  // as Solo Carry, and return to a neutral two-foot stance otherwise.
   if(nativeCarryStride){
    newFeet=Object.freeze(newFeet.map((foot,i)=>{
-    const p=playerFrame.players[i],phase=selectNativeCarryStridePhase(p,playerFrame.smallSidedMovementDecisions,nextTick,physicalIds);
-    if(phase===null&&!nativeStrideReturning.has(p.id))return foot;
-    let desired=foot;
+    const p=playerFrame.players[i],pair=nativePairs.get(p.id);
+    if(!pair)return foot;
+    const phase=selectNativeCarryStridePhase(p,playerFrame.smallSidedMovementDecisions,nextTick,physicalIds);
+    let gait=null;
     if(phase!==null){
-     const g=advanceD01LiveShoeGait({phaseRad:nativeStridePhases.get(p.id)??0,player:p,ball:preStepBall,tick:nextTick,carryPhase:phase});
-     nativeStridePhases.set(p.id,g.phaseRad);
-     const c=Math.cos(p.facingRad),si=Math.sin(p.facingRad);
-     desired=Object.freeze({...foot,x:foot.x+g.forwardM*c-g.sideM*si,y:foot.y+g.forwardM*si+g.sideM*c});
-     nativeStrideReturning.add(p.id);
-    }
-    const actual=clampActualFoot(desired,actualShoeFeet[i]);
-    if(phase===null&&actual===desired){nativeStrideReturning.delete(p.id);nativeStridePhases.delete(p.id);}
-    return actual;
+     gait=advanceD01LiveShoeGait({phaseRad:nativeStridePhases.get(p.id)??0,player:p,ball:preStepBall,tick:nextTick,carryPhase:phase});
+     nativeStridePhases.set(p.id,gait.phaseRad);
+    }else nativeStridePhases.delete(p.id);
+    const desired=soloCarryTwoFootPositions(p,gait);
+    const right=clampActualFoot(limitSoloFootLateralMotion(desired.right,pair.actual),pair.actual);
+    const pose=footProxyTransform(right);
+    pair.body.setNextKinematicTranslation({x:pose.x,y:pose.y,z:pose.z});
+    pair.body.setNextKinematicRotation(pose.rotation);
+    pair.actual=right;
+    return clampActualFoot(limitSoloFootLateralMotion(desired.left,actualShoeFeet[i]),actualShoeFeet[i]);
    }));
   }
   const rightFoot=rightDesired?
@@ -495,7 +521,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   const poses=newFeet.map(footProxyTransform);
   for(let i=0;i<poses.length;i++){
    const p=poses[i];
-   if(strideIds.has(initialPlayers[i].id)||i===shotReleaseIndex){
+   if(strideIds.has(initialPlayers[i].id)||nativePairs.has(initialPlayers[i].id)||i===shotReleaseIndex){
     const previous=footProxyTransform(actualShoeFeet[i]);
     if(Math.hypot(p.x-previous.x,p.y-previous.y)>7/60+1e-5)
      throw new TypeError('D-01 real shoe exceeds original 7m/s continuity');
@@ -528,11 +554,18 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   const started=new Set(),ended=new Set(),next=new Set(active);
   const footStarts=new Set(),footEnds=new Set();
   const nextSoloFeet=new Set(activeSoloFeet);
+  const pairEvents=new Map([...nativePairs].map(([id,pair])=>[id,{next:new Set(pair.active),starts:new Set(),ends:new Set()}]));
   const visitCollision=(a,b,began)=>{
    const other=a===ballCollider.handle?b:
     b===ballCollider.handle?a:null;
    const physical=idsByCollider.get(other);
    if(!physical)return; // no turf, no proxy-to-proxy contact
+   const events=pairEvents.get(physical.id);
+   if(events){
+    if(began){events.starts.add(physical.foot);events.next.add(physical.foot);}
+    else{events.ends.add(physical.foot);events.next.delete(physical.foot);}
+    return;
+   }
    if(soloCarry&&physical.id===dribbleAttackerId){
     if(began){footStarts.add(physical.foot);nextSoloFeet.add(physical.foot);}
     else{footEnds.add(physical.foot);nextSoloFeet.delete(physical.foot);}
@@ -556,6 +589,23 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   }else if(soloTransition?.actorEnded){
    ended.add(dribbleAttackerId);next.delete(dribbleAttackerId);
   }
+  const pairedEvidence={};
+  for(const [id,events] of pairEvents){
+   const pair=nativePairs.get(id),transition=summarizeNativeFootTransition(pair.active,events.next,events.starts);
+   if(transition.actorStarted){started.add(id);next.add(id);}
+   if(transition.actorEnded){ended.add(id);next.delete(id);}
+   pair.active=events.next;
+   if(events.next.size||events.starts.size||events.ends.size){
+    const foot=transition.exclusivePhysicalStart?[...events.starts][0]:null;
+    const leftIndex=initialPlayers.findIndex(p=>p.id===id);
+    pairedEvidence[id]=Object.freeze({actorId:id,independentColliders:2,
+     started:Object.freeze(['left','right'].filter(f=>events.starts.has(f))),
+     ended:Object.freeze(['left','right'].filter(f=>events.ends.has(f))),
+     active:Object.freeze(['left','right'].filter(f=>events.next.has(f))),
+     exclusivePhysicalStart:transition.exclusivePhysicalStart,
+     exclusiveFootPosition:foot===null?null:vector((foot==='left'?bodies[leftIndex]:pair.body).translation())});
+   }
+  }
   const dv=Math.hypot(
    postBall.velocity.x-priorBall.velocity.x,
    postBall.velocity.y-priorBall.velocity.y,
@@ -564,6 +614,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   const collision=Object.freeze({
    version:FOOT_CONTACT_VERSION,tick:nextTick,
    started:ordered(started),ended:ordered(ended),active:ordered(next),
+   ...(nativeCarryStride?{nativePairedFeet:Object.freeze(pairedEvidence)}:{}),
    ...(soloCarry?{nativeSoloFeet:Object.freeze({
     actorId:dribbleAttackerId,source:'rapier-physical-collider-events',
     started:Object.freeze(['left','right'].filter(x=>footStarts.has(x))),
@@ -643,6 +694,13 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
      soloFootManifolds.push({foot:'left',geometricContacts,solverContacts});
    });
   }
+  for(const [id,pair] of nativePairs)if(relevant.has(id)){
+   world.contactPair(ballCollider,pair.collider,(m,flipped)=>{
+    const geometricContacts=m.numContacts(),solverContacts=m.numSolverContacts();
+    if(!geometricContacts&&!solverContacts)return;
+    manifolds.push({id,flipped,normalWorld:vector(m.normal()),geometricContacts,solverContacts});
+   });
+  }
   if(rightCollider&&relevant.has(dribbleAttackerId)){
    world.contactPair(ballCollider,rightCollider,(m,flipped)=>{
     const geometricContacts=m.numContacts(),solverContacts=m.numSolverContacts();
@@ -710,7 +768,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   physicalColliderIds:Object.freeze(initialPlayers.filter(p=>
    physicalIds===null||physicalIds.has(p.id)).map(p=>p.id)),
   physicalShoeColliderCount:colliders.filter(Boolean).length+
-   (rightCollider?1:0),
+   (rightCollider?1:0)+nativePairs.size,
   snapshot:()=>{live();return current;},
   timeline:()=>{live();return timeline.snapshot();},
   solver:()=>{live();return solver;}
