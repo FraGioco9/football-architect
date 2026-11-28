@@ -7,7 +7,7 @@ import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {initializeRapier,createEngine,canonicalSnapshot,
  BALL_RADIUS,BALL_MASS_KG,BALL_INERTIA_KG_M2,GRAVITY,nativeBallGroundContactProfile}
  from '../src/core.mjs';
-import {INITIAL_PLAYERS,PLAYER_DT,createPlayerMovement}
+import {INITIAL_PLAYERS,PLAYER_DT,PLAYER_VERSION,createPlayerMovement}
  from '../src/player-movement.mjs';
 import {FOOT_CONTACT_VERSION,FOOT_CONTACT_HALF_LENGTH_M,
  FOOT_CONTACT_HALF_WIDTH_M,FOOT_CONTACT_HALF_HEIGHT_M,
@@ -15,7 +15,7 @@ import {FOOT_CONTACT_VERSION,FOOT_CONTACT_HALF_LENGTH_M,
  FOOT_CONTACT_RESTITUTION,initialFootPositions,footProxyTransform,
  validateFootContactFrame} from '../src/player-foot-contact.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
-import {createPrivateRapierFootContactBridge,usesNativePairedShoeBridge,hasExclusiveNativeShoeStart,soloCarryTwoFootPositions,planNativeFirstTimeFootRecovery,nativeFirstTimeRecoveryTarget,nativeShoeContactProfile,nativePairedCarryReadout} from '../src/rapier-foot-contact-bridge.mjs';
+import {createPrivateRapierFootContactBridge,usesNativePairedShoeBridge,hasExclusiveNativeShoeStart,soloCarryTwoFootPositions,nativeNeutralShoePositions,planNativeFirstTimeFootRecovery,nativeFirstTimeRecoveryTarget,nativeShoeContactProfile,nativePairedCarryReadout} from '../src/rapier-foot-contact-bridge.mjs';
 import {createFootContactTimeline,FOOT_CONTACT_TIMELINE_VERSION}
  from '../src/player-foot-contact-timeline.mjs';
 import {summarizeFootSolverEvidence,FOOT_SOLVER_EVIDENCE_VERSION}
@@ -354,5 +354,40 @@ test('ME-01-QA U-01F7b: common paired cooldown and actual foot trajectory eviden
   assert.equal(separating.closingSpeedMps,0);
   assert.equal(nativeTimelineOnsetMotion(ball,null,after,id).relativeSpeedMps,null);
   assert.equal(nativeTimelineOnsetMotion(ball,before,null,id).geometry,'ambiguous-native-feet');
+ }
+});
+
+// Real paired contact liveness at the original elementary exercise start
+// gaps. Reflection changes the leading anatomical foot, never the gate.
+test('ME-01-QA U-03b: shared neutral stance produces exclusive real mirrored shoe START',{timeout:30000},async()=>{
+ const R=await initializeRapier(rapier);
+ for(const team of ['home','away'])for(const gap of [.28,.30,.35]){
+  const dir=team==='home'?1:-1,id=team+'-10';
+  const actor=INITIAL_PLAYERS.find(p=>p.id===id);
+  const neutral=nativeNeutralShoePositions(actor);
+  assert.equal(neutral.leadFoot,dir===1?'right':'left');
+  assert.deepEqual(footProxyTransform(neutral[neutral.leadFoot]),footProxyTransform(actor));
+  const support=footProxyTransform(neutral[neutral.leadFoot==='left'?'right':'left']);
+  const origin={x:actor.x+dir*gap,y:actor.y,z:BALL_RADIUS};
+  assert.ok(Math.hypot(origin.x-support.x,origin.y-support.y)>BALL_RADIUS+Math.hypot(FOOT_CONTACT_HALF_LENGTH_M,FOOT_CONTACT_HALF_WIDTH_M)+FOOT_CONTACT_ROUNDING_M);
+  const world=new R.World({x:0,y:0,z:0});world.timestep=PLAYER_DT;
+  let bridge;
+  try{
+   const body=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(origin.x,origin.y,origin.z).setCcdEnabled(true));
+   const collider=world.createCollider(R.ColliderDesc.ball(BALL_RADIUS).setMass(BALL_MASS_KG),body);
+   bridge=createPrivateRapierFootContactBridge(R,world,collider,INITIAL_PLAYERS,{activePlayerIds:[id],nativeCarryStride:true,isolatedPhysicalBodies:true});
+   const sample=()=>({position:{...body.translation()},velocity:{...body.linvel()}});
+   const prior=sample();
+   bridge.prepare({version:PLAYER_VERSION,tick:1,timeS:PLAYER_DT,players:INITIAL_PLAYERS},1,prior);
+   world.step(bridge.eventQueue);
+   const {collision,timeline,solver}=bridge.observe(1,prior,sample());
+   assert.equal(bridge.physicalShoeColliderCount,2);
+   assert.deepEqual(collision.started,[id]);assert.deepEqual(collision.active,[id]);
+   assert.equal(hasExclusiveNativeShoeStart(collision,id),true);
+   assert.deepEqual(collision.nativePairedFeet[id].started,[neutral.leadFoot]);
+   assert.deepEqual(collision.nativePairedFeet[id].active,[neutral.leadFoot]);
+   assert.equal(timeline.onsets[0].contactFoot,neutral.leadFoot);
+   assert.ok(solver.pairs.some(p=>p.id===id&&p.beganThisTick&&p.manifolds.some(m=>m.solverContacts>0)));
+  }finally{bridge?.dispose();world.free();}
  }
 });

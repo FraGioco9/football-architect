@@ -33,7 +33,7 @@ test('UME-05E isolated technical constraints filter the same native decision wit
  assert.throws(()=>createNativeActionRestriction({action:'pass',actorId:'home-10'}),/Bounded/);
  assert.throws(()=>createNativeActionRestriction({action:'shot',actorId:'home-10',maxActions:2}),/Bounded/);
 });
-import {createPrivateRapierFootContactBridge,soloCarryTwoFootPositions,hasExclusiveNativeShoeStart} from '../src/rapier-foot-contact-bridge.mjs';
+import {createPrivateRapierFootContactBridge,hasExclusiveNativeShoeStart} from '../src/rapier-foot-contact-bridge.mjs';
 import {createNativeAerialHead} from '../src/small-sided-native-body-guard.mjs';
 
 const mirrorScenario=team=>{
@@ -313,8 +313,7 @@ test('ME-01-QA U-02e2: mirrored physical header subtypes and ground clearance re
   const players=INITIAL_PLAYERS.map(p=>p.id===actorId?{...p,x,y:0,vx:0,vy:0,facingRad:dir===1?0:Math.PI}:p.id===mateId&&kind==='header-pass'?{...p,x:x+dir*14,y:5,vx:0,vy:0}:p);
   const actor=players.find(p=>p.id===actorId);
   const world=new R.World({x:0,y:0,z:ground?0:-9.81});world.timestep=PLAYER_DT;
-  const left=footProxyTransform(soloCarryTwoFootPositions(actor).left);
-  const origin=ground?{x:left.x,y:left.y+dir*.105,z:BALL_RADIUS}:{x,y:0,z:3};
+  const origin=ground?{x:x+dir*.30,y:0,z:BALL_RADIUS}:{x,y:0,z:3};
   const body=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(origin.x,origin.y,origin.z).setLinvel(0,0,ground?0:-2).setCcdEnabled(true));
   const collider=world.createCollider(R.ColliderDesc.ball(BALL_RADIUS).setMass(.43).setRestitution(0),body);
   const bridge=createPrivateRapierFootContactBridge(R,world,collider,players,{activePlayerIds:activeIds,isolatedPhysicalBodies:true,nativeCarryStride:true});

@@ -168,6 +168,26 @@ export function soloCarryTwoFootPositions(player,gait=null,{
  });
 }
 
+// Shared neutral striking stance: retain the original forward shoe proxy
+// on the centreline and keep the second, supporting foot behind it.
+// Both shoes remain real, continuously moving colliders; exclusivity is
+// still determined only by Rapier events, not this geometric proposal.
+export function nativeNeutralShoePositions(player){
+ if(!player||![player.x,player.y,player.facingRad].every(Number.isFinite))
+  throw new TypeError('Canonical neutral shoe stance required');
+ const c=Math.cos(player.facingRad),s=Math.sin(player.facingRad);
+ // Reflection of X exchanges anatomical left/right. For the same
+ // world-Y flank use the opposite leading foot on a reflected heading.
+ const lead=c>=0?'right':'left',supportSide=lead==='right'?1:-1;
+ const front=Object.freeze({...player});
+ const support=Object.freeze({...player,
+  x:player.x-.20*c-supportSide*.14*s,
+  y:player.y-.20*s+supportSide*.14*c});
+ return Object.freeze({left:lead==='left'?front:support,
+  right:lead==='right'?front:support,leadFoot:lead,
+  source:'native-neutral-striking-stance-v1'});
+}
+
 // Native pace is selected by the same-tick common movement policy, not a
 // LAB identity, possession award, or shoe event.
 export function selectNativeCarryStridePhase(player,decisions,tick,activeIds){
@@ -349,7 +369,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   }));
  }
  const nativePairs=new Map();
- const pairGeometry=(p,gait=null,activeFeet=empty)=>soloCarryTwoFootPositions(p,gait,p.id===pairedCarryReadoutId?{recoveryStepScale:soloRecoveryStepScale,sprintLateralTrackScale:soloSprintLateralTrackScale,nativeActiveFeet:activeFeet,sprintActiveFootReleaseM:gait?.carryPhase==='sprint'?soloSprintActiveFootReleaseM:0}:{});
+ const pairGeometry=(p,gait=null,activeFeet=empty)=>gait===null?nativeNeutralShoePositions(p):soloCarryTwoFootPositions(p,gait,p.id===pairedCarryReadoutId?{recoveryStepScale:soloRecoveryStepScale,sprintLateralTrackScale:soloSprintLateralTrackScale,nativeActiveFeet:activeFeet,sprintActiveFootReleaseM:gait?.carryPhase==='sprint'?soloSprintActiveFootReleaseM:0}:{});
  const stagedFeet=nativeCarryStride?Object.freeze(initialPlayers.map(p=>physicalIds.has(p.id)?pairGeometry(p).left:p)):shoeFeet(initialPlayers,0);
  for(const p of stagedFeet){
   const pose=footProxyTransform(p);
