@@ -1,3 +1,4 @@
+import {createNativeBallControlObserver} from '../src/isolated-dribble-touches.mjs';
 // #480/#620: closed same-world Rapier source -> physical action impulse.
 // Targeted tests are from real 22-actor Rapier shoes, not supplied START arrays.
 import test from 'node:test';
@@ -321,6 +322,7 @@ test('ME-01-QA U-02e2: mirrored physical header subtypes and ground clearance re
   const mask=permitted?(ground?['clearance']:['header',kind]):[];
   const executor=createPrivatePhysicalActionExecutor({ballBody:body,shoeBridge:bridge,ballRadiusM:BALL_RADIUS,activePlayerIds:activeIds,allowPhysicalCarry:true,physicalBodyGuardEnabled:true,nativeActionPolicy:true,latestLabDynamics:true,allowedFundamentals:mask});
   const sample=()=>({position:{...body.translation()},velocity:{...body.linvel()}});
+  const control=createNativeBallControlObserver(activeIds,activeIds,mask);
   try{
    let observed=false;
    for(let tick=1;tick<=60;tick++){
@@ -329,7 +331,9 @@ test('ME-01-QA U-02e2: mirrored physical header subtypes and ground clearance re
     head?.prepare(actor,tick,prior);
     world.step(bridge.eventQueue);
     const post=sample(),shoe=bridge.observe(tick,prior,post).collision,headState=head?.observe(tick)??null;
-    const result=executor.apply(tick,frame,head?{aerialEvidence:[headState],suppressPhysicalBodyContact:headState.contact}:{});
+    const result=executor.apply(tick,frame,{collectiveControl:control.snapshot(),priorNativeBall:prior,...(head?{aerialEvidence:[headState],suppressPhysicalBodyContact:headState.contact}:{})});
+    const headActive=headState?.contact?[actorId]:[],headStarts=headState?.contactStarted?[actorId]:[];
+    control.observe({tick,players,ball:sample(),starts:shoe.started,active:shoe.active,bodyStarts:headStarts,bodyActive:headActive,headStarts,headActive,exclusiveShoeStart:hasExclusiveNativeShoeStart(shoe,shoe.started[0]),action:result.action});
     const start=ground?hasExclusiveNativeShoeStart(shoe,actorId):headState.contactStarted&&headState.actualNativeSolverContact&&!shoe.active.length;
     if(!start){assert.equal(result.action,null);continue;}
     observed=true;

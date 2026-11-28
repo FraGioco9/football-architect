@@ -2597,7 +2597,8 @@ export function createPlayerMovement(options={}){
    const planned=planNativeDefensiveIntervention({attacker,recipient,defender,ballPosition,ballVelocity:realBallVelocity,
     context:smallSided.blockStart?'shot':'pass',attackPolarity,allowedFundamentals:defensiveMask});
    defensiveDecision=planned?.decision??null;
-   duelInterception=planned?.interception??null;blockApproach=planned?.block??null;
+   duelInterception=defensiveDecision?.kind==='interception'?planned.interception:null;
+   blockApproach=defensiveDecision?.kind==='block'?planned.block:null;
   }
   const postContact=duelActors&&(duelActors.candidateId!==null||
    duelTransition?.lastIntervention&&tick-duelTransition.lastIntervention.tick<=45||
