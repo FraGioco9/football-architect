@@ -176,6 +176,24 @@ export const INITIAL_PLAYERS=Object.freeze(['home','away'].flatMap(team=>
  }))
 ));
 const finite=v=>typeof v==='number'&&Number.isFinite(v);
+// During a verified throw-in, other actors must not trap its designated
+// taker against the touchline. Return a movement target only; keep the
+// normal speed, body separation, hand contact and restart take gates.
+export function planNativeThrowInClearance(player,taker,target){
+ if(!player||!taker||player.id===taker.id||
+    ![player.x,player.y,taker.x,taker.y,target?.x,target?.y].every(finite))return target;
+ const gap=Math.hypot(player.x-taker.x,player.y-taker.y);
+ if(gap>2.2)return target;
+ if(taker.blockedBy===player.id||player.blockedBy===taker.id){
+  // Yield sideways, away from the actual taker. If near a goal line,
+  // choose the available inward side; no teleport or collision bypass.
+  const delta=player.x-taker.x;
+  let sign=Math.abs(delta)>0.05?Math.sign(delta):Math.sign(target.x-taker.x)||1;
+  if(Math.abs(taker.x+sign*1.8)>PLAYER_KINEMATIC_LIMITS.maxX)sign=-sign;
+  return Object.freeze({x:clamp(taker.x+sign*1.8,-PLAYER_KINEMATIC_LIMITS.maxX,PLAYER_KINEMATIC_LIMITS.maxX),y:player.y});
+ }
+ return routeDuelAroundOpponent(player,taker,target).target;
+}
 function ballXY(input){
  if(!input||!finite(input.x)||!finite(input.y))
    throw new TypeError('Finite ball XY state required');
@@ -2745,7 +2763,12 @@ export function createPlayerMovement(options={}){
      return Object.freeze({x:nativeHalfFormationPhase==='enter-lanes'?route.startX:route.endX,y:route.laneY});
     }
     const base=INITIAL_PLAYERS.find(q=>q.id===p.id);
-    return Object.freeze({x:attackPolarity*base.x,y:base.y});
+    const baseTarget=Object.freeze({x:attackPolarity*base.x,y:base.y});
+    if(restartPlacement.kind==='throw-in'){
+     const taker=players.find(q=>q.id===restartPlacement.takerId);
+     return planNativeThrowInClearance(p,taker,baseTarget);
+    }
+    return baseTarget;
    }
    if(smallSided){
     // A genuine reduced-player session: only selected physical shoes can

@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {createEngine,initializeRapier} from '../src/core.mjs';
-import {createPlayerMovement,INITIAL_PLAYERS,goalkeeperPosition} from '../src/player-movement.mjs';
+import {createPlayerMovement,INITIAL_PLAYERS,goalkeeperPosition,planNativeThrowInClearance} from '../src/player-movement.mjs';
 import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT,
  keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget,planCollectiveApproaches,planCollectiveSupport,planCollectiveDefense,planNativeFootballMovement,supportsNativeOpenPlay,planNativeKeeperCloseDown,planNativeKeeperHighIntercept,NATIVE_HIGH_HAND_MAX_Z,planNativeAerialContest}
  from '../src/small-sided-lab-scenarios.mjs';
@@ -2487,4 +2487,21 @@ test('AERIAL-05B mirrored short loft and switch require genuine same-world launc
  }
  process.stdout.write('ME_628_LOFTED_VARIANTS '+JSON.stringify(rows)+'\\n');
  assert.ok(rows.every(r=>r.profile===(r.id==='lofted-short'?'short':'switch')&&r.receipt&&r.peak>2),JSON.stringify(rows.filter(r=>!r.receipt)));
+});
+
+test('ME-01-QA U-01C-R1: a real throw-in blocker yields without changing the taker or contact authority',()=>{
+ for(const sign of [-1,1])for(const lateral of [-1,1]){
+  const taker={id:'home-8',x:sign*10.606741437789038,y:lateral*32.06366156229924,blockedBy:'away-8'};
+  const blocker={id:'away-8',x:taker.x,y:taker.y+lateral*0.98,blockedBy:taker.id};
+  const base={x:sign*20,y:lateral*16},target=planNativeThrowInClearance(blocker,taker,base);
+  assert.ok(Math.abs(target.x-taker.x)>=1.8-1e-9);
+  assert.equal(target.y,blocker.y);
+  assert.ok(Math.hypot(target.x-taker.x,target.y-taker.y)>0.98);
+  assert.deepEqual(planNativeThrowInClearance({...blocker,x:sign*30},taker,base),base);
+  assert.deepEqual(planNativeThrowInClearance(taker,taker,base),base);
+  const nearEnd={...taker,x:sign*51};
+  const endBlocker={...blocker,x:nearEnd.x};
+  const endTarget=planNativeThrowInClearance(endBlocker,nearEnd,{x:sign*52,y:base.y});
+  assert.ok(Math.abs(endTarget.x)<Math.abs(nearEnd.x));
+ }
 });
