@@ -31,7 +31,7 @@ jobs:
           node-version: '22'
       - name: Find certified economic source for unchanged test inputs
         id: economic
-        if: ${{ github.event.pull_request.base.ref == 'main' }}
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.base.repo.full_name == github.repository }}
         uses: actions/github-script@v7
         with:
           script: |
@@ -64,6 +64,10 @@ jobs:
         run: |
           if [ "$PR_HEAD_REF" = ci/785-historical-economic-source ] && [ "${{ steps.economic.outputs.mode }}" != economic-only ]; then
             echo 'BLOCKED: certified historical economic source unavailable; do not start the rehearsal.' >&2
+            exit 1
+          fi
+          if [ "$PR_HEAD_REF" = ci/stacked-economic-evidence ] && [ "${{ steps.economic.outputs.mode }}" != economic-only ]; then
+            echo 'BLOCKED: stacked policy transition lacks certified economic evidence.' >&2
             exit 1
           fi
           test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
