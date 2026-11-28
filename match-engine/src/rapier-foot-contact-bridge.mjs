@@ -188,6 +188,21 @@ export function nativeNeutralShoePositions(player){
   source:'native-neutral-striking-stance-v1'});
 }
 
+// A low descending delivery is met with a small withdrawal of the
+// forward shoe along its measured incoming trajectory. This is a bounded
+// target adjustment, not a ball correction or contact authorization.
+export function nativeLowDeliveryShoeTarget(pose,player,ball){
+ const p=ball?.position,v=ball?.velocity;
+ if(![p?.x,p?.y,p?.z,v?.x,v?.y,v?.z,player?.x,player?.y].every(Number.isFinite))return pose;
+ const speed=Math.hypot(v.x,v.y);
+ if(p.z<0.22||p.z>0.65||v.z>=-0.15||speed<2||
+    Math.hypot(p.x-player.x,p.y-player.y)>1.25)return pose;
+ // Move with the inbound ball, leaving the supporting foot unchanged.
+ // Existing per-tick whole-shoe and lateral motion limits still apply.
+ const travel=0.06;
+ return Object.freeze({...pose,x:pose.x+v.x/speed*travel,y:pose.y+v.y/speed*travel});
+}
+
 // Native pace is selected by the same-tick common movement policy, not a
 // LAB identity, possession award, or shoe event.
 export function selectNativeCarryStridePhase(player,decisions,tick,activeIds){
@@ -576,7 +591,9 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
      nativeStridePhases.set(p.id,gait.phaseRad);
     }else nativeStridePhases.delete(p.id);
     if(p.id===pairedCarryReadoutId)lastGaitFrequencyHz=gait?.frequencyHz??null;
-    const desired=pairGeometry(p,gait,[...pair.active]);
+    const neutral=pairGeometry(p,gait,[...pair.active]);
+    const desired=gait===null&&p.role!=='goalkeeper'&&pair.active.size===0?
+     Object.freeze({...neutral,[neutral.leadFoot]:nativeLowDeliveryShoeTarget(neutral[neutral.leadFoot],p,preStepBall)}):neutral;
     const recovering=releasePreviousNativePose!==null&&p.id===firstTimeShotReleaseId;
     const age=recovering?nextTick-shotRelease.strikeTick:0;
     const leftTarget=recovering?nativeFirstTimeRecoveryTarget(desired.left,'left',shotRelease,age):desired.left;

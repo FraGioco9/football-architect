@@ -2525,9 +2525,16 @@ test('AERIAL-05B mirrored short loft and switch require genuine same-world launc
  for(const [id,profile] of [['lofted-short','short'],['lofted-switch','switch']])for(const side of ['home','away'])for(let variantIndex=0;variantIndex<30;variantIndex++){
   const lab=createControlledActionLab(R,id,{shotSide:side,variantIndex});
   try{
-   let audit=null;
+   let audit=null,nearest=null,firstInterruption=null;
    for(let tick=1;tick<=300;tick++){
     const frame=lab.step();audit=frame.loftedPassAudit;
+    if(audit&&tick>audit.launch.tick){
+     const recipient=side+'-9',e=frame.smallSidedNativeBodyGuard?.aerial?.find(s=>s.actorId===recipient&&s.surface==='foot');
+     if(e&&e.incomingVelocity.z<0&&(!nearest||e.centreGapM<nearest.centreGapM))
+      nearest={tick,centreGapM:e.centreGapM,reachPlanned:e.reachPlanned,contact:e.contact,contactStarted:e.contactStarted,incoming:e.incomingPosition,velocity:e.incomingVelocity,surface:e.surfacePosition,ball:e.ballCentre,receiver:frame.observedMovementPlayers.find(p=>p.id===recipient),movement:frame.smallSidedMovementDecisions.find(d=>d.id===recipient)};
+     if(!firstInterruption&&(frame.starts.length||frame.smallSidedNativeBodyGuard?.lowerLegBallStarts?.length||frame.smallSidedNativeBodyGuard?.aerialControlStarts?.length))
+      firstInterruption={tick,shoeStarts:frame.starts,legStarts:frame.smallSidedNativeBodyGuard?.lowerLegBallStarts,aerialStarts:frame.smallSidedNativeBodyGuard?.aerialControlStarts,action:frame.action?.action??null,delivery:frame.collectiveControl?.delivery??null};
+    }
     if(frame.action?.passTarget?.loftedProfile===profile){
      assert.equal(frame.action.action,'pass');assert.equal(frame.action.actualPhysicsImpulseApplied,true);
      assert.deepEqual(frame.starts,[frame.action.playerId]);assert.ok(frame.action.impulseNs.z>0);
@@ -2535,7 +2542,7 @@ test('AERIAL-05B mirrored short loft and switch require genuine same-world launc
     }
     if(audit?.receiverContact)break;
    }
-   rows.push({id,side,variantIndex,profile:audit?.launch.passTarget.loftedProfile??null,receipt:!!audit?.receiverContact,peak:audit?.peakZM??0});
+   rows.push({id,side,variantIndex,profile:audit?.launch.passTarget.loftedProfile??null,receipt:!!audit?.receiverContact,peak:audit?.peakZM??0,...(!audit?.receiverContact?{nearest,firstInterruption}:{})});
   }finally{lab.dispose();}
  }
  process.stdout.write('ME_628_LOFTED_VARIANTS '+JSON.stringify(rows)+'\\n');

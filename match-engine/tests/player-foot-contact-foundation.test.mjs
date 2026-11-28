@@ -15,7 +15,7 @@ import {FOOT_CONTACT_VERSION,FOOT_CONTACT_HALF_LENGTH_M,
  FOOT_CONTACT_RESTITUTION,initialFootPositions,footProxyTransform,
  validateFootContactFrame} from '../src/player-foot-contact.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
-import {createPrivateRapierFootContactBridge,usesNativePairedShoeBridge,hasExclusiveNativeShoeStart,soloCarryTwoFootPositions,nativeNeutralShoePositions,planNativeFirstTimeFootRecovery,nativeFirstTimeRecoveryTarget,nativeShoeContactProfile,nativePairedCarryReadout} from '../src/rapier-foot-contact-bridge.mjs';
+import {createPrivateRapierFootContactBridge,usesNativePairedShoeBridge,hasExclusiveNativeShoeStart,soloCarryTwoFootPositions,nativeNeutralShoePositions,nativeLowDeliveryShoeTarget,planNativeFirstTimeFootRecovery,nativeFirstTimeRecoveryTarget,nativeShoeContactProfile,nativePairedCarryReadout} from '../src/rapier-foot-contact-bridge.mjs';
 import {createFootContactTimeline,FOOT_CONTACT_TIMELINE_VERSION}
  from '../src/player-foot-contact-timeline.mjs';
 import {summarizeFootSolverEvidence,FOOT_SOLVER_EVIDENCE_VERSION}
@@ -409,5 +409,20 @@ test('ME-01-QA U-03c: first-time paired recovery chooses side of actual outgoing
   }
   assert.deepEqual(prev,{x:0,y:0});
   assert.equal(planNativeFirstTimeFootRecovery({contact,actorId:id,ballPosition,ballVelocity:{x:NaN,y:0}}),null);
+ }
+});
+
+test('ME-01-QA U-04b: neutral receiving shoe follows bounded actual low descending delivery',()=>{
+ for(const dir of [1,-1])for(const lateral of [1,-1]){
+  const actor={x:dir*40,y:4,facingRad:dir===1?0:Math.PI};
+  const stance=nativeNeutralShoePositions(actor),pose=stance[stance.leadFoot];
+  const velocity={x:dir*8,y:lateral*14,z:-5};
+  const ball={position:{x:actor.x-dir*.3,y:actor.y-lateral*.5,z:.5},velocity};
+  const target=nativeLowDeliveryShoeTarget(pose,actor,ball);
+  assert.ok(Math.abs(Math.hypot(target.x-pose.x,target.y-pose.y)-.06)<1e-10);
+  assert.ok((target.x-pose.x)*velocity.x+(target.y-pose.y)*velocity.y>0);
+  assert.equal(target.facingRad,pose.facingRad);
+  for(const patch of [{position:{...ball.position,z:.11}},{position:{...ball.position,z:1.35}},{velocity:{...velocity,z:2}},{velocity:{x:.1,y:.1,z:-1}},{position:{...ball.position,y:actor.y+3}}])
+   assert.equal(nativeLowDeliveryShoeTarget(pose,actor,{...ball,...patch}),pose);
  }
 });
