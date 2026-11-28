@@ -154,6 +154,19 @@ export function nativePendingDeliveryValid(delivery,tick,{shoeStarts=[],shoeActi
  return shoeStarts.length>0||shoeActive.every(id=>id===delivery.actorId);
 }
 
+// Update an existing real delivery from pre-solver flight evidence before
+// evaluating a receiving START. A receiving impact can itself reverse vz;
+// it must not manufacture or erase the incoming descending flight.
+export function nativeDeliveryFlight(delivery,ball,ballRadiusM){
+ if(!delivery||![ball?.position?.z,ball?.velocity?.z,ballRadiusM].every(Number.isFinite)||ballRadiusM<=0)return delivery;
+ const airborne=delivery.airborne===true||ball.position.z-ballRadiusM>0.20;
+ return {...delivery,airborne,descending:delivery.descending===true||airborne&&ball.velocity.z<0};
+}
+export function nativeDeliveryGroundReceptionEligible(delivery){
+ return !!delivery&&delivery.actualPhysicsImpulseApplied===true&&
+  (delivery.kind==='pass'&&!delivery.lofted||delivery.airborne===true&&delivery.descending===true);
+}
+
 // A hand release is a distinct physical source, not a ground shoe action.
 // A previous confirmed hold and an authorized recipient/kind are mandatory.
 export function nativeKeeperDistributionAllowed(mask,d,{tick,priorHold,players=[],activeIds=[]}={}){

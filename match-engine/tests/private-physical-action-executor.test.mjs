@@ -7,7 +7,7 @@ import {initializeRapier,createEngine,BALL_RADIUS,canonicalSnapshot}
  from '../src/core.mjs';
 import {INITIAL_PLAYERS,PLAYER_VERSION,PLAYER_DT,createPlayerMovement} from '../src/player-movement.mjs';
 import {footProxyTransform} from '../src/player-foot-contact.mjs';
-import {NATIVE_FUNDAMENTALS,createNativeFundamentalMask,nativeFundamentalAllowed,nativeLabFundamentalMask,nativeAerialSurfaceAllowed,createNativeDuelFundamentalMask,nativeDefensiveInterventionAllowed,nativePhysicalActionAllowed,nativeLabAerialSequence,nativeSequenceDeliveryAllowed,nativeSequenceAerialAllowed,nativeSequenceGroundMask,nativeKeeperSequenceDeliveryAllowed,nativeKeeperSequenceClaimAllowed,nativeKeeperSequenceInterrupted,selectNativeCrossProfile,nativeCrossTargetHeight,nativePendingDeliveryValid} from '../src/native-fundamental-mask.mjs';
+import {NATIVE_FUNDAMENTALS,createNativeFundamentalMask,nativeFundamentalAllowed,nativeLabFundamentalMask,nativeAerialSurfaceAllowed,createNativeDuelFundamentalMask,nativeDefensiveInterventionAllowed,nativePhysicalActionAllowed,nativeLabAerialSequence,nativeSequenceDeliveryAllowed,nativeSequenceAerialAllowed,nativeSequenceGroundMask,nativeKeeperSequenceDeliveryAllowed,nativeKeeperSequenceClaimAllowed,nativeKeeperSequenceInterrupted,selectNativeCrossProfile,nativeCrossTargetHeight,nativePendingDeliveryValid,nativeDeliveryFlight,nativeDeliveryGroundReceptionEligible} from '../src/native-fundamental-mask.mjs';
 import {selectDefensiveIntervention} from '../src/defensive-intervention-selection.mjs';
 import {createNativeActionRestriction,evaluateNativeActionRestriction,calculateNativeCrossImpulse,createPrivatePhysicalActionExecutor} from '../src/private-physical-action-executor.mjs';
 
@@ -351,4 +351,22 @@ test('ME-01-QA U-02e2: mirrored physical header subtypes and ground clearance re
    assert.ok(observed,team+'/'+kind+'/'+permitted+' requires actual native START');
   }finally{executor.dispose();bridge.dispose();world.free();}
  }
+});
+
+test('ME-01-QA U-03c: real pre-solver descent survives receiving collision; no fake delivery',()=>{
+ for(const team of ['home','away'])for(const kind of ['pass','cross']){
+  const launch={kind,team,tick:3,actorId:team+'-10',recipientId:team+'-9',lofted:true,airborne:false,descending:false,actualPhysicsImpulseApplied:true};
+  const rising=nativeDeliveryFlight(launch,{position:{z:.85},velocity:{z:2}},.11);
+  assert.equal(rising.airborne,true);assert.equal(rising.descending,false);
+  assert.equal(nativeDeliveryGroundReceptionEligible(rising),false);
+  const descending=nativeDeliveryFlight(rising,{position:{z:.35},velocity:{z:-2}},.11);
+  assert.equal(nativeDeliveryGroundReceptionEligible(descending),true);
+  const after=nativeDeliveryFlight(descending,{position:{z:.14},velocity:{z:2}},.11);
+  assert.equal(nativeDeliveryGroundReceptionEligible(after),true);
+  assert.equal(nativeDeliveryGroundReceptionEligible({...after,actualPhysicsImpulseApplied:false}),false);
+  assert.equal(nativeDeliveryGroundReceptionEligible({...launch,lofted:false}),kind==='pass');
+  assert.equal(nativeDeliveryFlight(launch,{position:{z:NaN},velocity:{z:-2}},.11),launch);
+  assert.equal(launch.airborne,false);
+ }
+ assert.equal(nativeDeliveryGroundReceptionEligible(null),false);
 });

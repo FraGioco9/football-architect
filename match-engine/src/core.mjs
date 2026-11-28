@@ -1044,6 +1044,7 @@ export function createEngine(RAPIER, input = {}, {
       collectiveControl:collectiveObserver?.snapshot()??null,keeperDistribution:distribution,attackPolarity:nativeAttackPolarity,
       ...(nativeAerialEnabled?{aerialEvidence:smallBodyGuard.snapshot().aerial,
        aerialConflict:smallBodyGuard.snapshot().lowerLegBallContacts.length>0||hands.some(k=>k.contact||k.catchState?.active||k.distribution?.tick===tick||k.boundedRelease?.tick===tick)}:{}),
+      priorNativeBall:preStepBall,
       ...(diagnosticFirstTimeShot?{priorNativeBallVelocity:preStepBall.velocity}:{}),
       suppressOriginalAction:restarting||(diagnosticB06bNativeShotSide!==null&&(
        b06bGoalPending!==null||

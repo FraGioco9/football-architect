@@ -391,3 +391,23 @@ test('ME-01-QA U-03b: shared neutral stance produces exclusive real mirrored sho
   }finally{bridge?.dispose();world.free();}
  }
 });
+
+test('ME-01-QA U-03c: first-time paired recovery chooses side of actual outgoing trajectory',()=>{
+ for(const dir of [1,-1])for(const lateral of [1,-1]){
+  const id=dir===1?'home-10':'away-10',foot=dir===1?'right':'left';
+  const contact={started:[id],active:[id],nativePairedFeet:{[id]:{actorId:id,independentColliders:2,exclusivePhysicalStart:true,started:[foot],active:[foot],exclusiveFootPosition:{x:dir*.20,y:lateral*.02,z:.09}}}};
+  const ballPosition={x:0,y:0,z:.11},ballVelocity={x:dir*20,y:lateral*8,z:0};
+  const legacy=planNativeFirstTimeFootRecovery({contact,actorId:id,ballPosition});
+  const plan=planNativeFirstTimeFootRecovery({contact,actorId:id,ballPosition,ballVelocity});
+  assert.equal(legacy.direction,lateral);assert.equal(plan.direction,-lateral);assert.equal(plan.foot,foot);
+  let prev={x:0,y:0};
+  for(let age=1;age<=6;age++){
+   const next=nativeFirstTimeRecoveryTarget({x:0,y:0},foot,plan,age);
+   assert.ok(Math.hypot(next.x-prev.x,next.y-prev.y)<=.100000001);
+   assert.equal(nativeFirstTimeRecoveryTarget({x:0,y:0},foot==='left'?'right':'left',plan,age).y,0);
+   prev=next;
+  }
+  assert.deepEqual(prev,{x:0,y:0});
+  assert.equal(planNativeFirstTimeFootRecovery({contact,actorId:id,ballPosition,ballVelocity:{x:NaN,y:0}}),null);
+ }
+});

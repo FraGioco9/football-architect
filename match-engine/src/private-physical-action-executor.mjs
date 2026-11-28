@@ -8,7 +8,7 @@ import {inspectPhysicalActionRejection,selectUniformAutonomousContactAction,choo
  from './player-ball-uniform-autonomous-action.mjs';
 import {FOOT_CONTACT_VERSION,footProxyTransform} from './player-foot-contact.mjs';
 import {hasExclusiveNativeShoeStart} from './rapier-foot-contact-bridge.mjs';
-import {createNativeFundamentalMask,nativeFundamentalAllowed,nativePhysicalActionAllowed,nativeSequenceDeliveryAllowed,nativeSequenceAerialAllowed,nativeSequenceGroundMask,selectNativeCrossProfile,nativeCrossTargetHeight,nativePendingDeliveryValid,nativeKeeperDistributionAllowed} from './native-fundamental-mask.mjs';
+import {createNativeFundamentalMask,nativeFundamentalAllowed,nativePhysicalActionAllowed,nativeSequenceDeliveryAllowed,nativeSequenceAerialAllowed,nativeSequenceGroundMask,selectNativeCrossProfile,nativeCrossTargetHeight,nativePendingDeliveryValid,nativeDeliveryFlight,nativeDeliveryGroundReceptionEligible,nativeKeeperDistributionAllowed} from './native-fundamental-mask.mjs';
 import {chooseIntentSoloCarryTouch} from './intent-driven-solo-carry.mjs';
 import {chooseNativeFixedCarryImpulse}
  from './native-fixed-carry-impulse.mjs';
@@ -194,7 +194,7 @@ export function createPrivatePhysicalActionExecutor({
  let firstReceiverChoice=null,firstReceiverTap=null;
  const ensureOpen=()=>{if(closed)throw new Error('Physical action executor disposed');};
  function apply(nextTick,playerFrame,{
-  suppressOriginalAction=false,suppressPhysicalBodyContact=false,priorNativeBallVelocity=null,duelTransition=null,collectiveControl=null,keeperDistribution=null,attackPolarity=1,aerialEvidence=null,aerialConflict=false
+  suppressOriginalAction=false,suppressPhysicalBodyContact=false,priorNativeBallVelocity=null,priorNativeBall=null,duelTransition=null,collectiveControl=null,keeperDistribution=null,attackPolarity=1,aerialEvidence=null,aerialConflict=false
  }={}){
   ensureOpen();
   validateAttackPolarity(attackPolarity);
@@ -256,6 +256,7 @@ export function createPrivatePhysicalActionExecutor({
    });
    return Object.freeze({tick,action,audit});
   }
+  if(pendingDelivery&&priorNativeBall)pendingDelivery=nativeDeliveryFlight(pendingDelivery,priorNativeBall,ballRadiusM);
   // Same private executor, same original ball. The core supplies actual
   // post-step head evidence from the guarded body source; never a caller
   // requested action or a second ball. No shoe action on the same contact.
@@ -317,7 +318,7 @@ export function createPrivatePhysicalActionExecutor({
     }
     pendingDelivery=null;latestCushion=null;
     if(result?.action==='pass')pendingDelivery={kind:'pass',tick:nextTick,actorId:result.playerId,
-     recipientId:result.recipientId,team:result.team,airborne:true,descending:result.after.z<0,source:'native-head-contact'};
+     recipientId:result.recipientId,team:result.team,airborne:true,descending:result.after.z<0,lofted:true,source:'native-head-contact',actualPhysicsImpulseApplied:true};
     tick=nextTick;action=result;audit=Object.freeze({tick,originalRapierBall:true,nativeHeadContacts:heads.length,
      selectedIntent:result!==null,officialMatchAction:false,noActionReason:result?null:'head-contact-not-exclusive-or-not-eligible'});
     return Object.freeze({tick,action,audit});
@@ -355,7 +356,7 @@ export function createPrivatePhysicalActionExecutor({
   if(pendingDelivery&&!nativePendingDeliveryValid(pendingDelivery,nextTick,{shoeStarts:contact.started,shoeActive:contact.active,conflict:suppressPhysicalBodyContact||suppressOriginalAction}))pendingDelivery=null;
   if(sharedDynamics&&pendingDelivery&&nextTick>pendingDelivery.tick){
    const d=pendingDelivery,pos=ballBody.translation(),v=ballBody.linvel();
-   const eligible=d.kind==='pass'&&!d.lofted||(d.airborne&&d.descending);
+   const eligible=nativeDeliveryGroundReceptionEligible(d);
    if(contact.started.length){
     // First subsequent native contact consumes the delivery, even an
     // interruption or ambiguous contact. No later assisted trap.
@@ -376,8 +377,7 @@ export function createPrivatePhysicalActionExecutor({
      if(orientedCandidate)orientedDelivery=d;
     }
    }else{
-    d.airborne=d.airborne||pos.z-ballRadiusM>0.20;
-    d.descending=d.descending||(d.airborne&&v.z<0);
+    pendingDelivery=nativeDeliveryFlight(d,{position:pos,velocity:v},ballRadiusM);
    }
   }
   let researchCandidate=null;
@@ -618,7 +618,7 @@ export function createPrivatePhysicalActionExecutor({
    const d=keeperDistribution;
    if(!nativeActionPolicy||!suppressPhysicalBodyContact||applied||!nativeKeeperDistributionAllowed(fundamentalMask,d,{tick:nextTick,priorHold:collectiveControl?.keeperHold,players:playerFrame.players,activeIds:activePlayerIds}))throw new TypeError('Current authorized confirmed native keeper release required');
    pendingDelivery=null;
-   if(d.kind==='pass')pendingDelivery={kind:'pass',tick:nextTick,actorId:d.keeperId,recipientId:d.recipientId,team:d.team,airborne:true,descending:false,source:'native-keeper-grip-release',actualPhysicsImpulseApplied:true};
+   if(d.kind==='pass')pendingDelivery={kind:'pass',tick:nextTick,actorId:d.keeperId,recipientId:d.recipientId,team:d.team,airborne:true,descending:false,lofted:true,source:'native-keeper-grip-release',actualPhysicsImpulseApplied:true};
   }
   if(side!==null&&!sharedDynamics){
    if(researchCandidate!==null){

@@ -244,13 +244,28 @@ export function nativePairedCarryReadout(pair,metadata){
 }
 // Recover only the physical foot that actually struck. The six-tick
 // offset is an existing target profile, never a contact or ball impulse.
-export function planNativeFirstTimeFootRecovery({contact,actorId,ballPosition,legacyPose=null}={}){
+export function planNativeFirstTimeFootRecovery({contact,actorId,ballPosition,ballVelocity=null,legacyPose=null}={}){
  if(!hasExclusiveNativeShoeStart(contact,actorId)||![ballPosition?.x,ballPosition?.y].every(Number.isFinite))return null;
  const paired=contact.nativePairedFeet!==undefined;
  const evidence=paired?contact.nativePairedFeet[actorId]:null;
  const pose=paired?evidence.exclusiveFootPosition:legacyPose;
  if(![pose?.x,pose?.y,pose?.z].every(Number.isFinite))return null;
- return Object.freeze({foot:paired?evidence.started[0]:null,direction:Math.sign(pose.y-ballPosition.y)});
+ // Paired feet withdraw away from the actual outgoing ball ray, rather
+ // than merely from its present centre. Preserve the archived single-shoe
+ // projection and bounded six-tick trajectory when no velocity is supplied.
+ let direction=Math.sign(pose.y-ballPosition.y);
+ if(paired&&ballVelocity!==null){
+  if(![ballVelocity.x,ballVelocity.y].every(Number.isFinite))return null;
+  const speed2=ballVelocity.x**2+ballVelocity.y**2;
+  if(speed2>1e-8){
+   const dx=pose.x-ballPosition.x,dy=pose.y-ballPosition.y;
+   const eta=Math.max(0,(dx*ballVelocity.x+dy*ballVelocity.y)/speed2);
+   const offset=dy-ballVelocity.y*eta;
+   if(Math.abs(offset)>1e-8)direction=Math.sign(offset);
+   else if(direction===0)direction=evidence.started[0]==='left'?1:-1;
+  }
+ }
+ return Object.freeze({foot:paired?evidence.started[0]:null,direction});
 }
 export function nativeFirstTimeRecoveryTarget(pose,foot,release,age){
  if(!release||release.foot!==foot||!Number.isSafeInteger(age)||age<1||age>6)return pose;
@@ -456,7 +471,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
       !hasExclusiveNativeShoeStart(current,firstTimeShotReleaseId))
     throw new TypeError('First-time recovery needs the immediately preceding real strike');
    const plan=planNativeFirstTimeFootRecovery({contact:current,actorId:firstTimeShotReleaseId,
-    ballPosition:preStepBall.position,legacyPose:bodies[shotReleaseIndex].translation()});
+    ballPosition:preStepBall.position,ballVelocity:preStepBall.velocity,legacyPose:bodies[shotReleaseIndex].translation()});
    if(!plan||nativeCarryStride&&previousStrike.firstTimeShotEvidence.contactFoot!==plan.foot)
     throw new TypeError('First-time recovery needs the actual exclusive striking shoe');
    shotRelease=Object.freeze({strikeTick:tick,...plan});
