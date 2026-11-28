@@ -5,11 +5,11 @@ import assert from 'node:assert/strict';
 import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {initializeRapier,createEngine,BALL_RADIUS,canonicalSnapshot}
  from '../src/core.mjs';
-import {INITIAL_PLAYERS,createPlayerMovement} from '../src/player-movement.mjs';
+import {INITIAL_PLAYERS,PLAYER_VERSION,PLAYER_DT,createPlayerMovement} from '../src/player-movement.mjs';
 import {footProxyTransform} from '../src/player-foot-contact.mjs';
 import {NATIVE_FUNDAMENTALS,createNativeFundamentalMask,nativeFundamentalAllowed,nativeLabFundamentalMask,nativeAerialSurfaceAllowed,createNativeDuelFundamentalMask,nativeDefensiveInterventionAllowed,nativePhysicalActionAllowed,nativeLabAerialSequence,nativeSequenceDeliveryAllowed,nativeSequenceAerialAllowed,nativeSequenceGroundMask,nativeKeeperSequenceDeliveryAllowed,nativeKeeperSequenceClaimAllowed,nativeKeeperSequenceInterrupted,selectNativeCrossProfile,nativeCrossTargetHeight,nativePendingDeliveryValid} from '../src/native-fundamental-mask.mjs';
 import {selectDefensiveIntervention} from '../src/defensive-intervention-selection.mjs';
-import {createNativeActionRestriction,evaluateNativeActionRestriction,calculateNativeCrossImpulse} from '../src/private-physical-action-executor.mjs';
+import {createNativeActionRestriction,evaluateNativeActionRestriction,calculateNativeCrossImpulse,createPrivatePhysicalActionExecutor} from '../src/private-physical-action-executor.mjs';
 
 test('UME-05E isolated technical constraints filter the same native decision without creating actions',()=>{
  for(const [actor,receiver] of [['home-10','home-9'],['away-4','away-7'],['home-2','home-6']]){
@@ -33,6 +33,9 @@ test('UME-05E isolated technical constraints filter the same native decision wit
  assert.throws(()=>createNativeActionRestriction({action:'pass',actorId:'home-10'}),/Bounded/);
  assert.throws(()=>createNativeActionRestriction({action:'shot',actorId:'home-10',maxActions:2}),/Bounded/);
 });
+import {createPrivateRapierFootContactBridge,soloCarryTwoFootPositions,hasExclusiveNativeShoeStart} from '../src/rapier-foot-contact-bridge.mjs';
+import {createNativeAerialHead} from '../src/small-sided-native-body-guard.mjs';
+
 const mirrorScenario=team=>{
  const actor=INITIAL_PLAYERS.find(p=>p.id===team+'-10');
  const pose=footProxyTransform(actor);
@@ -296,4 +299,55 @@ test('ME-01-QA U-02d5: pending delivery expires and cannot survive competing con
   }
  }
  assert.equal(nativePendingDeliveryValid(null,21),false);
+});
+
+// Component acceptance only: stationary canonical actors, one real Rapier
+// world, native paired shoes and head controller, actual shared executor.
+// No fabricated START arrays, policy result or manually applied test impulse.
+test('ME-01-QA U-02e2: mirrored physical header subtypes and ground clearance require genuine exclusive sources',{timeout:30000},async()=>{
+ const R=await initializeRapier(rapier);
+ for(const team of ['home','away'])for(const kind of ['header-shot','header-pass','header-clearance','clearance'])for(const permitted of [true,false]){
+  const dir=team==='home'?1:-1,actorId=team+'-10',mateId=team+'-9',ground=kind==='clearance';
+  const x=dir*(kind==='header-shot'?45:kind==='header-pass'?0:-42);
+  const activeIds=kind==='header-pass'?[actorId,mateId]:[actorId];
+  const players=INITIAL_PLAYERS.map(p=>p.id===actorId?{...p,x,y:0,vx:0,vy:0,facingRad:dir===1?0:Math.PI}:p.id===mateId?{...p,x:x+dir*14,y:5,vx:0,vy:0}:p);
+  const actor=players.find(p=>p.id===actorId);
+  const world=new R.World({x:0,y:0,z:ground?0:-9.81});world.timestep=PLAYER_DT;
+  const left=footProxyTransform(soloCarryTwoFootPositions(actor).left);
+  const origin=ground?{x:left.x,y:left.y+dir*.105,z:BALL_RADIUS}:{x,y:0,z:3};
+  const body=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(origin.x,origin.y,origin.z).setLinvel(0,0,ground?0:-2).setCcdEnabled(true));
+  const collider=world.createCollider(R.ColliderDesc.ball(BALL_RADIUS).setMass(.43).setRestitution(0),body);
+  const bridge=createPrivateRapierFootContactBridge(R,world,collider,players,{activePlayerIds:activeIds,isolatedPhysicalBodies:true,nativeCarryStride:true});
+  const head=ground?null:createNativeAerialHead(R,world,collider,actor);
+  const mask=permitted?(ground?['clearance']:['header',kind]):[];
+  const executor=createPrivatePhysicalActionExecutor({ballBody:body,shoeBridge:bridge,ballRadiusM:BALL_RADIUS,activePlayerIds:activeIds,allowPhysicalCarry:true,physicalBodyGuardEnabled:true,nativeActionPolicy:true,latestLabDynamics:true,allowedFundamentals:mask});
+  const sample=()=>({position:{...body.translation()},velocity:{...body.linvel()}});
+  try{
+   let observed=false;
+   for(let tick=1;tick<=60;tick++){
+    const frame={version:PLAYER_VERSION,tick,timeS:tick*PLAYER_DT,players},prior=sample();
+    bridge.prepare(frame,tick,prior);
+    head?.prepare(actor,tick,prior);
+    world.step(bridge.eventQueue);
+    const post=sample(),shoe=bridge.observe(tick,prior,post).collision,headState=head?.observe(tick)??null;
+    const result=executor.apply(tick,frame,head?{aerialEvidence:[headState],suppressPhysicalBodyContact:headState.contact}:{});
+    const start=ground?hasExclusiveNativeShoeStart(shoe,actorId):headState.contactStarted&&headState.actualNativeSolverContact&&!shoe.active.length;
+    if(!start){assert.equal(result.action,null);continue;}
+    observed=true;
+    const a=result.action;
+    if(!permitted){assert.equal(a,null);assert.deepEqual(sample().velocity,post.velocity);break;}
+    assert.equal(a?.action,ground?'clearance':kind.slice(7));
+    assert.equal(a.playerId,actorId);assert.equal(a.tick,tick);
+    assert.equal(a.actualPhysicsImpulseApplied,true);assert.equal(a.appliedByRapier,true);
+    assert.equal(a.officialMatchAction,false);
+    if(!ground){assert.equal(a.nativeExclusiveHeadStart,true);assert.equal(a.actualNativeSolverContact,true);assert.ok(Math.hypot(...Object.values(a.impulseNs))<=5+1e-8);}
+    if(kind==='header-pass')assert.equal(a.recipientId,mateId);
+    assert.ok(dir*a.after.x>0,'actual ball exits in the authorized attacking direction');
+    assert.ok(d3(sample().velocity,post.velocity)>.01);
+    assert.deepEqual(sample().velocity,a.after);
+    break;
+   }
+   assert.ok(observed,team+'/'+kind+'/'+permitted+' requires actual native START');
+  }finally{executor.dispose();bridge.dispose();world.free();}
+ }
 });

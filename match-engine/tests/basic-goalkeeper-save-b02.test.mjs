@@ -392,13 +392,13 @@ test('ACTIONS-B02 real HOME/AWAY original Rapier keeper shoe START, parry, dive 
 
  test('UME-05G confirmed native grip releases one real distribution, mirrored',{timeout:120000},async()=>{
   const R=await initializeRapier(rapier);
-  for(const team of ['home','away']){
+  for(const team of ['home','away'])for(const kind of ['pass','clearance']){
    const dir=team==='home'?1:-1,world=new R.World({x:0,y:0,z:0});world.timestep=FIXED_DT;
    const hand=world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(-dir*48,0,1));
    const glove=world.createCollider(R.ColliderDesc.ball(0.21).setRestitution(0),hand);
    const ball=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(-dir*47.5,0,1).setLinvel(-dir*3,0,0).setCcdEnabled(true));
    const collider=world.createCollider(R.ColliderDesc.ball(0.11).setMass(0.43).setRestitution(0),ball);
-   const grip=createNativeKeeperGrip(R,world,hand,ball,team);
+   const grip=createNativeKeeperGrip(R,world,hand,ball,team,['save',kind]);
    const keeper={id:team+'-1',team,role:'goalkeeper',x:-dir*48,y:0};
    const mate={id:team+'-4',team,role:'defender',x:-dir*35,y:3};
    const actors=[keeper,mate];
@@ -415,7 +415,9 @@ test('ACTIONS-B02 real HOME/AWAY original Rapier keeper shoe START, parry, dive 
      released=grip.distribute(tick,keeper,actors);
      if(!released){if(confirmed!==null)assert.ok(tick-confirmed<NATIVE_KEEPER_DISTRIBUTION_DELAY_TICKS);continue;}
      assert.equal(tick,confirmed+NATIVE_KEEPER_DISTRIBUTION_DELAY_TICKS);
-     assert.equal(released.recipientId,mate.id);assert.equal(released.kind,'pass');
+     assert.equal(released.recipientId,kind==='pass'?mate.id:null);assert.equal(released.kind,kind);
+     assert.equal(released.nativeGripReleased,true);assert.equal(released.actualPhysicsImpulseApplied,true);
+     assert.equal(released.confirmedGripTick,confirmed);assert.equal(released.appliedByRapier,true);
      assert.deepEqual({...ball.translation()},origin);assert.ok(dir*ball.linvel().x>4);
      assert.ok(Math.hypot(...Object.values(released.impulseNs))<=6+1e-9);
      assert.equal(released.officialPossession,false);assert.equal(grip.active(),false);
