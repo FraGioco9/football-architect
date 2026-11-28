@@ -6,7 +6,7 @@ import {attackDirection,validateAttackPolarity} from './match-directions.mjs';
 import {INITIAL_PLAYERS,PLAYER_VERSION,PLAYER_DT,PLAYER_MAX_SPEED_MPS}
  from './player-movement.mjs';
 import {chooseRecipient} from './player-ball-uniform-autonomous-action.mjs';
-import {createNativeFundamentalMask,nativeFundamentalAllowed,nativeAerialSurfaceAllowed,nativeKeeperSequenceDeliveryAllowed,nativeKeeperSequenceClaimAllowed} from './native-fundamental-mask.mjs';
+import {createNativeFundamentalMask,nativeFundamentalAllowed,nativePermittedAerialSurfaces,nativeKeeperSequenceDeliveryAllowed,nativeKeeperSequenceClaimAllowed} from './native-fundamental-mask.mjs';
 import {planNativeKeeperHighIntercept,NATIVE_HIGH_HAND_MAX_Z} from './small-sided-lab-scenarios.mjs';
 
 export const SMALL_SIDED_BODY_VERSION='me-628-native-physical-body-guard-v1';
@@ -91,6 +91,7 @@ export function createNativeAerialHead(R,world,ballCollider,actor){
   collider.setCollisionGroups(active?(LEG_CATEGORY<<16)|BALL_CATEGORY:0);
   head.setNextKinematicTranslation(target);
   prepared={tick,active,started,elapsed:active?elapsed:null,incomingVelocity:freeze({...ball.velocity})};
+  return active;
  }
  function observe(tick){
   if(prepared?.tick!==tick)throw new TypeError('Native aerial evidence requires original post-step solver tick');
@@ -213,7 +214,7 @@ export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
  initialPlayers,activePlayerIds,{feedbackEnabled=false,
   dribbleGroundBallCentreZ=null,fullFieldNative=false,aerialEnabled=false,aerialSurface='all',allowedFundamentals=null}={}){
  const mask=createNativeFundamentalMask(allowedFundamentals);
- if(!['all','head','chest','foot'].includes(aerialSurface))throw new TypeError('Known aerial training restriction required');
+ const surfaces=nativePermittedAerialSurfaces(mask,aerialSurface,aerialEnabled);
  if(typeof aerialEnabled!=='boolean'||aerialEnabled&&(!feedbackEnabled||dribbleGroundBallCentreZ!==null))
   throw new TypeError('Native aerial research requires original guarded movement feedback');
  if(typeof fullFieldNative!=='boolean'||fullFieldNative&&(activePlayerIds?.length!==22||feedbackEnabled!==true||dribbleGroundBallCentreZ!==null))throw new TypeError('Full field requires all 22 native bodies and canonical feedback');
@@ -257,8 +258,8 @@ export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
    .setDensity(80).setFriction(0.7).setRestitution(0)
    .setCollisionGroups((LEG_CATEGORY<<16)|BALL_CATEGORY),rigid);
   entries.push({id:actor.id,team:actor.team,rigid,torso,leg,
-   head:aerialEnabled&&actor.role!=='goalkeeper'&&['all','head'].includes(aerialSurface)&&nativeAerialSurfaceAllowed(mask,'head')?createNativeAerialHead(R,world,ballCollider,actor):null,
-   controls:aerialEnabled&&actor.role!=='goalkeeper'?['chest','foot'].filter(surface=>(aerialSurface==='all'||aerialSurface===surface)&&nativeAerialSurfaceAllowed(mask,surface)).map(surface=>createNativeAerialControl(R,world,ballCollider,actor,surface)):[]});
+   head:actor.role!=='goalkeeper'&&surfaces.includes('head')?createNativeAerialHead(R,world,ballCollider,actor):null,
+   controls:actor.role!=='goalkeeper'?surfaces.filter(surface=>surface!=='head').map(surface=>createNativeAerialControl(R,world,ballCollider,actor,surface)):[]});
  }
  if(entries.length!==activePlayerIds.length)
   throw new Error('Selected physical body identity mismatch');
@@ -290,8 +291,8 @@ export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
   for(const e of entries){
    const actor=frame.players.find(p=>p.id===e.id);
    e.rigid.setLinvel({x:actor.vx,y:actor.vy,z:0},true);
-   e.head?.prepare(actor,nextTick,ball,deadBall);
-   for(const control of e.controls)control.prepare(actor,nextTick,ball,deadBall,!!e.head&&!!planNativeAerialJump(actor,ball));
+   const headActive=e.head?.prepare(actor,nextTick,ball,deadBall)===true;
+   for(const control of e.controls)control.prepare(actor,nextTick,ball,deadBall,headActive);
   }
   prior=frame.players.map(p=>({id:p.id,x:p.x,y:p.y}));
   prepared=nextTick;

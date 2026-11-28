@@ -1,6 +1,6 @@
 import {attackDirection,validateAttackPolarity,nativeHalfFormationReady} from './match-directions.mjs';
 import {directedDribbleApproachTarget,planDribbleDefender,resolveDuelActors,isDuelGettingUp,chooseDribbleDefensiveTouch,planShoulderBalanceRecovery,isShoulderCollecting,isSlideCollecting,routeDuelAroundOpponent,planDuelRecoveryApproach,planLooseDuelApproaches,planDuelPostContactAlignment,planDribbleContactRelease,dribbleReleaseApproach,planNativeDefensiveIntervention,isNativeRecoveryLocked} from './isolated-dribble-touches.mjs';
-import {nativeLabFundamentalMask,nativeDefensiveInterventionAllowed} from './native-fundamental-mask.mjs';
+import {nativeLabFundamentalMask,nativeDefensiveInterventionAllowed,nativePermittedAerialSurfaces,NATIVE_AERIAL_APPROACH_HEIGHTS} from './native-fundamental-mask.mjs';
 import {advanceSlidingTackle,planSlidingTackle,SLIDE_MAX_SPEED_MPS,SLIDE_ACCEL_MPS2,SLIDE_BRAKE_MPS2} from './sliding-tackle.mjs';
 // ME-PLAYER-01/24 — autonomous movement and current handoff-corridor safety.
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
@@ -13,7 +13,7 @@ import {projectNativeShoeBodyStep,projectNativeShoeBodyFacing}
  from './native-shoe-body-handoff.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
 import {smallSidedSetup,keeperDuelAttackerTarget,keeperDuelReboundTarget,
- keeperDuelGoalkeeperTarget,keeperDuelCloseDownTarget,planNativeKeeperCloseDown,planNativeKeeperHighIntercept,planNativeFootballMovement,planNativeAerialContest,supportsNativeOpenPlay} from './small-sided-lab-scenarios.mjs';
+ keeperDuelGoalkeeperTarget,keeperDuelCloseDownTarget,planNativeKeeperCloseDown,planNativeKeeperHighIntercept,planNativeFootballMovement,planNativePermittedAerialContest,supportsNativeOpenPlay} from './small-sided-lab-scenarios.mjs';
 import {basicSourcePositiveRestartSetup}
  from './basic-restart-source-lineup-b05b.mjs';
 import {initialB06bOpeningLineup} from './basic-opening-kickoff-lineup-b06b.mjs';
@@ -2582,6 +2582,7 @@ export function createPlayerMovement(options={}){
   const duelActors=directedDribble?resolveDuelActors(players,smallSided.side,duelTransition,ball):null;
   const defensiveMask=nativeLabFundamentalMask({id:smallSided?.id,collective:options.researchCollectiveApproaches===true,interceptionStart:smallSided?.interceptionStart,blockStart:smallSided?.blockStart,directedDribble,duelTackleProfile:duelTransition?.profile??'mixed'});
   const permitsDefense=kind=>nativeDefensiveInterventionAllowed(defensiveMask,kind);
+  const aerialSurfaces=nativePermittedAerialSurfaces(defensiveMask,smallSided?.aerialSurface??'all',options.researchCollectiveApproaches===true);
   defensiveDecision=null;duelShoulder=null;duelInterception=null;blockApproach=null;
   // Delivery scenarios provide the witnessed trajectory and participants,
   // not their own interception or block geometry.
@@ -2665,7 +2666,8 @@ export function createPlayerMovement(options={}){
    // Predict the descending crossing point from the live ball, not the
    // fixture. The receiving player runs there using normal acceleration.
    if((delivery.kind==='cross'||delivery.lofted===true)&&recipient&&[ballPosition.z,realBallVelocity.z].every(Number.isFinite)){
-    const h=delivery.lofted===true?0.85:smallSided.aerialSurface==='chest'?1.35:smallSided.aerialSurface==='foot'?0.85:1.95,z=ballPosition.z,vz=realBallVelocity.z;
+    const preferred=delivery.lofted===true&&aerialSurfaces.includes('foot')?'foot':aerialSurfaces[0];
+    const h=NATIVE_AERIAL_APPROACH_HEIGHTS[preferred]??(delivery.lofted===true?0.85:1.95),z=ballPosition.z,vz=realBallVelocity.z;
     const discriminant=vz*vz+19.62*(z-h);
     if(discriminant>=0){
      const t=(vz+Math.sqrt(discriminant))/9.81;
@@ -2686,15 +2688,14 @@ export function createPlayerMovement(options={}){
     if(plan?.decision?.plan)nativeDeliveryPlans[defender.id]=plan.decision;
    }
   }
-  if(collectiveApproaches&&collectiveControl?.kind==='loose'&&(smallSided.aerialSurface||options.researchNativeAerialEnabled===true)){
-   const height=smallSided.aerialSurface==='chest'?1.35:smallSided.aerialSurface==='foot'?0.85:1.95;
-   const aerial=planNativeAerialContest(players.filter(p=>smallActive.has(p.id)&&!isNativeRecoveryLocked(collectiveControl,p.id,tick+1)),ballPosition,realBallVelocity,height);
+  if(collectiveApproaches&&collectiveControl?.kind==='loose'&&aerialSurfaces.length){
+   const aerial=planNativePermittedAerialContest(players.filter(p=>smallActive.has(p.id)&&!isNativeRecoveryLocked(collectiveControl,p.id,tick+1)),ballPosition,realBallVelocity,aerialSurfaces);
    for(const [id,plan] of Object.entries(aerial))if(!nativeDeliveryPlans[id]){
     let receivePlan=plan;
     // A slow, descending loose ball is received in front of the body,
     // not by running underneath its centre. The direction comes from
     // the original player-to-ball geometry, not the LAB or team.
-    if(height===0.85&&Math.hypot(realBallVelocity.x,realBallVelocity.y)<2){
+    if(plan.surface==='foot'&&Math.hypot(realBallVelocity.x,realBallVelocity.y)<2){
      const actor=players.find(p=>p.id===id);
      const dx=plan.target.x-actor.x,dy=plan.target.y-actor.y,gap=Math.hypot(dx,dy);
      if(gap>0.05){

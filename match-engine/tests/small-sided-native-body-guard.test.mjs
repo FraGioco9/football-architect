@@ -171,3 +171,30 @@ test('#628 body collision requires a real small-sided shoe source; V01 supports 
   import.meta.url),'utf8');
  assert.ok(routes.includes("'/__fa_match_engine__/small-sided-native-body-guard.mjs':"));
 });
+
+import {nativeLabFundamentalMask,nativePermittedAerialSurfaces} from '../src/native-fundamental-mask.mjs';
+import {planNativePermittedAerialContest} from '../src/small-sided-lab-scenarios.mjs';
+test('ME-01-QA U-02b: common aerial capability allocation and bounded approach arbitration',()=>{
+ const all=nativeLabFundamentalMask({id:'full-field-native',collective:true});
+ assert.deepEqual(nativePermittedAerialSurfaces(all),['head','chest','foot']);
+ assert.deepEqual(nativePermittedAerialSurfaces(all,'all',false),[]);
+ for(const [id,restriction,expected] of [
+ ['header-pair','head',['head']],['chest-control','chest',['chest']],['aerial-foot-control','foot',['foot']],
+ ['volley-solo','foot',['foot']],['lofted-pass','foot',['foot']],['keeper-high-cross','head',[]]]){
+  const mask=nativeLabFundamentalMask({id,collective:true});
+  assert.deepEqual(nativePermittedAerialSurfaces(mask,restriction),expected);
+  assert.ok(Object.isFrozen(nativePermittedAerialSurfaces(mask,restriction)));
+ }
+ const players=[{id:'home-10',team:'home',role:'forward',x:0,y:0,vx:0,vy:0},
+ {id:'away-2',team:'away',role:'defender',x:0,y:0,vx:0,vy:0},
+ {id:'home-1',team:'home',role:'goalkeeper',x:0,y:0,vx:0,vy:0}];
+ for(const z of [2.8,1.6,1.0,.2]){
+  const ball={x:0,y:0,z},velocity={x:0,y:0,z:-1};
+  const plans=planNativePermittedAerialContest(players,ball,velocity,nativePermittedAerialSurfaces(all));
+  const expected=z>=1.95?'head':z>=1.35?'chest':z>=.85?'foot':null;
+  assert.equal(plans['home-1'],undefined);
+  assert.equal(plans['home-10']?.surface??null,expected);
+  assert.equal(plans['away-2']?.surface??null,expected);
+  assert.deepEqual(planNativePermittedAerialContest(players,ball,velocity,[]),{});
+ }
+});

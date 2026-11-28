@@ -106,3 +106,10 @@ export function nativeKeeperSequenceInterrupted(sequence,shoeStarts,shoeActive,b
  // or another actor's active shoe/body contact interrupts the delivery.
  return shoeStarts.length>0||shoeActive.some(id=>id!==sequence.actorId)||bodyActive.length>0;
 }
+
+// One capability-to-surface mapping used for physical allocation and movement.
+export const NATIVE_AERIAL_APPROACH_HEIGHTS=Object.freeze({head:1.95,chest:1.35,foot:0.85});
+export function nativePermittedAerialSurfaces(mask,restriction='all',enabled=true){
+ if(!['all','head','chest','foot'].includes(restriction)||typeof enabled!=='boolean')throw new TypeError('Known aerial surface configuration required');
+ return Object.freeze(Object.keys(NATIVE_AERIAL_APPROACH_HEIGHTS).filter(surface=>enabled&&(restriction==='all'||surface===restriction)&&nativeAerialSurfaceAllowed(mask,surface)));
+}

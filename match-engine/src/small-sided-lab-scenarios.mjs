@@ -1,3 +1,4 @@
+import {NATIVE_AERIAL_APPROACH_HEIGHTS} from './native-fundamental-mask.mjs';
 import {attackDirection,validateAttackPolarity} from './match-directions.mjs';
 // #628 LAB-SMALL-01: bounded small-sided exercises, never a 11v11 match.
 // Twenty-two canonical mover identities stay available to the existing
@@ -687,4 +688,22 @@ export function smallSidedSetup(id,side,canonicalPlayers,{
   genuinePhysicalPlayers:activeIds.length,
   officialMatchResult:null
  });
+}
+
+// Choose at most one reachable aerial approach per side. Higher surfaces
+// are considered first; if unreachable, a lower permitted surface can be
+// chosen. The physical jump/control controllers still own actual contact.
+export function planNativePermittedAerialContest(players,ball,velocity,surfaces){
+ const result={},teams=new Set();
+ for(const surface of surfaces){
+  const height=NATIVE_AERIAL_APPROACH_HEIGHTS[surface];
+  if(!height)throw new TypeError('Known aerial approach surface required');
+  const plans=planNativeAerialContest(players,ball,velocity,height);
+  for(const [id,plan] of Object.entries(plans)){
+   const team=players.find(p=>p.id===id)?.team;
+   if(teams.has(team))continue;
+   teams.add(team);result[id]=freeze({...plan,surface,height});
+  }
+ }
+ return freeze(result);
 }
