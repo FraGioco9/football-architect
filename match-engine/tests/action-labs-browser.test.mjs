@@ -146,7 +146,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   }
   await send('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
   const activePage=await evalJs("(()=>{const el=id=>document.getElementById(id),menu=el('preset-options');return {groups:[...menu.querySelectorAll('.me-scenario-group-label')].map(x=>x.textContent),choices:menu.querySelectorAll('[role=option]').length,selected:el('preset-value').textContent,visibleComboboxes:[...document.querySelectorAll('.me-toolbar [role=combobox]')].filter(x=>x.getClientRects().length>0).length,attributesHidden:el('me-inline-rating-control').hidden,diagnosticsClosed:!el('me-observation-details').open,legacyAbsent:!menu.querySelector('[data-value=drop]'),nestedMenus:el('me-observation-details').querySelectorAll('details,select,[role=combobox]').length,legacyTextHidden:el('me-inline-observation').hidden};})()");
-  assert.deepEqual(activePage,{groups:['Carry phases','Passing','Shooting','Goalkeeping','Dribbling & defending','Collective situations'],choices:28,selected:'Carry · Moderate',visibleComboboxes:3,attributesHidden:true,diagnosticsClosed:true,legacyAbsent:true,nestedMenus:0,legacyTextHidden:true});
+  assert.deepEqual(activePage,{groups:['Carry phases','Passing','Shooting','Goalkeeping','Dribbling & defending','Collective situations'],choices:29,selected:'Carry · Moderate',visibleComboboxes:3,attributesHidden:true,diagnosticsClosed:true,legacyAbsent:true,nestedMenus:0,legacyTextHidden:true});
   const toggled=await evalJs("(()=>{const el=id=>document.getElementById(id);el('me-inline-side-trigger').click();el('me-inline-side-options').querySelector('[data-value=away]').click();el('speed-trigger').click();el('speed-opt-2').click();return {side:el('me-inline-side').value,speed:el('speed').value,sideLabel:el('me-inline-side-value').textContent,speedLabel:el('speed-value').textContent,tick:el('tick').textContent};})()");
   assert.deepEqual(toggled,{side:'away',speed:'2',sideLabel:'AWAY',speedLabel:'2×',tick:'Tick 0 · 0.00 s'});
   const flat=await evalJs("(()=>{const el=id=>document.getElementById(id);el('me-observation-details').open=true;for(let i=0;i<60;i++)el('step').click();return {open:el('me-observation-details').open,labels:[...el('me-active-metrics').querySelectorAll('dt')].map(x=>x.textContent),values:[...el('me-active-metrics').querySelectorAll('dd')].map(x=>x.textContent),nested:el('me-observation-details').querySelectorAll('details').length};})()");
@@ -174,6 +174,55 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   assert.deepEqual(actionLog.restored,actionLog.all);
   assert.deepEqual(actionLog.reset,[]);assert.equal(actionLog.empty,true);
   assert.ok(Math.abs(actionLog.beforeReset-actionLog.afterReset)<=1);
+  // AERIAL-02B: exercise the actual active selector, original head action,
+  // step progression and reset/replay on both sides and all three geometries.
+  const headerExceptions=[];
+  const captureHeaderException=e=>{const m=JSON.parse(e.data);if(m.method==='Runtime.exceptionThrown')headerExceptions.push(m.params.exceptionDetails.exception?.description??m.params.exceptionDetails.text);};
+  socket.addEventListener('message',captureHeaderException);
+  const headers=await evalJs(`(()=>{
+   const el=id=>document.getElementById(id);
+   el('preset-trigger').click();
+   el('preset-options').querySelector('[data-value="action:header-pair"]').click();
+   const sample=()=>({tick:el('tick').textContent,summary:el('me-inline-summary').textContent,
+    position:el('position').textContent,height:el('height').textContent,
+    actions:[...el('me-performed-rows').rows].map(r=>({player:r.dataset.player,action:r.dataset.action,tick:+r.dataset.tick}))});
+   const chooseSide=side=>{el('me-inline-side-trigger').click();el('me-inline-side-options').querySelector('[data-value="'+side+'"]').click();};
+   const chooseVariant=index=>{const current=Number(el('me-inline-variant-display').textContent.split('/')[0])-1;
+    for(let i=0;i<(index-current+30)%30;i++)el('me-inline-variant-next').click();};
+   const advance=()=>{const ticks=[];for(let i=0;i<75;i++){el('step').click();ticks.push(Number(el('tick').textContent.split(' ')[1]));
+    if(el('me-inline-summary').textContent.startsWith('Header · '))break;}
+    return {ticks,...sample()};};
+   const result=[];
+   for(const side of ['home','away'])for(let variant=0;variant<3;variant++){
+    if(el('me-inline-side').value!==side)chooseSide(side);
+    chooseVariant(variant);el('reset').click();
+    const initial=sample(),first=advance();el('reset').click();const reset=sample(),replay=advance();
+    const pitch=el('pitch').getBoundingClientRect();
+    result.push({side,variant,variantLabel:el('me-inline-variant-display').textContent,label:el('preset-value').textContent,
+     players:[...el('me-performed-player-options').querySelectorAll('[role=option]')].map(o=>o.dataset.value),
+     initial,first,reset,replay,pitch:{left:pitch.left,right:pitch.right,width:innerWidth,scroll:document.documentElement.scrollWidth}});
+   }
+   el('me-inline-variant-prev').click();el('me-inline-variant-prev').click();
+   return result;
+  })()`);
+  assert.equal(headers.length,6);
+  for(const h of headers){
+   assert.equal(h.label,'Header · Aerial');
+   assert.equal(h.variantLabel,String(h.variant+1).padStart(2,'0')+' / 30');
+   assert.deepEqual(new Set(h.players),new Set(['',h.side+'-10',h.side+'-9']));
+   assert.equal(h.initial.tick,'Tick 0 · 0.00 s');assert.equal(h.initial.summary,'Waiting for header');
+   assert.deepEqual(h.initial.actions,[]);assert.deepEqual(h.reset,h.initial);
+   assert.ok(h.first.ticks.length>0&&h.first.ticks.length<=75);
+   assert.ok(h.first.ticks.every((t,i)=>t===i+1),'header must advance consecutive physical ticks');
+   const action=['shot','pass','clearance'][h.variant];
+   assert.equal(h.first.summary,'Header · '+action);
+   assert.deepEqual(h.first.actions,[{player:h.side+'-10',action,tick:h.first.ticks.at(-1)}]);
+   assert.deepEqual(h.replay,h.first,'same header must replay identically after Reset');
+   assert.ok(h.pitch.left>=-1&&h.pitch.right<=h.pitch.width+1&&h.pitch.scroll<=h.pitch.width+1);
+   process.stdout.write('ME_628_AERIAL02_BROWSER '+JSON.stringify(h)+'\\n');
+  }
+  await delay(100);socket.removeEventListener('message',captureHeaderException);
+  assert.deepEqual(headerExceptions,[],'Header LAB must not freeze Chrome');
   const keeperUI=await evalJs("(()=>{const el=id=>document.getElementById(id);el('preset-trigger').click();document.querySelector('#preset-options [data-value=\\\"action:keeper-1v1\\\"]').click();el('me-observation-details').open=true;return {label:el('preset-value').textContent,players:[...el('me-performed-player-options').querySelectorAll('[role=option]')].map(x=>x.dataset.value),metrics:[...el('me-active-metrics').querySelectorAll('dt')].map(x=>x.textContent),summary:el('me-inline-summary').textContent};})()");
   assert.equal(keeperUI.label,'1v1 · goalkeeper');
   assert.deepEqual(new Set(keeperUI.players),new Set(['','away-10','home-1']));
