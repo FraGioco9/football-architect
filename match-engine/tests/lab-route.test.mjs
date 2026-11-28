@@ -12,6 +12,8 @@ import {drawPitchMarkings,pitchProjection,PITCH_LENGTH_M,PITCH_WIDTH_M,
 import {NUMERIC_BOUNDS,formatNumericValue,stepNumericValue,speedToKmh,speedFromKmh}
  from '../src/numeric-controls.mjs';
 import {isAllowlistedPublicPath,planPublicFiles} from '../../tools/publication-guard.mjs';
+import {ACTION_LAB_SCENARIOS} from '../src/action-lab-scenarios.mjs';
+import {SMALL_SIDED_LAB_SCENARIOS,AERIAL_LAB_SCENARIOS} from '../src/small-sided-lab-scenarios.mjs';
 
 const getServer = async options => {
   const server = createPreviewServer(options);
@@ -543,4 +545,14 @@ test('ME-01 all relative browser module dependencies resolve through the DEV-onl
   assert.equal(isAllowlistedPublicPath('match-engine/src/defensive-intervention-selection.mjs'),false);
   assert.equal(isAllowlistedPublicPath('__fa_match_engine__/defensive-intervention-selection.mjs'),false);
  }finally{await new Promise(resolve=>server.close(resolve));}
+});
+
+test('Action LAB HTML choices exactly match the complete engine catalog in order',()=>{
+ const html=readFileSync(new URL('../lab/index.html',import.meta.url),'utf8');
+ const select=html.match(/<select\b[^>]*\bid="action-labs-choice"[^>]*>([\s\S]*?)<\/select>/);
+ assert.ok(select,'internal Action LAB selector missing');
+ const actual=[...select[1].matchAll(/<option\b[^>]*\bvalue="([^"]+)"/g)].map(m=>m[1]);
+ const expected=[...ACTION_LAB_SCENARIOS,...SMALL_SIDED_LAB_SCENARIOS,...AERIAL_LAB_SCENARIOS].map(s=>s.id);
+ assert.deepEqual(actual,expected);
+ assert.equal(new Set(actual).size,actual.length);
 });
