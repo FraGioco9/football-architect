@@ -110,3 +110,9 @@ test('Admin economic source discovery includes internal stacked PRs but retains 
  assert.doesNotMatch(step,/base\.ref == 'main'/);
  assert.match(step,/economicSource\(/);
 });
+
+
+test('stacked CI policy transition fails closed rather than repeating the rehearsal when proof is missing',()=>{
+ assert.match(workflow,/PR_HEAD_REF.*ci\/stacked-economic-evidence/);
+ assert.match(workflow,/BLOCKED: stacked policy transition lacks certified economic evidence/);
+});

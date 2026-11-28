@@ -66,6 +66,10 @@ jobs:
             echo 'BLOCKED: certified historical economic source unavailable; do not start the rehearsal.' >&2
             exit 1
           fi
+          if [ "$PR_HEAD_REF" = ci/stacked-economic-evidence ] && [ "${{ steps.economic.outputs.mode }}" != economic-only ]; then
+            echo 'BLOCKED: stacked policy transition lacks certified economic evidence.' >&2
+            exit 1
+          fi
           test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
           node tools/ci-discovery.mjs
           if [ "${{ steps.economic.outputs.mode }}" = match-engine ]; then

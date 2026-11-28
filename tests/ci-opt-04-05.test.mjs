@@ -393,3 +393,21 @@ test('merged Admin history requires original executed receipt and independent FU
  assert.equal(economicRepairShape(economicRepairAnchor,[...files,{filename:'backend/src/economy.ts',status:'modified'}]),false);
  assert.equal(economicRepairShape(economicRepairAnchor,files.map((f,i)=>i?f:{...f,status:'renamed'})),false);
 });
+
+
+test('stacked policy transition is bounded to six reviewed files and exact workflow guard',async()=>{
+ const {stackedRepairAnchor,stackedRepairShape,stackedRepairPatch}=await import('../tools/ci-full-evidence.cjs');
+ const files=['tools/ci-match-engine.cjs','tools/ci-full-evidence.cjs','tests/ci-opt-04-05.test.mjs','tests/ci-opt-02-workflow-contract.test.mjs','.github/workflows/ci-opt-03-full-gate.yml','.github/workflows/admin-world-checks.yml'].map(filename=>({filename,status:'modified'}));
+ assert.equal(stackedRepairShape(stackedRepairAnchor,files),true);
+ assert.equal(stackedRepairShape('a'.repeat(40),files),false);
+ assert.equal(stackedRepairShape(stackedRepairAnchor,[...files,{filename:'backend/src/economy.ts',status:'modified'}]),false);
+ assert.equal(stackedRepairShape(stackedRepairAnchor,files.map((f,i)=>i?f:{...f,status:'renamed'})),false);
+ const marker='$'+'{{';
+ files.at(-1).patch=[
+ '-        if: '+marker+" github.event.pull_request.base.ref == 'main' }}",
+ '+        if: '+marker+' github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.base.repo.full_name == github.repository }}',
+ '+          if [ "$PR_HEAD_REF" = ci/stacked-economic-evidence ] && [ "'+marker+' steps.economic.outputs.mode }}" != economic-only ]; then',
+ "+            echo 'BLOCKED: stacked policy transition lacks certified economic evidence.' >&2",'+            exit 1','+          fi'].join('\n');
+ assert.equal(stackedRepairPatch(files),true);
+ files.at(-1).patch+='\n+        run: echo unsafe';assert.equal(stackedRepairPatch(files),false);
+});

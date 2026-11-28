@@ -60,6 +60,15 @@ function economicRepairShape(baseSha,files){
   new Set(files.map(f=>f.filename)).size===economicRepairPaths.size&&
   files.every(f=>economicRepairPaths.has(f.filename)&&f.status==='modified'&&!f.previous_filename);
 }
+// A second narrowly bounded transition, only from this reviewed main tree.
+const stackedRepairAnchor='5633690abc6abc278ba62b89100fa7754b2f8da4';
+const stackedRepairBranch='ci/stacked-economic-evidence';
+const stackedRepairPaths=new Set([...economicRepairPaths,'tests/ci-opt-02-workflow-contract.test.mjs']);
+function stackedRepairShape(baseSha,files){
+ return baseSha===stackedRepairAnchor&&files.length===stackedRepairPaths.size&&
+  new Set(files.map(f=>f.filename)).size===stackedRepairPaths.size&&
+  files.every(f=>stackedRepairPaths.has(f.filename)&&f.status==='modified'&&!f.previous_filename);
+}
 function historicIdentity(run,source,tree,workflow,owner,repo){
  const end=Date.parse(source.merged_at),start=Date.parse(run.created_at),updated=Date.parse(run.updated_at);
  return run.event==='pull_request'&&run.head_sha===source.head.sha&&run.head_commit?.tree_id===tree&&
@@ -126,6 +135,9 @@ async function certifiedHistoricalAdmin({github,owner,repo,source,tree,baseSha,r
 // One bounded policy transition, independently checking the executed source.
 async function certifyEconomicRepair({github,owner,repo,baseSha,headRef,files}){
  if(headRef!==economicRepairBranch||!economicRepairShape(baseSha,files))return false;
+ return validateEconomicRepairPatch(files)&&await originalEconomicReceipt({github,owner,repo});
+}
+async function originalEconomicReceipt({github,owner,repo}){
  const {data:source}=await github.rest.pulls.get({owner,repo,pull_number:814});
  if(!source.merged||source.merge_commit_sha!==economicRepairAnchor||
     source.head.sha!=='52b9cf8b9b7f1467c9a22bc5c1277106273c16df')return false;
@@ -133,18 +145,44 @@ async function certifyEconomicRepair({github,owner,repo,baseSha,headRef,files}){
  const {data:commit}=await github.rest.git.getCommit({owner,repo,commit_sha:source.head.sha});
  if(merge.tree.sha!==commit.tree.sha||merge.parents[0]?.sha!==source.base.sha||
     merge.tree.sha!=='fceabfb6437d8daf662fca7aa577c239db1b784c')return false;
- // The actual Admin workflow can only gain the fail-closed preflight lines.
- const patch=files.find(f=>f.filename==='.github/workflows/admin-world-checks.yml')?.patch;
- if(typeof patch!=='string')return false;
- const additions=patch.split('\n').filter(l=>l.startsWith('+')&&!l.startsWith('+++')).map(l=>l.slice(1));
- const deletions=patch.split('\n').filter(l=>l.startsWith('-')&&!l.startsWith('---'));
- if(deletions.length||JSON.stringify(additions)!==JSON.stringify(economicRepairGuardLines))return false;
  const {data:run}=await github.rest.actions.getWorkflowRun({owner,repo,run_id:45777171064});
  if(run.id!==45777171064||run.run_attempt!==1)return false;
  const jobs=await github.paginate(github.rest.actions.listJobsForWorkflowRun,{owner,repo,run_id:run.id,filter:'latest',per_page:100});
  return certifiedHistoricalAdmin({github,owner,repo,source,tree:commit.tree.sha,baseSha:source.base.sha,run,jobs});
 }
 
+function validateEconomicRepairPatch(files){
+ // The actual Admin workflow can only gain the fail-closed preflight lines.
+ const patch=files.find(f=>f.filename==='.github/workflows/admin-world-checks.yml')?.patch;
+ if(typeof patch!=='string')return false;
+ const additions=patch.split('\n').filter(l=>l.startsWith('+')&&!l.startsWith('+++')).map(l=>l.slice(1));
+ const deletions=patch.split('\n').filter(l=>l.startsWith('-')&&!l.startsWith('---'));
+ return !deletions.length&&JSON.stringify(additions)===JSON.stringify(economicRepairGuardLines);
+}
+function stackedRepairPatch(files){
+ const patch=files.find(f=>f.filename==='.github/workflows/admin-world-checks.yml')?.patch;
+ if(typeof patch!=='string')return false;
+ const added=patch.split('\n').filter(l=>l.startsWith('+')&&!l.startsWith('+++')).map(l=>l.slice(1));
+ const removed=patch.split('\n').filter(l=>l.startsWith('-')&&!l.startsWith('---')).map(l=>l.slice(1));
+ const old="        if: $"+ "{{ github.event.pull_request.base.ref == 'main' }}";
+ const next="        if: $"+ "{{ github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.base.repo.full_name == github.repository }}";
+ const guard=["          if [ \"$PR_HEAD_REF\" = ci/stacked-economic-evidence ] && [ \"$"+"{{ steps.economic.outputs.mode }}\" != economic-only ]; then",
+  "            echo 'BLOCKED: stacked policy transition lacks certified economic evidence.' >&2","            exit 1","          fi"];
+ return JSON.stringify(removed)===JSON.stringify([old])&&JSON.stringify(added)===JSON.stringify([next,...guard]);
+}
+async function certifyStackedRepair({github,owner,repo,baseSha,headRef,files}){
+ if(headRef!==stackedRepairBranch||!stackedRepairShape(baseSha,files)||!stackedRepairPatch(files))return false;
+ const {data:anchor}=await github.rest.git.getCommit({owner,repo,commit_sha:stackedRepairAnchor});
+ if(anchor.tree.sha!=='153a72e8f7ff1638d7a60ea96511c2dce2146a10')return false;
+ // Independently verify the immutable main interval contains only the
+ // already-reviewed historical repair and engine/preview files.
+ const {data:comparison}=await github.rest.repos.compareCommitsWithBasehead({owner,repo,basehead:economicRepairAnchor+'...'+stackedRepairAnchor});
+ if(comparison.merge_base_commit?.sha!==economicRepairAnchor||comparison.behind_by!==0||
+    !Array.isArray(comparison.files)||!comparison.files.length||comparison.files.length>=300||
+    !comparison.files.every(f=>['added','modified'].includes(f.status)&&!f.previous_filename&&
+     (economicRepairPaths.has(f.filename)||f.filename.startsWith('match-engine/')||f.filename==='tools/dev-standings-preview.mjs')))return false;
+ return originalEconomicReceipt({github,owner,repo});
+}
 const economicRepairGuardLines=["          PR_HEAD_REF: $"+"{{ github.event.pull_request.head.ref }}","          if [ \"$PR_HEAD_REF\" = ci/785-historical-economic-source ] && [ \"$"+"{{ steps.economic.outputs.mode }}\" != economic-only ]; then","            echo 'BLOCKED: certified historical economic source unavailable; do not start the rehearsal.' >&2","            exit 1","          fi"];
 const inheritedMarker='Verified unchanged economic scope against executed FULL source';
 const engineSteps=['Verify exact PR HEAD','Install pinned physics candidate','Focused core and route security tests',
@@ -225,7 +263,7 @@ async function observe({github,owner,repo,sha,prNumber,baseSha,headRef,files=[]}
   const policy=p=>p.startsWith('.github/')||p.startsWith('tools/ci-')||p==='backend/tests/prepare-persistence.test.mts';
   if(!files.length||files.some(f=>policy(f.filename)||(f.previous_filename&&policy(f.previous_filename)))){
    const transition=rows.some(r=>r.workflow==='admin-world-checks.yml'&&r.state==='ECONOMY_INHERITED')&&
-    !rows.some(r=>['SELECTED','INHERITED'].includes(r.state))&&await certifyEconomicRepair({github,owner,repo,baseSha,headRef,files});
+    !rows.some(r=>['SELECTED','INHERITED'].includes(r.state))&&(await certifyEconomicRepair({github,owner,repo,baseSha,headRef,files})||await certifyStackedRepair({github,owner,repo,baseSha,headRef,files}));
    if(!transition)throw Error('BLOCKED: verification policy changed');
   }
  }
@@ -286,4 +324,4 @@ async function mergedPublicSource({github,owner,repo,workflow,sha,before}){
  }
  return null;
 }
-module.exports={certifiedHistoricalAdmin,certifyEconomicRepair,economicRepairAnchor,economicRepairBranch,economicRepairShape,mergedPublicSource,selectedPublicEvidence,inheritedAdmin,engineEvidence,requirements,evaluateRun,observe,verify,findReusable};
+module.exports={certifiedHistoricalAdmin,certifyEconomicRepair,certifyStackedRepair,stackedRepairShape,stackedRepairPatch,stackedRepairAnchor,stackedRepairBranch,economicRepairAnchor,economicRepairBranch,economicRepairShape,mergedPublicSource,selectedPublicEvidence,inheritedAdmin,engineEvidence,requirements,evaluateRun,observe,verify,findReusable};
