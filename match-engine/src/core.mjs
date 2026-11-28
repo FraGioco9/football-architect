@@ -1,4 +1,5 @@
 import {attackDirection,nativeHalfFormationReady} from './match-directions.mjs';
+import {createNativeRestartMask,nativeRestartAllowed,planNativeGroundRestartImpulse,nativeGroundRestartContactReady} from './native-restart-policy.mjs';
 // ME-01: isolated, deterministic 3D physics core. No browser, HTTP, D1 or football-world dependencies.
 import {speedDependentDragCd} from './aerodynamics.mjs';
 import {magnusLift,MAGNUS_SPIN_LIMIT_RAD_S} from './magnus.mjs';
@@ -832,6 +833,7 @@ export function createEngine(RAPIER, input = {}, {
   // Only the private full-field native session exposes its own original
   // referee ticket; an externally assembled boundary object is not authority.
   const nativeMatchReferee=smallSided?.fullField&&diagnosticCollectiveActions?createBasicMatchRefereeB05():null;
+  const restartMask=createNativeRestartMask({fullField:!!nativeMatchReferee,boundaryEnabled:diagnosticBasicRestartEnabled,boundaryType:diagnosticBasicRestartSource,kickoffEnabled:diagnosticB06bHalftimeTick!==null});
   let nativeRestartPending=null,nativeRestartTake=null,nativeMatchFrame=null,nativeThrowHands=null;
   let nativePlayedTicks=0,nativeHalfPlacement=null,nativeHalfTake=null,nativeAttackPolarity=1;
   let b06bOpeningKickoff=null,b06bHalftimePlacement=null,b06bKickoff=null;
@@ -1063,8 +1065,9 @@ export function createEngine(RAPIER, input = {}, {
     if(restarting){
      const placement=nativeRestartPending,at=placement.spot,id=placement.takerId;
      const foot=shoeBridge.snapshot(),solver=shoeBridge.solver(),p=body.translation();
-     const exclusive=foot.tick===tick&&solver?.tick===tick&&hasExclusiveNativeShoeStart(foot,id)&&solver.pairs.some(pair=>pair.id===id&&pair.beganThisTick&&pair.collisionActive&&pair.manifolds.some(m=>m.geometricContacts>0));
      const otherBody=smallBodyGuard.snapshot().lowerLegBallContacts.some(actor=>actor!==id);
+     const exclusive=nativeGroundRestartContactReady({mask:restartMask,kind:placement.kind,tick,takerId:id,foot,solver,exclusive:hasExclusiveNativeShoeStart(foot,id),otherBody});
+     if(!nativeRestartAllowed(restartMask,placement.kind))throw new TypeError('Native restart not permitted');
      if(placement.kind==='throw-in'){
       const take=nativeThrowHands.observe(tick,foot,smallBodyGuard.snapshot().lowerLegBallContacts);
       if(take){
@@ -1077,9 +1080,8 @@ export function createEngine(RAPIER, input = {}, {
       }
      }else if(exclusive&&!otherBody&&Math.hypot(p.x-at.x,p.y-at.y)<=0.65&&Math.abs(p.z-BALL_RADIUS)<=0.35&&
        (placement.periodRestart!=='second-half'||playerFrame.nativeHalfFormationPhase==='ready'&&nativeHalfFormationReady(playerFrame.players))){
-      const dir=attackDirection(placement.assignedTeam,nativeAttackPolarity);
-      const impulse=Object.freeze(placement.kind==='kickoff'?{x:dir*0.65,y:0,z:0.04}:
-       placement.kind==='corner'?{x:-dir*1.85,y:-Math.sign(at.y)*1.15,z:0.42}:{x:dir*2.5,y:0,z:0.30});
+      const impulse=planNativeGroundRestartImpulse({mask:restartMask,kind:placement.kind,team:placement.assignedTeam,spot:at,attackPolarity:nativeAttackPolarity});
+      if(!impulse)throw new TypeError('Native restart impulse not permitted');
       body.applyImpulse(impulse,true);
       nativeRestartTake=Object.freeze({tick,type:placement.kind,team:placement.assignedTeam,actorId:id,
        sourceEventTick:placement.sourceEventTick,impulseNs:impulse,singleOriginalRapierBall:true,
@@ -1169,7 +1171,7 @@ export function createEngine(RAPIER, input = {}, {
        !['home','away'].includes(event.restart.team)||
        !['goal','goal-line','touchline'].includes(event.kind)||
        event.crossing.edge!==event.kind||
-       !['kickoff','throw-in','corner','goal-kick'].includes(event.restart.type))
+       !nativeRestartAllowed(restartMask,event.restart.type))
       throw new TypeError('B05 needs an original exact-tick verified full-ball exit and ready restart');
     const p=body.translation(),at=event.restart.spot;
     if(!at||![at.x,at.y,at.z].every(Number.isFinite)||
@@ -1234,7 +1236,7 @@ export function createEngine(RAPIER, input = {}, {
   // Reuse the identical native kickoff approach/take path; switch the
   // orientation once at the cleared dead-ball period boundary.
   function placeNativeSecondHalf(){
-   if(disposed||diagnosticNativeHalfTicks===null||nativePlayedTicks!==diagnosticNativeHalfTicks||
+   if(disposed||!nativeRestartAllowed(restartMask,'kickoff')||diagnosticNativeHalfTicks===null||nativePlayedTicks!==diagnosticNativeHalfTicks||
       nativeRestartPending||nativeHalfPlacement||!nativeMatchFrame||
       nativeMatchReferee.snapshot().lastEvent&&!nativeMatchReferee.snapshot().restartApplied)
     throw new TypeError('Native second-half placement requires exact completed first half and no outstanding restart');
@@ -1258,7 +1260,7 @@ export function createEngine(RAPIER, input = {}, {
   function attemptB05bOriginalSetPiece(frame,ticket){
     if(disposed||!b05bSource||!b05bOutboundAction||
        b05bRestartTicket===null||ticket!==b05bRestartTicket||
-       ticket.type!==b05bSource.kind||
+       ticket.type!==b05bSource.kind||!nativeRestartAllowed(restartMask,ticket.type)||
        frame?.tick!==tick||tick<=basicRestartTick||
        !Array.isArray(frame.players)||frame.players.length!==22)
       throw new TypeError('B05b set piece requires original prepared restart ticket');
@@ -1278,12 +1280,8 @@ export function createEngine(RAPIER, input = {}, {
     if(contact.tick!==tick||solver?.tick!==tick)
       throw new TypeError('B05b set-piece requires original latest Rapier shoe step');
     const throwIn=ticket.type==='throw-in';
-    const native=contact.started.length===1&&contact.active.length===1&&
-      contact.started[0]===b05bSource.takerId&&
-      contact.active[0]===b05bSource.takerId&&
-      solver.pairs.some(pair=>pair.id===b05bSource.takerId&&
-       pair.beganThisTick&&pair.collisionActive&&
-       pair.manifolds.some(m=>m.geometricContacts>0));
+    const native=throwIn?hasExclusiveNativeShoeStart(contact,b05bSource.takerId)&&solver.pairs.some(pair=>pair.id===b05bSource.takerId&&pair.beganThisTick&&pair.collisionActive&&pair.manifolds.some(m=>m.geometricContacts>0)):
+     nativeGroundRestartContactReady({mask:restartMask,kind:ticket.type,tick,takerId:b05bSource.takerId,foot:contact,solver,exclusive:hasExclusiveNativeShoeStart(contact,b05bSource.takerId)});
     if(!throwIn&&!native)return null;
     if(throwIn&&(
       contact.started.length!==0||
@@ -1292,9 +1290,8 @@ export function createEngine(RAPIER, input = {}, {
     const d=diagnosticBasicRestartAttackSide==='home'?1:-1;
     const impulse=throwIn?
      {x:d*0.2,y:-d*1.8,z:0.55}:
-     ticket.type==='corner'?
-     {x:-d*1.85,y:-d*1.15,z:0.42}:
-     {x:-d*2.5,y:0,z:0.3};
+     planNativeGroundRestartImpulse({mask:restartMask,kind:ticket.type,team:ticket.team,spot:at});
+    if(!impulse)return null;
     if(throwIn){
      // Original ball is positioned at the approximate release height
      // only once. The human arm/hand itself is NOT simulated.
@@ -1335,7 +1332,8 @@ export function createEngine(RAPIER, input = {}, {
     const pos=body.translation();
     if(Math.hypot(pos.x,pos.y)>0.65||Math.abs(pos.z-BALL_RADIUS)>0.3)
       throw new TypeError('B06b original opening ball must be at centre');
-    const impulse=Object.freeze({x:0.65,y:0,z:0.04});
+    const impulse=planNativeGroundRestartImpulse({mask:restartMask,kind:'kickoff',team:'home',spot:{x:0,y:0,z:BALL_RADIUS}});
+    if(!impulse)return null;
     body.applyImpulse(impulse,true);
     b06bOpeningKickoff=Object.freeze({
       tick,team:'home',actorId:'home-10',
@@ -1412,7 +1410,8 @@ export function createEngine(RAPIER, input = {}, {
     const pos=body.translation();
     if(Math.hypot(pos.x,pos.y)>0.65||Math.abs(pos.z-BALL_RADIUS)>0.3)
       throw new TypeError('B06b goal kick must act on original midfield ball');
-    const impulse=Object.freeze({x:team==='home'?0.65:-0.65,y:0,z:0.04});
+    const impulse=planNativeGroundRestartImpulse({mask:restartMask,kind:'kickoff',team,spot:{x:0,y:0,z:BALL_RADIUS}});
+    if(!impulse)return null;
     body.applyImpulse(impulse,true);
     b06bGoalPausedTicks+=tick-b06bGoalPending.placement.tick;
     const take=Object.freeze({
@@ -1481,7 +1480,8 @@ export function createEngine(RAPIER, input = {}, {
     const pos=body.translation();
     if(Math.hypot(pos.x,pos.y)>0.65||Math.abs(pos.z-BALL_RADIUS)>0.3)
      throw new TypeError('B06b second-half kick requires the original centre-circle ball');
-    const impulse=Object.freeze({x:-0.65,y:0,z:0.04});
+    const impulse=planNativeGroundRestartImpulse({mask:restartMask,kind:'kickoff',team:'away',spot:{x:0,y:0,z:BALL_RADIUS}});
+    if(!impulse)return null;
     body.applyImpulse(impulse,true);
     b06bKickoff=Object.freeze({
      tick,firstHalfEndPhysicalTick:b06bHalftimePlacement.physicsTick,
@@ -1561,6 +1561,7 @@ export function createEngine(RAPIER, input = {}, {
       originalSmallSidedPhysicalShoeColliderCount:()=>shoeBridge.physicalShoeColliderCount,
       nativeContactMaterialSnapshot:()=>Object.freeze({historicalCarryPhysics,...contactMaterial,shoe:shoeBridge.contactMaterialProfile}),
       nativeFundamentalsSnapshot:()=>nativeFundamentals,
+      nativeRestartMaskSnapshot:()=>restartMask,
       ...(smallBodyGuard?{
         smallSidedBodyGuardSnapshot:()=>smallBodyGuard.snapshot(),
         ...(diagnosticSmallSidedBodyFeedbackEnabled?{

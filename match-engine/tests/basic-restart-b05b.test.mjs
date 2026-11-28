@@ -11,6 +11,7 @@ import {basicSourcePositiveRestartSetup,B05B_SOURCE_VERSION}
  from '../src/basic-restart-source-lineup-b05b.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {initializeRapier,createEngine} from '../src/core.mjs';
+import {NATIVE_RESTART_TYPES,createNativeRestartMask,nativeRestartAllowed,planNativeGroundRestartImpulse,nativeGroundRestartContactReady} from '../src/native-restart-policy.mjs';
 
 test('B05b authentic last-shoe and restart taker are the original ordered 22, pre-tick zero only',()=>{
  assert.deepEqual(ACTION_LAB_SCENARIOS.filter(s=>
@@ -160,4 +161,33 @@ test('B05b HOME/AWAY true initial native shoe START sets real last-touch owner b
       officialPossession:false})+'\\n');
    }finally{a.dispose();b.dispose();}
   }
+});
+
+test('ME-01-QA U-01F6: common restart permissions, direction and exclusive physical witness',()=>{
+ const all=createNativeRestartMask({fullField:true});
+ assert.deepEqual(all,NATIVE_RESTART_TYPES);
+ assert.deepEqual(createNativeRestartMask(),[]);
+ assert.deepEqual(createNativeRestartMask({kickoffEnabled:true}),['kickoff']);
+ for(const kind of ['corner','goal-kick','throw-in']){
+  const only=createNativeRestartMask({boundaryEnabled:true,boundaryType:kind});
+  assert.deepEqual(only,[kind]);
+  for(const k of NATIVE_RESTART_TYPES)assert.equal(nativeRestartAllowed(only,k),k===kind);
+ }
+ for(const team of ['home','away'])for(const attackPolarity of [1,-1]){
+  const dir=(team==='home'?1:-1)*attackPolarity;
+  for(const y of [-33.89,33.89]){
+   assert.deepEqual(planNativeGroundRestartImpulse({mask:all,kind:'corner',team,spot:{x:dir*52,y,z:.11},attackPolarity}),{x:-dir*1.85,y:-Math.sign(y)*1.15,z:.42});
+  }
+  assert.deepEqual(planNativeGroundRestartImpulse({mask:all,kind:'goal-kick',team,spot:{x:-dir*47,y:5.5,z:.11},attackPolarity}),{x:dir*2.5,y:0,z:.30});
+  const args={mask:all,kind:'kickoff',team,spot:{x:0,y:0,z:.11},attackPolarity};
+  assert.deepEqual(planNativeGroundRestartImpulse(args),{x:dir*.65,y:0,z:.04});
+  assert.equal(planNativeGroundRestartImpulse({...args,kind:'throw-in'}),null);
+  assert.equal(planNativeGroundRestartImpulse({...args,mask:[]}),null);
+  assert.equal(planNativeGroundRestartImpulse({...args,spot:{x:1,y:0,z:.11}}),null);
+  const takerId=team+'-10',tick=2,foot={tick,started:[takerId],active:[takerId]},solver={tick,pairs:[{id:takerId,beganThisTick:true,collisionActive:true,manifolds:[{geometricContacts:1}]}]};
+  const witness={mask:all,kind:'kickoff',tick,takerId,foot,solver,exclusive:true};
+  assert.equal(nativeGroundRestartContactReady(witness),true);
+  for(const patch of [{mask:[]},{exclusive:false},{otherBody:true},{kind:'throw-in'},{tick:3},{foot:{...foot,active:[takerId,'other']}},{solver:{tick,pairs:[]}}])
+   assert.equal(nativeGroundRestartContactReady({...witness,...patch}),false);
+ }
 });
