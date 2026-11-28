@@ -1053,7 +1053,7 @@ export function createEngine(RAPIER, input = {}, {
        body.resetForces(true);body.resetTorques(true);
       }
      }else if(exclusive&&!otherBody&&Math.hypot(p.x-at.x,p.y-at.y)<=0.65&&Math.abs(p.z-BALL_RADIUS)<=0.35&&
-       (placement.periodRestart!=='second-half'||nativeHalfFormationReady(playerFrame.players))){
+       (placement.periodRestart!=='second-half'||playerFrame.nativeHalfFormationPhase==='ready'&&nativeHalfFormationReady(playerFrame.players))){
       const dir=attackDirection(placement.assignedTeam,nativeAttackPolarity);
       const impulse=Object.freeze(placement.kind==='kickoff'?{x:dir*0.65,y:0,z:0.04}:
        placement.kind==='corner'?{x:-dir*1.85,y:-Math.sign(at.y)*1.15,z:0.42}:{x:dir*2.5,y:0,z:0.30});

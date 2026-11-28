@@ -1959,6 +1959,7 @@ export function createPlayerMovement(options={}){
  let currentSoloCarryPhase=null;
  let duelSlide=null,duelShoulder=null,duelInterception=null,blockApproach=null,defensiveDecision=null;
  let nativeSlides=Object.freeze({}),nativeShoulders=Object.freeze({}),nativeAttackPolarity=1,nativePeriodSwitched=false;
+ let nativeHalfRoutes=null,nativeHalfFormationPhase=null;
  const players=initial.map(p=>({...p}));
  let b06bGoalKickoffTarget=null;
  function queueB06bOriginalGoalKickoff(event){
@@ -2077,7 +2078,7 @@ export function createPlayerMovement(options={}){
    // choice. The target remains original; velocity is the final observed value.
    ...(smallSided?.id==='carry-solo'?{soloCarryPhase:currentSoloCarryPhase}:{}),
    ...(duelSlide?{duelSlide}:{}),
-   ...(options.researchCollectiveApproaches===true?{nativeSlides,nativeShoulders,...(smallSided?.fullField?{attackPolarity:nativeAttackPolarity}:{})}:{}),
+   ...(options.researchCollectiveApproaches===true?{nativeSlides,nativeShoulders,...(smallSided?.fullField?{attackPolarity:nativeAttackPolarity,nativeHalfFormationPhase}:{})}:{}),
    ...(duelShoulder?{duelShoulder}:{}),
    ...(duelInterception?{duelInterception}:{}),
    ...(blockApproach?{blockApproach}:{}),
@@ -2266,7 +2267,17 @@ export function createPlayerMovement(options={}){
   if(restartPlacement?.periodRestart==='second-half'&&attackPolarity===-1){
    if(restartPlacement.attackPolarity!==-1||restartPlacement.assignedTeam!=='away'||restartPlacement.takerId!=='away-10')
     throw new TypeError('Native period transition requires original away kickoff placement');
-   if(!nativePeriodSwitched){nativeSlides=Object.freeze({});nativeShoulders=Object.freeze({});nativePeriodSwitched=true;}
+   if(!nativePeriodSwitched){
+    nativeSlides=Object.freeze({});nativeShoulders=Object.freeze({});nativePeriodSwitched=true;
+    // Assign one distinct longitudinal lane to every original player.
+    // Preserve initial lateral order to avoid crossing during lane entry.
+    const ordered=[...players].sort((p,q)=>p.y-q.y||p.x-q.x||p.id.localeCompare(q.id));
+    nativeHalfRoutes=Object.freeze(Object.fromEntries(ordered.map((p,i)=>[p.id,Object.freeze({
+     startX:p.x,laneY:(i-(ordered.length-1)/2)*2.7,
+     endX:-INITIAL_PLAYERS.find(q=>q.id===p.id).x
+    })])));
+    nativeHalfFormationPhase='enter-lanes';
+   }
   }
   if(collectiveControl!==null&&(options.researchCollectiveApproaches!==true||collectiveControl.tick!==tick||!['controlled','loose'].includes(collectiveControl.kind)||collectiveControl.officialPossession!==false))throw new TypeError('Previous native collective control required');
   if(blockState!==null&&(!smallSided?.blockStart||!realBallVelocity||!['ready','flight','blocked'].includes(blockState.phase)))throw new TypeError('Original shot-block state required');
@@ -2672,18 +2683,30 @@ export function createPlayerMovement(options={}){
   nativeSlides=Object.freeze(nextNativeSlides);nativeShoulders=Object.freeze(nextNativeShoulders);
   nativeAttackPolarity=attackPolarity;
   const halfPreparation=restartPlacement?.periodRestart==='second-half';
-  const halfReady=halfPreparation&&nativeHalfFormationReady(players);
+  if(halfPreparation){
+   const aligned=(p,x,y)=>Math.hypot(p.x-x,p.y-y)<=0.35&&Math.hypot(p.vx,p.vy)<=0.35;
+   if(nativeHalfFormationPhase==='enter-lanes'&&players.every(p=>{
+    const route=nativeHalfRoutes[p.id];return aligned(p,route.startX,route.laneY);
+   }))nativeHalfFormationPhase='cross-field';
+   if(nativeHalfFormationPhase==='cross-field'&&players.every(p=>{
+    const route=nativeHalfRoutes[p.id];return aligned(p,route.endX,route.laneY);
+   }))nativeHalfFormationPhase='restore-shape';
+   if(nativeHalfFormationPhase==='restore-shape'&&nativeHalfFormationReady(players))
+    nativeHalfFormationPhase='ready';
+  }
+  const halfReady=halfPreparation&&nativeHalfFormationPhase==='ready'&&nativeHalfFormationReady(players);
   const targets=players.map(p=>{
    if(restartPlacement){
     const at=restartPlacement.spot,dir=attackDirection(restartPlacement.assignedTeam,attackPolarity);
     if(p.id===restartPlacement.takerId&&restartPlacement.kind==='throw-in')return Object.freeze({x:clamp(at.x,-PLAYER_KINEMATIC_LIMITS.maxX,PLAYER_KINEMATIC_LIMITS.maxX),y:at.y-Math.sign(at.y)*0.85});
     if(p.id===restartPlacement.takerId&&(!halfPreparation||halfReady))return Object.freeze({x:clamp(at.x+dir*0.10,-PLAYER_KINEMATIC_LIMITS.maxX,PLAYER_KINEMATIC_LIMITS.maxX),y:clamp(at.y,-PLAYER_KINEMATIC_LIMITS.maxY,PLAYER_KINEMATIC_LIMITS.maxY)});
-    // Separate opposing crossing lanes while changing halves; converge
-    // towards the canonical mirrored formation after crossing midfield.
-    const base=INITIAL_PLAYERS.find(q=>q.id===p.id);
-    if(halfPreparation&&p.x*attackDirection(p.team,-1)>-2){
-     return Object.freeze({x:attackPolarity*base.x,y:clamp(base.y+(p.team==='home'?2:-2),-PLAYER_KINEMATIC_LIMITS.maxY,PLAYER_KINEMATIC_LIMITS.maxY)});
+    // First align laterally at the original X, then traverse in separate
+    // lanes, then restore the mirrored shape. No crossing traffic head-on.
+    if(halfPreparation&&['enter-lanes','cross-field'].includes(nativeHalfFormationPhase)){
+     const route=nativeHalfRoutes[p.id];
+     return Object.freeze({x:nativeHalfFormationPhase==='enter-lanes'?route.startX:route.endX,y:route.laneY});
     }
+    const base=INITIAL_PLAYERS.find(q=>q.id===p.id);
     return Object.freeze({x:attackPolarity*base.x,y:base.y});
    }
    if(smallSided){

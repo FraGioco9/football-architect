@@ -91,7 +91,7 @@ export function createNativeFullFieldSession(RAPIER,{side='home',variantIndex=0,
     physicalRestart:placement,restartTake:restartTake??latest?.restartTake??null,throwHands:engine.nativeThrowHandsSnapshot(),
     matchAuthority:false,officialMatchResult:null,officialPossession:false,
     completeFootballGameplayVerified:false,realFull90MinutesVerified:false,
-    boundedTwoPeriodsVerified:phase==='full-time',attackPolarity:engine.nativeAttackPolaritySnapshot(),
+    boundedTwoPeriodsVerified:phase==='full-time',attackPolarity:engine.nativeAttackPolaritySnapshot(),nativeHalfFormationPhase:frame.nativeHalfFormationPhase??null,
     directionSwitchVerified:secondHalfStarted&&engine.nativeAttackPolaritySnapshot()===-1
    });
    return latest;

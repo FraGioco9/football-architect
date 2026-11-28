@@ -502,15 +502,26 @@ test('UME-06D3 bounded native two halves with authentic second-half kickoff and 
    assert.deepEqual(placed.players,stopped.players);
    assert.throws(()=>session.placeSecondHalf(),/exact half-time/);
    let taken=null;
+   const phases=new Set();
+   let priorPlayers=placed.players;
    for(let n=1;n<=3600;n++){
     const f=session.advanceRestart();
     assert.equal(f.playedTicks,120);assert.equal(f.tick,120+n);
+    phases.add(f.nativeHalfFormationPhase);
+    for(let i=0;i<f.players.length;i++){
+     const p=f.players[i],q=priorPlayers[i];
+     assert.equal(p.id,q.id);assert.equal(p.team,q.team);
+     assert.ok(Math.hypot(p.x-q.x,p.y-q.y)<=7/60+1e-6,'bounded physical period movement');
+     for(let k=0;k<i;k++)assert.ok(Math.hypot(p.x-f.players[k].x,p.y-f.players[k].y)>=0.98-1e-6,'native minimum player separation');
+    }
+    priorPlayers=f.players;
     if(f.restartTake?.tick===f.tick){taken=f;break;}
     assert.equal(f.phase,'dead-ball-placed-awaiting-native-take');
     assert.equal(Math.hypot(...Object.values(f.ball.velocity)),0);
    }
-   if(!taken)process.stdout.write('ME_628_UME06_HALF_STALLED '+JSON.stringify({side,players:session.snapshot().players,ball:session.snapshot().ball,decisions:session.snapshot().decisions})+'\n');
+   if(!taken)process.stdout.write('ME_628_UME06_HALF_STALLED '+JSON.stringify({side,phases:[...phases],formationPhase:session.snapshot().nativeHalfFormationPhase,players:session.snapshot().players,ball:session.snapshot().ball,decisions:session.snapshot().decisions})+'\n');
    assert.ok(taken,'actual second-half kickoff required');
+   assert.ok(phases.has('enter-lanes')&&phases.has('cross-field')&&phases.has('ready'));
    assert.equal(taken.phase,'second-half');assert.equal(taken.restartTake.actorId,'away-10');
    assert.equal(taken.directionSwitchVerified,true);assert.equal(taken.restartTake.formationReady,true);
    assert.ok(taken.restartTake.impulseNs.x>0);
