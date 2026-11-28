@@ -143,8 +143,24 @@ export function chooseNativeLoftedRecipient(actor,ball,players,attackPolarity=1)
  if(!actor||actor.role==='goalkeeper'||!Array.isArray(players)||![actor.x,actor.y,ball?.x,ball?.y].every(finite))return null;
  const dir=attackDirection(actor.team,attackPolarity);
  return players.filter(p=>p.team===actor.team&&p.id!==actor.id&&p.role!=='goalkeeper')
-  .map(p=>({player:p,distanceM:Math.hypot(p.x-ball.x,p.y-ball.y),forwardM:dir*(p.x-ball.x),gapM:nearOpponent(p,actor.team,players)}))
-  .filter(p=>p.distanceM>=26&&p.distanceM<=48&&p.forwardM>=8&&p.gapM>=2.2)
+  .map(p=>{
+   const distanceM=Math.hypot(p.x-ball.x,p.y-ball.y),forwardM=dir*(p.x-ball.x),gapM=nearOpponent(p,actor.team,players);
+   const laneClearanceM=lineClearance(ball,p,actor.team,players);
+   const switchLane=ball.y*p.y<0&&Math.abs(ball.y)>=12&&Math.abs(p.y)>=12&&Math.abs(ball.y-p.y)>=26&&forwardM>=-8;
+   const profile=distanceM>=26&&distanceM<=48&&switchLane?'switch':
+    distanceM>=26&&distanceM<=48&&forwardM>=8?'long':
+    distanceM>=8&&distanceM<=25&&forwardM>=3&&laneClearanceM<PASS_LANE_MIN_CLEARANCE_M?'short':null;
+   // A short loft must actually clear a middle-lane obstruction, not an
+   // opponent standing on the ball or at the receiving point.
+   const middleBlock=profile==='short'&&players.some(q=>{
+    if(q.team===actor.team)return false;
+    const dx=p.x-ball.x,dy=p.y-ball.y;
+    const u=((q.x-ball.x)*dx+(q.y-ball.y)*dy)/(distanceM*distanceM);
+    return u>=0.28&&u<=0.72&&Math.hypot(q.x-ball.x-u*dx,q.y-ball.y-u*dy)<1.65;
+   });
+   return {player:p,distanceM,forwardM,gapM,laneClearanceM,profile:profile==='short'&&!middleBlock?null:profile};
+  })
+  .filter(p=>p.profile&&p.gapM>=2.2)
   .sort((a,b)=>(Math.min(b.gapM,12)+b.forwardM*0.2-b.distanceM*0.1)-(Math.min(a.gapM,12)+a.forwardM*0.2-a.distanceM*0.1)||a.player.id.localeCompare(b.player.id))[0]??null;
 }
 export function chooseRecipient(actor,ball,players,attackPolarity=1){
@@ -529,7 +545,7 @@ export function selectUniformAutonomousContactAction({
   }else if(collective&&contextualAttacker&&!contextualRecipient&&!chosenShotLane&&
     (loftedInfo=chooseNativeLoftedRecipient(player,ballPosition,actors,attackPolarity))){
    recipient=loftedInfo.player;action='pass';dx=recipient.x-ballPosition.x;dy=recipient.y-ballPosition.y;
-   vertical=0.65;rule='live-distant-forward-teammate-lofted-pass';
+   vertical=0.65;rule='live-'+loftedInfo.profile+'-teammate-lofted-pass';
   }else if(contextualChoice?.selected==='pass'){
    recipientInfo=contextualRecipient;
    recipient=recipientInfo.player;
@@ -652,7 +668,7 @@ export function selectUniformAutonomousContactAction({
    distanceM:Math.hypot(dx,dy),
    forwardM:(recipient.x-player.x)*attack,
    team:player.team,physicsTick:tick,
-   ...(loftedInfo?{deliveryProfile:'lofted',recipientOpponentGapM:loftedInfo.gapM}:{}),
+   ...(loftedInfo?{deliveryProfile:'lofted',loftedProfile:loftedInfo.profile,recipientOpponentGapM:loftedInfo.gapM}:{}),
    physicalPassAttemptOnly:true,passCompleted:false
   }):null;
   return Object.freeze({

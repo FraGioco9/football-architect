@@ -2380,3 +2380,37 @@ test('AERIAL-07B high hand decision catches reachable unpressured deliveries or 
   assert.equal(eligibleKeeperGrip({...gripEvidence,highClaim:true,after:{x:5,y:0,z:0}}),false);
  }
 });
+
+test('AERIAL-05B short loft requires middle-lane obstruction; switch selects opposite flank',()=>{
+ for(const side of ['home','away']){
+  const dir=side==='home'?1:-1,actor={id:side+'-10',team:side,role:'forward',x:dir*-20,y:0};
+  const receiver={id:side+'-9',team:side,role:'forward',x:dir*-4,y:0},ball={x:actor.x,y:0,z:0.11};
+  const blocker={id:(side==='home'?'away':'home')+'-2',team:side==='home'?'away':'home',x:dir*-12,y:0};
+  assert.equal(chooseNativeLoftedRecipient(actor,ball,[actor,receiver]),null);
+  assert.equal(chooseNativeLoftedRecipient(actor,ball,[actor,receiver,blocker]).profile,'short');
+  assert.equal(chooseNativeLoftedRecipient(actor,ball,[actor,receiver,{...blocker,x:dir*-5}]),null);
+  const wide={...actor,y:19},far={...receiver,x:dir*-17,y:-19};
+  assert.equal(chooseNativeLoftedRecipient(wide,{...ball,y:19},[wide,far]).profile,'switch');
+ }
+});
+test('AERIAL-05B mirrored short loft and switch require genuine same-world launch and receipt',{timeout:120000},async()=>{
+ const R=await initializeRapier(rapier),rows=[];
+ for(const [id,profile] of [['lofted-short','short'],['lofted-switch','switch']])for(const side of ['home','away'])for(let variantIndex=0;variantIndex<30;variantIndex++){
+  const lab=createControlledActionLab(R,id,{shotSide:side,variantIndex});
+  try{
+   let audit=null;
+   for(let tick=1;tick<=300;tick++){
+    const frame=lab.step();audit=frame.loftedPassAudit;
+    if(frame.action?.passTarget?.loftedProfile===profile){
+     assert.equal(frame.action.action,'pass');assert.equal(frame.action.actualPhysicsImpulseApplied,true);
+     assert.deepEqual(frame.starts,[frame.action.playerId]);assert.ok(frame.action.impulseNs.z>0);
+     assert.equal(frame.action.nativeLoftedPassCalibration.profile,profile);
+    }
+    if(audit?.receiverContact)break;
+   }
+   rows.push({id,side,variantIndex,profile:audit?.launch.passTarget.loftedProfile??null,receipt:!!audit?.receiverContact,peak:audit?.peakZM??0});
+  }finally{lab.dispose();}
+ }
+ process.stdout.write('ME_628_LOFTED_VARIANTS '+JSON.stringify(rows)+'\\n');
+ assert.ok(rows.every(r=>r.profile===(r.id==='lofted-short'?'short':'switch')&&r.receipt&&r.peak>2),JSON.stringify(rows.filter(r=>!r.receipt)));
+});

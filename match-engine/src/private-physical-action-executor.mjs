@@ -22,14 +22,15 @@ import {calculatePhysicalReceiverReleaseTap} from './physical-receiver-tap-m30.m
 export function calculateNativeLoftedPassImpulse({origin,velocity,target,massKg}={}){
  if(![origin?.x,origin?.y,origin?.z,velocity?.x,velocity?.y,velocity?.z,target?.recipientX,target?.recipientY,massKg].every(Number.isFinite)||massKg<=0)return null;
  const dx=target.recipientX-origin.x,dy=target.recipientY-origin.y,d=Math.hypot(dx,dy);
- if(d<26-1e-6||d>48+1e-6)return null;
- const flightS=Math.max(2.0,Math.min(2.85,Math.sqrt(d/5.8)));
+ const profile=target.loftedProfile??'long';
+ if(!['short','long','switch'].includes(profile)||d<(profile==='short'?8:26)-1e-6||d>(profile==='short'?25:48)+1e-6)return null;
+ const flightS=profile==='short'?Math.max(1.42,Math.min(2.05,Math.sqrt(d/5.8))):Math.max(2.0,Math.min(2.85,Math.sqrt(d/5.8)));
  const targetZ=0.85;
  const desired={x:dx/flightS,y:dy/flightS,z:(targetZ-origin.z)/flightS+4.905*flightS};
  const raw={x:massKg*(desired.x-velocity.x),y:massKg*(desired.y-velocity.y),z:massKg*(desired.z-velocity.z)};
  const magnitude=Math.hypot(raw.x,raw.y,raw.z),scale=Math.min(1,12/Math.max(magnitude,1e-9));
  if(magnitude<0.025||raw.z<=0)return null;
- return Object.freeze({source:'native-lofted-pass-range-v1',distanceM:d,flightS,targetZ,
+ return Object.freeze({source:'native-lofted-pass-range-v1',profile,distanceM:d,flightS,targetZ,
   impulseNs:Object.freeze({x:raw.x*scale,y:raw.y*scale,z:raw.z*scale}),officialMatchAction:false});
 }
 export const PRIVATE_PHYSICAL_ACTION_EXECUTOR_VERSION=

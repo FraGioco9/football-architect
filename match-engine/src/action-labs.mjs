@@ -171,7 +171,7 @@ export function createControlledActionLab(RAPIER,id,{
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
- const aerialLab=['header-pair','chest-control','aerial-foot-control','aerial-duel','lofted-pass','volley-solo','keeper-high-cross'].includes(id);
+ const aerialLab=['header-pair','chest-control','aerial-foot-control','aerial-duel','lofted-pass','volley-solo','keeper-high-cross','lofted-short','lofted-switch'].includes(id);
  if(aerialLab){bodyGuardEnabled=true;collectiveApproaches=true;}
  if(typeof collectiveApproaches!=='boolean'||(collectiveApproaches&&(!supportsNativeOpenPlay(id)||!bodyGuardEnabled||keeperSingleShot||directedDribble||duelTackleProfile!=='mixed')))
   throw new TypeError('Native open play requires guarded participants without isolated overrides');
@@ -638,7 +638,7 @@ export function createControlledActionLab(RAPIER,id,{
   if(id==='volley-solo'&&!volleyAudit&&headerCrossAudit&&action?.nativeVolley===true&&action.nativeExclusiveAerialControlStart===true&&action.actualPhysicsImpulseApplied===true&&
      action.playerId===headerCrossAudit.recipientId&&action.tick>headerCrossAudit.tick)
    volleyAudit=Object.freeze({cross:headerCrossAudit,launch:action,crossing:null});
-  if(id==='lofted-pass'){
+  if(['lofted-pass','lofted-short','lofted-switch'].includes(id)){
    if(!loftedPassAudit&&action?.action==='pass'&&action.passTarget?.deliveryProfile==='lofted'&&action.actualPhysicsImpulseApplied===true&&starts.length===1&&starts[0]===action.playerId)
     loftedPassAudit=Object.freeze({launch:action,peakZM:physics.ball.position.z,receiverContact:null});
    if(loftedPassAudit&&!loftedPassAudit.receiverContact){
