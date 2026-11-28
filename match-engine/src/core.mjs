@@ -1067,7 +1067,7 @@ export function createEngine(RAPIER, input = {}, {
     if(duelTransition){
      const shoe=shoeBridge.snapshot(),physical=smallBodyGuard.snapshot();
      duelTransition.observe({tick,starts:shoe.started,active:shoe.active,bodyStarts:physical.lowerLegBallStarts,
-      bodyActive:physical.lowerLegBallContacts,action:actionExecutor?.actionSnapshot()??null,
+      bodyActive:physical.lowerLegBallContacts,exclusiveShoeStart:hasExclusiveNativeShoeStart(shoe,shoe.started[0]),action:actionExecutor?.actionSnapshot()??null,
       ball:{position:body.translation(),velocity:body.linvel()},players:playerFrame.players,
       shoulderPlan:playerFrame.duelShoulder??null,torsoPairs:physical.nativeOpposingTorsoPairs,bodies:physical.bodies});
     }

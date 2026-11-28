@@ -748,7 +748,7 @@ export function selectUniformAutonomousContactAction({
     opponentTackleProven:false,interceptionProven:false,
     passCompleted:false,goalScored:false,
     ...(contextualChoice?{smallSidedChoice:contextualChoice}:{}),
-    ...(dribbleTouch?{isolatedDribbleTouch:dribbleTouch}:{}),
+    ...(dribbleTouch&&!nativeCarryTouch?{isolatedDribbleTouch:dribbleTouch}:{}),
     ...(nativeCarryTouch?{nativeCarryTouch:Object.freeze({...nativeCarryTouch,tick,actorId:id})}:{})
    }),
    temporaryPlayersOnly:true,uniformPlayerStats:true,

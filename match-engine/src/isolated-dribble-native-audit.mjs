@@ -34,7 +34,7 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false,d
   throw new TypeError('Only D-01 paired HOME/AWAY variant may audit Rapier');
  const actor=side+'-10',opponent=solo?null:(side==='home'?'away':'home')+'-2';
  const validCarrySource=(a,foot,tick)=>foot.nativePairedFeet!==undefined?
-  hasExclusiveNativeShoeStart(foot,a.playerId)&&a.decisionContext?.nativeCarryTouch?.version==='me-628-native-carry-geometry-v1'&&a.decisionContext.nativeCarryTouch.tick===tick&&a.decisionContext.nativeCarryTouch.genuineRapierShoeStartRequired===true:
+  hasExclusiveNativeShoeStart(foot,a.playerId)&&a.decisionContext?.nativeCarryTouch?.version==='me-628-native-carry-geometry-v1'&&a.decisionContext.nativeCarryTouch.tick===tick&&a.decisionContext.nativeCarryTouch.actorId===a.playerId&&a.decisionContext.nativeCarryTouch.genuineRapierShoeStartRequired===true:
   a.decisionContext?.isolatedDribbleTouch?.tick===tick;
  if(typeof directed!=='boolean'||(directed&&solo))throw new TypeError('Directed evidence only for 1v1');
  let tackles=0,interceptions=0,recoveryTouches=0;
@@ -332,8 +332,9 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false,d
    if(action.tick!==physics.tick||![actor,opponent].includes(id)||!['tackle','interception','carry'].includes(action.action)||
       action.appliedByRapier!==true||action.actualPhysicsImpulseApplied!==true||
       foot.started.length!==1||foot.started[0]!==id||foot.active.length!==1||foot.active[0]!==id||
+      foot.nativePairedFeet!==undefined&&!hasExclusiveNativeShoeStart(foot,id)||
       (action.action==='carry'?!validCarrySource(action,foot,physics.tick):
-       action.defensiveTarget?.version!=='me-628-duel-defensive-touch-v1'||action.defensiveTarget.physicsTick!==physics.tick))
+       !['me-628-duel-defensive-touch-v1',...(foot.nativePairedFeet!==undefined&&action.action==='interception'?['me-628-interception-cushion-v1']:[])].includes(action.defensiveTarget?.version)||action.defensiveTarget.physicsTick!==physics.tick))
     throw new TypeError('Only native exclusive shared duel actions qualify');
    perPlayer[id][action.action]++;
    if(action.action==='tackle')tackles++;

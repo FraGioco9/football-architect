@@ -85,8 +85,11 @@ export function createNativeBallControlObserver(activeIds,outfieldIds,allowedFun
   const holding=(mask.includes('save')?currentKeepers:[]).filter(k=>k.catchState?.active&&Number.isSafeInteger(k.catchState.confirmedTick)&&k.catchState.confirmedTick<=tick);
   const keeperHold=holding.length===1?Object.freeze({keeperId:holding[0].keeperId,confirmedTick:holding[0].catchState.confirmedTick}):null;
   const released=currentKeepers.filter(k=>k.distribution?.keeperId===k.keeperId&&k.catchState?.active===false&&k.catchState.released===true);
+  // The releasing glove itself may be in the combined body readout, but
+  // no other hand, shoe or aerial surface can certify a distribution.
+  const competingReleaseContact=id=>starts.length>0||active.length>0||headActive.length>0||aerialControlActive.length>0||bodyActive.some(actorId=>actorId!==id)||bodyStarts.some(actorId=>actorId!==id)||currentKeepers.some(k=>k.keeperId!==id&&(k.contact||k.catchState?.active||k.distribution?.tick===tick));
   const candidate=released.length===1?released[0].distribution:null;
-  const keeperDistribution=!real&&nativeKeeperDistributionAllowed(mask,candidate,{tick,priorHold:latest.keeperHold,players,activeIds})?candidate:null;
+  const keeperDistribution=!real&&candidate!==null&&!competingReleaseContact(candidate.keeperId)&&nativeKeeperDistributionAllowed(mask,candidate,{tick,priorHold:latest.keeperHold,players,activeIds})?candidate:null;
   if(keeperHold){witness=null;delivery=null;}
   if(keeperDistribution){witness=null;delivery=keeperDistribution.kind==='pass'?Object.freeze({tick,playerId:keeperDistribution.keeperId,team:keeperDistribution.team,kind:'pass',recipientId:keeperDistribution.recipientId,source:'native-keeper-grip-release'}):null;}
   const control=observeNativeBallControl({players:participants,ball,carryWitness:witness,tick});
@@ -706,13 +709,13 @@ export function createDribbleTransitionObserver(side,profile='mixed'){
  const mask=createNativeDuelFundamentalMask(profile);
  const controlObserver=createNativeBallControlObserver(ids,ids,mask);
  let latest=Object.freeze({tick:0,profile,phase:'attack',carrierId,candidateId,sourceTick,lastIntervention,getUpUntil,lastShoulder,shoulderContacts,recoveries,regains,changes,recovered:false,regained:false,ballControl:observeDuelBallControl(),officialPossession:false});
- function observe({tick,starts,active,bodyStarts,bodyActive,action,ball,players=[],shoulderPlan=null,torsoPairs=[],bodies=[]}){
+ function observe({tick,starts,active,bodyStarts,bodyActive,action,ball,players=[],shoulderPlan=null,torsoPairs=[],bodies=[],exclusiveShoeStart=true}){
   if(tick!==latest.tick+1)throw new TypeError('Same original physics tick required');
   let recovered=false,regained=false;
   const touching=ids.filter(id=>active.includes(id)||bodyActive.includes(id));
   const started=ids.filter(id=>starts.includes(id)||bodyStarts.includes(id));
   const inField=Math.abs(ball.position.x)<52.39&&Math.abs(ball.position.y)<33.89;
-  const real=action?.tick===tick&&ids.includes(action.playerId)&&nativeObservedActionAllowed(mask,action)&&
+  const real=exclusiveShoeStart===true&&bodyStarts.length===0&&bodyActive.length===0&&action?.tick===tick&&ids.includes(action.playerId)&&nativeObservedActionAllowed(mask,action)&&
     starts.length===1&&starts[0]===action.playerId&&active.length===1&&active[0]===action.playerId&&
     action.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true&&touching.length===1;
   if(!inField||candidateId!==null&&tick-candidateTick>120){
@@ -760,7 +763,7 @@ export function createDribbleTransitionObserver(side,profile='mixed'){
   priorShoulderPair=shoulderPair;
   const phase=candidateId!==null?'recover':carrierId===first?'attack':'counter';
   const nativeControl=controlObserver.observe({tick,players,ball,starts,active,bodyStarts,bodyActive,action,
-   physicalChallengeReleased:lastShoulder?.tick===tick&&lastShoulder.successful===true});
+   exclusiveShoeStart,physicalChallengeReleased:lastShoulder?.tick===tick&&lastShoulder.successful===true});
   const ballControl=Object.freeze({kind:nativeControl.kind,playerId:nativeControl.playerId,sourceTick:nativeControl.sourceTick,officialPossession:false});
   // Historical phase/carrier/counters remain diagnostic compatibility only.
   latest=Object.freeze({tick,profile,phase,carrierId,candidateId,sourceTick,lastIntervention,getUpUntil,lastShoulder,shoulderContacts,recoveries,regains,changes,recovered,regained,ballControl,officialPossession:false});

@@ -1262,8 +1262,10 @@ test('#628 solo Carry has one Rapier actor and repeated genuine shoe actions, HO
      assert.equal(f.action.action,'carry');
      assert.equal(f.action.appliedByRapier,true);
      assert.equal(f.action.actualPhysicsImpulseApplied,true);
-     assert.equal(f.action.decisionContext.isolatedDribbleTouch.soloCarry,true);
-     assert.equal(f.action.decisionContext.isolatedDribbleTouch.fromLiveOpponent,false);
+     const d=f.action.decisionContext.nativeCarryTouch;
+     assert.equal(d?.version,'me-628-native-carry-geometry-v1');assert.equal(d.actorId,side+'-10');assert.equal(d.tick,f.physicsTick);
+     assert.equal(d.fromLiveOpponent,false);assert.ok(d.phaseProposal?.impulseNs);
+     assert.ok(Math.abs(f.action.impulseNs.x-d.phaseProposal.impulseNs.x)<1e-8);
     }
     releaseRecontacts=f.nativeDribbleAudit.independentRecontacts;
     if(f.refereeEvidence?.lastEvent)break;
@@ -2586,5 +2588,21 @@ test('ME-01-QA U-02d5: simultaneous surfaces of one actor cannot authorize contr
   assert.equal(obs.observe(pass).delivery.recipientId,b.id);
   assert.equal(obs.observe({...base,tick:2,starts:[],active:[a.id],action:null}).delivery.recipientId,b.id);
   assert.equal(obs.observe({...base,tick:3,action:null}).delivery,null);
+ }
+});
+
+test('ME-01-QA U-03d competing shoe or hand invalidates confirmed goalkeeper release witness',()=>{
+ for(const side of ['home','away']){
+  const other=side==='home'?'away':'home',k={id:side+'-1',team:side,role:'goalkeeper',x:0,y:0},r={id:side+'-9',team:side,role:'forward',x:10,y:0},q={id:other+'-1',team:other,role:'goalkeeper',x:30,y:0};
+  const players=[k,r,q],ids=players.map(p=>p.id),ball={position:{x:0,y:0,z:1},velocity:{x:0,y:0,z:0}};
+  const grip={tick:1,keeperId:k.id,catchState:{active:true,confirmedTick:1}};
+  const release={tick:2,keeperId:k.id,catchState:{active:false,released:true},distribution:{tick:2,keeperId:k.id,team:side,kind:'pass',recipientId:r.id,confirmedGripTick:1,nativeGripReleased:true,appliedByRapier:true,actualPhysicsImpulseApplied:true}};
+  const sample={tick:2,players,ball,starts:[],active:[],keeperStates:[release]};
+  for(const extra of [{},{starts:[r.id],active:[r.id]},{bodyActive:[r.id]},{keeperStates:[release,{tick:2,keeperId:q.id,contact:true}]},{headActive:[r.id]}]){
+   const obs=createNativeBallControlObserver(ids,[r.id],['save','pass']);
+   assert.equal(obs.observe({...sample,tick:1,keeperStates:[grip]}).keeperHold.keeperId,k.id);
+   const result=obs.observe({...sample,...extra});
+   assert.equal(!!result.keeperDistribution,Object.keys(extra).length===0);
+  }
  }
 });
