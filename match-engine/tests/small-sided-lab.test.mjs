@@ -682,7 +682,7 @@ test('#628 small-sided catalog replaces only visible elementary exercise UI; arc
    'original research scene stays in hidden regression catalog');
  for(const id of ['keeper-1v1','overload-2v1','duel-3v3'])
   assert.match(ui,new RegExp("'action:"+id+"'"));
- assert.match(ui,/length!==\(archiveMode\?24:28\)/);
+ assert.match(ui,/length!==\(archiveMode\?24:29\)/);
  assert.doesNotMatch(ui,/visibleMovement/);
  assert.match(ui,/Carry phases/);
  assert.match(ui,/Small-sided situations/);
@@ -2069,4 +2069,32 @@ test('AERIAL-02 original full-field core consumes a descending ball head START w
   assert.ok(hit,'genuine full-field head redirect required');
   process.stdout.write('ME_628_AERIAL02_HEADER '+JSON.stringify({tick:hit.tick,actor:hit.playerId,action:hit.action,impulse:hit.impulseNs})+'\n');
  }finally{engine.dispose();}
+});
+
+test('AERIAL-02 LAB all 30 mirrored starts keep original actors and descending ball; shared policy produces actual head redirects', {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier),counts={shot:0,pass:0,clearance:0};
+ for(const side of ['home','away'])for(let variantIndex=0;variantIndex<30;variantIndex++){
+  const fixture=smallSidedSetup('header-pair',side,INITIAL_PLAYERS,{variantIndex});
+  const lab=createControlledActionLab(R,'header-pair',{shotSide:side,variantIndex});
+  const replay=createControlledActionLab(R,'header-pair',{shotSide:side,variantIndex});
+  try{
+   assert.equal(lab.snapshot().genuinePhysicalPlayerCount,2);assert.deepEqual(lab.focus,fixture.activeIds);
+   assert.equal(lab.snapshot().ball.velocity.z,-2);
+   let header=null;
+   for(let tick=1;tick<=75;tick++){
+    const a=lab.step(),b=replay.step();assert.deepEqual(a.ball,b.ball);assert.deepEqual(a.action,b.action);
+    assert.equal(a.officialMatchResult,null);
+    if(a.action?.nativeExclusiveHeadStart){
+     assert.equal(a.action.playerId,side+'-10');assert.equal(a.starts.length,0);
+     assert.deepEqual(a.smallSidedNativeBodyGuard.headBallStarts,[a.action.playerId]);
+     assert.equal(a.headerAudit.tick,tick);assert.equal(a.action.actualPhysicsImpulseApplied,true);
+     header=a.action;break;
+    }
+   }
+   assert.ok(header,'original header required '+side+' variant '+variantIndex);
+   counts[header.action]++;
+  }finally{lab.dispose();replay.dispose();}
+ }
+ assert.ok(counts.shot&&counts.pass&&counts.clearance);
+ process.stdout.write('ME_628_HEADER_LAB '+JSON.stringify(counts)+'\n');
 });

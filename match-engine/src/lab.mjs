@@ -741,7 +741,7 @@ function render() {
     const shot=f.shotSoloAudit, pass=f.passPairAudit, cross=f.crossPairAudit;
     const keeper=f.keeperShotAudit;
     const mixedControl=f.duelTackleProfile==='mixed'&&f.duelTransition?.ballControl;
-    const summary=f.blockAudit?(f.blockAudit.blocked?'Shot blocked':f.blockAudit.contactTick!==null?'Defender contact':f.blockAudit.phase==='flight'?'Shot in flight':'Waiting for shot'):f.interceptionAudit?({ready:'Waiting for pass',flight:'Pass in flight',intercepted:'Interception contact',collected:'Ball recovered',received:'Pass reached receiver'})[f.interceptionAudit.phase]:keeper?
+    const summary=f.headerAudit?'Header · '+f.headerAudit.action:activeScene.id==='header-pair'?'Waiting for header':f.blockAudit?(f.blockAudit.blocked?'Shot blocked':f.blockAudit.contactTick!==null?'Defender contact':f.blockAudit.phase==='flight'?'Shot in flight':'Waiting for shot'):f.interceptionAudit?({ready:'Waiting for pass',flight:'Pass in flight',intercepted:'Interception contact',collected:'Ball recovered',received:'Pass reached receiver'})[f.interceptionAudit.phase]:keeper?
       (keeper.crossing?(keeper.crossing.kind==='goal'?'Goal observed':'Ball out'):
        f.keeperDive?.catchState?.active&&f.keeperDive.catchState.confirmedTick!==null?'Ball held':
        f.keeperDive?.catchState?.active?'Securing ball':
@@ -2345,7 +2345,8 @@ function setupUnifiedScenarioMenu(){
   ]],
   ['Shooting',[
    ...LAB_SHOT_PROFILES.map(profile=>[profile==='power'?'action:shot-solo':'action:shot-solo:'+profile,'Shot · '+LAB_SHOT_LABELS[profile]]),
-   ...LAB_SHOT_PROFILES.map(profile=>['action:shot-solo:'+profile+':first-time','First-time · '+LAB_SHOT_LABELS[profile]])
+   ...LAB_SHOT_PROFILES.map(profile=>['action:shot-solo:'+profile+':first-time','First-time · '+LAB_SHOT_LABELS[profile]]),
+   ...(!archiveMode?[['action:header-pair','Header · Aerial']]:[])
   ]],
   ...(archiveMode?[['Small-sided situations',[
    ['action:keeper-1v1','1v1 · goalkeeper'],
@@ -2400,7 +2401,7 @@ function setupUnifiedScenarioMenu(){
   root.dataset.selectedScene='action:carry-solo:moderate';
   // Detailed research panels stay in the archive surface.
  }
- if(menu.querySelectorAll('[role="option"][data-value]').length!==(archiveMode?24:28)||
+ if(menu.querySelectorAll('[role="option"][data-value]').length!==(archiveMode?24:29)||
     menu.querySelectorAll('.me-scenario-group-label').length!==(archiveMode?5:6))
   throw new Error('Unexpected active or archived LAB catalog');
 }

@@ -25,7 +25,7 @@ import {createBasicReceiveDribbleObserverB04}
 import {createRealOpponentBallContestAuditM31}
  from './real-opponent-ball-contest-m31.mjs';
 import {createPlayerMovement,INITIAL_PLAYERS} from './player-movement.mjs';
-import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,supportsNativeOpenPlay}
+import {SMALL_SIDED_LAB_SCENARIOS,AERIAL_LAB_SCENARIOS,smallSidedSetup,supportsNativeOpenPlay}
  from './small-sided-lab-scenarios.mjs';
 import {SOLO_CARRY_PHASES} from './solo-carry-phases.mjs';
 import {uniformSoloCarryAttributes,validateSoloCarryAttributes}
@@ -170,6 +170,8 @@ export function createControlledActionLab(RAPIER,id,{
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
+ const aerialLab=id==='header-pair';
+ if(aerialLab){bodyGuardEnabled=true;collectiveApproaches=true;}
  if(typeof collectiveApproaches!=='boolean'||(collectiveApproaches&&(!supportsNativeOpenPlay(id)||!bodyGuardEnabled||keeperSingleShot||directedDribble||duelTackleProfile!=='mixed')))
   throw new TypeError('Native open play requires guarded participants without isolated overrides');
  if(typeof carryRunwayStart!=='boolean'||
@@ -372,7 +374,7 @@ export function createControlledActionLab(RAPIER,id,{
     diagnosticNativeFixedSprintLongStrideEnabled:nativeFixedSprintLongStride
    }:{}),
    diagnosticSmallSidedBodyGuardEnabled:bodyGuardEnabled,
-   diagnosticCollectiveActions:collectiveApproaches,
+   diagnosticCollectiveActions:collectiveApproaches,diagnosticNativeAerialEnabled:aerialLab,
    diagnosticKeeperSingleShot:keeperSingleShot,diagnosticDirectedDribble:directedDribble,diagnosticDuelTackleProfile:duelTackleProfile,
     diagnosticSmallSidedBodyFeedbackEnabled:bodyGuardEnabled
   }:{}),
@@ -505,6 +507,7 @@ export function createControlledActionLab(RAPIER,id,{
  const baseFootworkObserver=basicFootwork?
   createBasicReceiveDribbleObserverB04({side:selectedControlSide,kind:id}):null;
  const collectiveCounts=collectiveApproaches?{carry:0,pass:0,shot:0,tackle:0,interception:0,save:0,other:0}:null;
+ let headerAudit=null;
  function record(physics,playerFrame){
   const foot=engine.footContactSnapshot();
   const starts=Object.freeze([...foot.started]);
@@ -627,7 +630,8 @@ export function createControlledActionLab(RAPIER,id,{
   // A gameplay-proximity impulse is NOT native shoe evidence. Keep the
   // actual Rapier ball action visible, but do not feed it to any observer
   // whose proofs require a genuine shoe START.
-  const nativeAction=intentDrivenSoloCarry?null:action;
+  const nativeAction=intentDrivenSoloCarry||action?.nativeExclusiveHeadStart===true?null:action;
+  if(aerialLab&&action?.nativeExclusiveHeadStart===true&&!headerAudit)headerAudit=action;
   const evidence=classifyActionLabEvidence(spec,{
    tick:physics.tick,action:nativeAction,starts,priorPass:firstRealPass,
    opponentEarlier:firstOpposingShoe!==null,
@@ -940,7 +944,9 @@ export function createControlledActionLab(RAPIER,id,{
   const keeperDive=engine.keeperDiveSnapshot?.()??null;
   const refereeEvidence=refereeObserver?.observe({
    physics,playerFrame,foot,solver:engine.footContactSolverSnapshot(),
-   action:nativeAction,...(keeperDive?{keeperDive}: {})
+   action:aerialLab?action:nativeAction,...(keeperDive?{keeperDive}: {}),
+   ...(aerialLab&&physics.tick>0?{aerialEvidence:engine.smallSidedBodyGuardSnapshot().aerial,
+    aerialConflict:engine.smallSidedBodyGuardSnapshot().lowerLegBallContacts.length>0}:{})
   })??null;
   if(refereeEvidence?.lastEvent?.tick===physics.tick){
    count++;
@@ -1014,6 +1020,7 @@ export function createControlledActionLab(RAPIER,id,{
    // velocity and no authority outside the existing closed Action LAB.
    observedMovementPlayers:playerFrame.players,
    starts,action,evidence,decisionEvidence,contactContinuity,
+   ...(aerialLab?{headerAudit}:{}),
    ...(collectiveControl?{collectiveControl,collectiveCounts:Object.freeze({...collectiveCounts}),nativeKeeperStates:engine.nativeKeeperSnapshots()}:{}),
     labDynamicsVersion:currentDynamics?CURRENT_LAB_DYNAMICS_VERSION:null,
     latestOrientedReception:currentDynamics?(engine.latestLabReceptionSnapshot?.()??null):null,
@@ -1190,7 +1197,7 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
     !go||!pause||!step||!reset||
     !by('action-labs-open')||!by('action-labs-close'))
   throw new Error('Action LAB controls are missing');
- const all=[...ACTION_LAB_SCENARIOS,...SMALL_SIDED_LAB_SCENARIOS];
+ const all=[...ACTION_LAB_SCENARIOS,...SMALL_SIDED_LAB_SCENARIOS,...AERIAL_LAB_SCENARIOS];
  if(select.options.length!==all.length||
     all.some((s,i)=>select.options[i].value!==s.id))
   throw new Error('Action LAB menu must match the single scenario catalog');
@@ -1471,16 +1478,16 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
  function resetSession(){
   stop();step.disabled=false;if(session)session.dispose();
   shotSideLabel.hidden=!(['shot','cross','save','tackle','interception','trap','dribble','goal','touchline','goal-line-out','throw-in','corner','goal-kick','carry','challenge'].includes(select.value)||
-    SMALL_SIDED_LAB_SCENARIOS.some(x=>x.id===select.value));
+    [...SMALL_SIDED_LAB_SCENARIOS,...AERIAL_LAB_SCENARIOS].some(x=>x.id===select.value));
   shotLaneLabel.hidden=select.value!=='shot';
   controlSceneLabel.hidden=select.value!=='control';
   challengeSceneLabel.hidden=select.value!=='challenge';
   by('action-labs-title').textContent=select.selectedOptions[0].textContent.trim();
   session=createControlledActionLab(getRapier(),select.value,{
    // Hidden original research comparator, not a selectable gameplay LAB.
-   historicalEvidenceBaseline:!SMALL_SIDED_LAB_SCENARIOS.some(x=>x.id===select.value),
+   historicalEvidenceBaseline:![...SMALL_SIDED_LAB_SCENARIOS,...AERIAL_LAB_SCENARIOS].some(x=>x.id===select.value),
    shotSide:(['shot','cross','save','tackle','interception','trap','dribble','goal','touchline','goal-line-out','throw-in','corner','goal-kick'].includes(select.value)||
-    SMALL_SIDED_LAB_SCENARIOS.some(x=>x.id===select.value))?shotSide.value:'home',
+    [...SMALL_SIDED_LAB_SCENARIOS,...AERIAL_LAB_SCENARIOS].some(x=>x.id===select.value))?shotSide.value:'home',
    shotLane:select.value==='shot'?shotLaneChoice.value:'open',
    carrySide:select.value==='carry'?shotSide.value:'home',
    controlScene:select.value==='control'?controlSceneChoice.value:'receive',

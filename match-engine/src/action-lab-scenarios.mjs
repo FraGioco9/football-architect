@@ -1,5 +1,5 @@
 // ME-ACTIONS-LAB #620: single source of truth for bounded DEV action scenes.
-import {SMALL_SIDED_LAB_SCENARIOS} from './small-sided-lab-scenarios.mjs';
+import {SMALL_SIDED_LAB_SCENARIOS,AERIAL_LAB_SCENARIOS} from './small-sided-lab-scenarios.mjs';
 // A real shoe collision/impulse is required. These labels do NOT attest an
 // official pass completion, possession, tackle, dribble or scored goal.
 const scene=(seed,x,y=0,vx=0)=>Object.freeze({
@@ -148,7 +148,7 @@ export const ACTION_LAB_SCENARIOS=Object.freeze([
 ]);
 export function getActionLabScenario(id){
  const value=ACTION_LAB_SCENARIOS.find(x=>x.id===id)??
-  SMALL_SIDED_LAB_SCENARIOS.find(x=>x.id===id);
+  SMALL_SIDED_LAB_SCENARIOS.find(x=>x.id===id)??AERIAL_LAB_SCENARIOS.find(x=>x.id===id);
  if(!value)throw new RangeError('Unknown controlled Match Engine action LAB');
  return value;
 }
@@ -161,7 +161,7 @@ export function classifyActionLabEvidence(spec,{
  challengeSide='away'
 }={}){
  if(!spec||!(ACTION_LAB_SCENARIOS.includes(spec)||
-     SMALL_SIDED_LAB_SCENARIOS.includes(spec))||
+     SMALL_SIDED_LAB_SCENARIOS.includes(spec)||AERIAL_LAB_SCENARIOS.includes(spec))||
     !Number.isSafeInteger(tick)||tick<0||
     !Array.isArray(starts)||new Set(starts).size!==starts.length||
     starts.some(id=>typeof id!=='string'||
