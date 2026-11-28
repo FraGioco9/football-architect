@@ -212,10 +212,10 @@ export function hasExclusiveNativeShoeStart(contact,id){
  }
  return true;
 }
-// All selected-participant scenarios except legacy ground carry use the
-// paired native physical source, including first-time strikes.
-export function usesNativePairedShoeBridge({activePlayerIds,legacyGroundCarry=false}={}){
- return Array.isArray(activePlayerIds)&&activePlayerIds.length>0&&!legacyGroundCarry;
+// Current selected-participant duels use the same paired bridge as open
+// play. Solo research retains its existing two-foot evidence adapter.
+export function usesNativePairedShoeBridge({activePlayerIds,legacyGroundCarry=false,soloCarryAdapter=false}={}){
+ return Array.isArray(activePlayerIds)&&activePlayerIds.length>0&&!legacyGroundCarry&&!soloCarryAdapter;
 }
 // Recover only the physical foot that actually struck. The six-tick
 // offset is an existing target profile, never a contact or ball impulse.

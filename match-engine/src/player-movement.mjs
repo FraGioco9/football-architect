@@ -6,7 +6,7 @@ import {advanceSlidingTackle,planSlidingTackle,SLIDE_MAX_SPEED_MPS,SLIDE_ACCEL_M
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
 // Research LAB only. No Rapier bodies, ball contact, official world or club data.
 import {advanceFreePlayerKinematics,advancePlayerOrientation,advanceGoalkeeperBallOrientation} from './individual-kinematics.mjs';
-import {advanceSoloCarryPhase,SOLO_CARRY_PHASES,planNativeOpenCarryMotion,nativeCarryPursuitOffset,nearestNativeCarryOpponent,nativeCarryMotionHasPriority} from './solo-carry-phases.mjs';
+import {advanceSoloCarryPhase,SOLO_CARRY_PHASES,planNativeOpenCarryMotion,nativeCarryPursuitOffset,nearestNativeCarryOpponent,nativeCarryMotionHasPriority,selectNativeOpenCarryPhase} from './solo-carry-phases.mjs';
 import {validateSoloCarryAttributes}
  from './solo-carry-attribute-calibration.mjs';
 import {projectNativeShoeBodyStep,projectNativeShoeBodyFacing}
@@ -3219,7 +3219,9 @@ export function createPlayerMovement(options={}){
      ...(isShoulderCollecting(duelTransition,p.id,tick+1)?{shoulderCollection:true}:{}),
      ...(defensiveDecision?.actorId===p.id?{defensiveIntervention: defensiveDecision.kind}:{}),
      ...(duelAlignment?{postContactAlignment:true,alignmentDetour:duelAlignment[p.id].detour&&!directedContactRelease&&duelSlide?.actorId!==p.id}:{}),
-     ...(smallSided.id==='carry-solo'?{carryPhase:currentSoloCarryPhase.phase}:openCarryMotion[p.id]?{carryPhase:openCarryMotion[p.id].phase}:{}),
+     ...(smallSided.id==='carry-solo'?{carryPhase:currentSoloCarryPhase.phase}:openCarryMotion[p.id]?{carryPhase:openCarryMotion[p.id].phase}:
+      !collectiveApproaches&&smallSided.id==='dribble-1v1'&&realBallVelocity&&nativeCarryMotionHasPriority({movementKind:kind,recoveryLocked:isDuelGettingUp(duelTransition,p.id,tick+1),balance:shoulderBalance[p.id],slide:duelSlide?.actorId===p.id?duelSlide:null,shoulder:duelShoulder?.actorId===p.id?duelShoulder:null,deliveryPlan:duelInterception?.actorId===p.id?duelInterception:null})?
+       {carryPhase:selectNativeOpenCarryPhase({playerSpeedMps:Math.hypot(p.vx,p.vy),ballSpeedMps:Math.hypot(realBallVelocity.x,realBallVelocity.y),ballGapM:Math.hypot(p.x-ball.x,p.y-ball.y)})}:{}),
      target:Object.freeze({x:target.x,y:target.y}),
      speedMps:Math.hypot(p.vx,p.vy),
      blockedBy:p.blockedBy??null,

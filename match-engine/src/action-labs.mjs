@@ -1110,6 +1110,8 @@ export function createControlledActionLab(RAPIER,id,{
      nativeShoeContactClaimed:false
     }:{}),
     ...(smallSided?{smallSidedParticipants:smallSided.activeIds,
+     physicalShoeColliderCount:engine.originalSmallSidedPhysicalShoeColliderCount(),
+     nativeContactMaterial:engine.nativeContactMaterialSnapshot(),
      smallSidedMovementDecisions:playerFrame.smallSidedMovementDecisions,
      ...(id==='carry-solo'?{
       soloCarryPhase:playerFrame.soloCarryPhase,
@@ -1145,7 +1147,7 @@ export function createControlledActionLab(RAPIER,id,{
   let frame=mover.step(prior.ball.position,
    spec.mode==='control'?firstPhysicalPassAction:null,
    reachExperiment?engine.researchReceiverTapSnapshot():null,
-   (goalkeeperSave||id==='carry-solo'||id==='keeper-1v1'||directedDribble||collectiveApproaches||interceptionAudit||blockAudit)?prior.ball.velocity:null,
+   (goalkeeperSave||id==='carry-solo'||id==='dribble-1v1'||id==='keeper-1v1'||directedDribble||collectiveApproaches||interceptionAudit||blockAudit)?prior.ball.velocity:null,
    id==='keeper-1v1'&&!keeperSingleShot&&bodyGuardEnabled&&latest.keeperShotAudit?.reboundTick!=null&&
     !latest.keeperShotAudit.crossing&&!latest.keeperDive?.catchState?.active?
      {tick:prior.tick,reboundTick:latest.keeperShotAudit.reboundTick}:null,

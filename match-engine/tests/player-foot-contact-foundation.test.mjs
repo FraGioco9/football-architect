@@ -14,6 +14,7 @@ import {FOOT_CONTACT_VERSION,FOOT_CONTACT_HALF_LENGTH_M,
  FOOT_CONTACT_ROUNDING_M,FOOT_CONTACT_FRICTION,
  FOOT_CONTACT_RESTITUTION,initialFootPositions,footProxyTransform,
  validateFootContactFrame} from '../src/player-foot-contact.mjs';
+import {createControlledActionLab} from '../src/action-labs.mjs';
 import {createPrivateRapierFootContactBridge,usesNativePairedShoeBridge,hasExclusiveNativeShoeStart,soloCarryTwoFootPositions,planNativeFirstTimeFootRecovery,nativeFirstTimeRecoveryTarget,nativeShoeContactProfile} from '../src/rapier-foot-contact-bridge.mjs';
 import {createFootContactTimeline,FOOT_CONTACT_TIMELINE_VERSION}
  from '../src/player-foot-contact-timeline.mjs';
@@ -231,6 +232,7 @@ test('ME-01-QA U-01E3: paired bridge eligibility and physical foot authorization
   const id=team+'-10',ids=[id],pair={actorId:id,independentColliders:2,exclusivePhysicalStart:true,started:['right'],active:['right']};
   assert.equal(usesNativePairedShoeBridge({activePlayerIds:ids}),true);
   assert.equal(usesNativePairedShoeBridge({activePlayerIds:ids,legacyGroundCarry:true}),false);
+  assert.equal(usesNativePairedShoeBridge({activePlayerIds:ids,soloCarryAdapter:true}),false);
   assert.equal(usesNativePairedShoeBridge({activePlayerIds:ids,firstTimeShot:true}),true);
   assert.equal(usesNativePairedShoeBridge({activePlayerIds:[]}),false);
   assert.equal(usesNativePairedShoeBridge({}),false);
@@ -298,4 +300,21 @@ test('ME-01-QA U-01E5a: common native material with explicit archived carry exce
   assert.deepEqual(scaled,{...standard,halfWidthM:standard.halfWidthM*widthScale,halfLengthM:standard.halfLengthM*lengthScale});
  }
  assert.throws(()=>nativeShoeContactProfile({widthScale:1.1}),/geometry/);
+});
+
+test('ME-01-QA U-01E5b: current isolated duels use paired shoes; archive is explicit', {timeout:30000},async()=>{
+ const R=await initializeRapier(rapier);
+ for(const shotSide of ['home','away'])for(const directedDribble of [false,true])for(const historicalCarryPhysics of [false,true]){
+  const lab=createControlledActionLab(R,'dribble-1v1',{shotSide,directedDribble,bodyGuardEnabled:directedDribble,historicalCarryPhysics});
+  try{
+   const first=lab.snapshot(),next=lab.step();
+   for(const frame of [first,next]){
+    assert.equal(frame.physicalShoeColliderCount,historicalCarryPhysics?2:4);
+    assert.equal(frame.nativeContactMaterial.historicalCarryPhysics,historicalCarryPhysics);
+    assert.equal(frame.nativeContactMaterial.ballRestitution,historicalCarryPhysics?0:.62);
+    assert.equal(frame.nativeContactMaterial.shoe.restitution,historicalCarryPhysics?0:.12);
+    assert.equal(frame.smallSidedParticipants.length,2);
+   }
+  }finally{lab.dispose();}
+ }
 });

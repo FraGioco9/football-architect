@@ -526,6 +526,7 @@ export function createEngine(RAPIER, input = {}, {
  if(typeof diagnosticHistoricalCarryPhysics!=='boolean'||diagnosticHistoricalCarryPhysics&&!isolatedCarry)throw new TypeError('Historical carry materials require isolated carry research');
  const historicalCarryPhysics=isolatedCarry&&(diagnosticHistoricalCarryPhysics||diagnosticIntentDrivenSoloCarryEnabled);
  const contactMaterial=nativeBallGroundContactProfile(historicalCarryPhysics);
+ const pairedShoeBridge=usesNativePairedShoeBridge({activePlayerIds:smallSided?.activeIds,legacyGroundCarry:historicalCarryPhysics,soloCarryAdapter:isolatedCarry&&smallSided.id==='carry-solo'});
  const stagedShoes=smallSided?smallSided.staged:
   diagnosticB06bOpeningKickoffEnabled?
    initialB06bOpeningLineup(INITIAL_PLAYERS):
@@ -721,11 +722,11 @@ export function createEngine(RAPIER, input = {}, {
   const shoeBridge=diagnosticPlayerFootContactsEnabled?
     createPrivateRapierFootContactBridge(RAPIER,world,ballCollider,stagedShoes,
      {...(sharedContactQueue?{sharedQueue:sharedContactQueue}:{}),
-      ...(usesNativePairedShoeBridge({activePlayerIds:smallSided?.activeIds,legacyGroundCarry:isolatedCarry})?{nativeCarryStride:true}:{}),
+      ...(pairedShoeBridge?{nativeCarryStride:true}:{}),
       ...(smallSided?{activePlayerIds:smallSided.activeIds,fullFieldNative:smallSided.fullField===true}:{}),
       ...(diagnosticFirstTimeShot&&diagnosticIsolatedShotProfile!=='tap-in'?
        {firstTimeShotReleaseId:smallSided.side+'-10'}:{}),
-      ...(isolatedCarry?{
+      ...(isolatedCarry&&!pairedShoeBridge?{
        isolatedGroundDribbleBallCentreZ:BALL_RADIUS,historicalCarryMaterial:historicalCarryPhysics,
        dribbleAttackerId:smallSided.side+'-10',
        ...(diagnosticDirectedDribble?{sharedDuelStride:true}:{}),
