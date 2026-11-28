@@ -126,18 +126,19 @@ export function createBasicMatchRefereeB05({attackPolarity=1}={}){
       pair.manifolds.some(m=>m.geometricContacts>0))))
    throw new TypeError('B05 native Rapier solver and collision queue must agree');
   if(aerialEvidence!==null&&(!Array.isArray(aerialEvidence)||typeof aerialConflict!=='boolean'||
-     aerialEvidence.some(s=>s.version!=='me-628-native-aerial-head-v1'||s.tick!==next||
+     aerialEvidence.some(s=>!['me-628-native-aerial-head-v1','me-628-native-aerial-control-v1'].includes(s.version)||s.tick!==next||
       s.sameOriginalRapierWorld!==true||s.actualNativeSolverContact!==s.contact||
       s.contactStarted&&!s.contact||!playerFrame.players.some(p=>p.id===s.actorId&&p.team===s.team&&p.role!=='goalkeeper'))))
    throw new TypeError('B05 head touch requires current original native evidence');
   const heads=(aerialEvidence??[]).filter(s=>s.contact);
   const headStart=heads.length===1&&heads[0].contactStarted&&!aerialConflict&&foot.active.length===0&&foot.started.length===0?heads[0]:null;
-  const headerAction=action?.nativeExclusiveHeadStart===true&&action.actualNativeSolverContact===true&&headStart?.actorId===action.playerId;
+  const headerAction=action?.nativeExclusiveHeadStart===true&&headStart?.version==='me-628-native-aerial-head-v1'&&action.actualNativeSolverContact===true&&headStart?.actorId===action.playerId;
+  const aerialControlAction=action?.nativeExclusiveAerialControlStart===true&&headStart?.version==='me-628-native-aerial-control-v1'&&action.surface===headStart.surface&&action.actualNativeSolverContact===true&&headStart.actorId===action.playerId;
   if(action!==null&&(
     action.tick!==next||action.appliedByRapier!==true||
     action.actualPhysicsImpulseApplied!==true||
     action.officialMatchAction!==false||
-    (!headerAction&&(foot.started.length!==1||foot.started[0]!==action.playerId))))
+    (!headerAction&&!aerialControlAction&&(foot.started.length!==1||foot.started[0]!==action.playerId))))
    throw new TypeError('B05 last touch requires authenticated original action');
   // A native sole START is touch evidence even without a uniform kick.
   // Simultaneous STARTs cannot be assigned to either team.
@@ -147,7 +148,7 @@ export function createBasicMatchRefereeB05({attackPolarity=1}={}){
      !playerFrame.players.some(p=>p.id===keeperDive.keeperId&&p.role==='goalkeeper')))
    throw new TypeError('B05 keeper glove touch requires same-tick native evidence');
   if(heads.length&&(!headStart||gloveStart))lastTouch=null;
-  else if(headStart)lastTouch=freeze({tick:next,playerId:headStart.actorId,team:headStart.team,nativeHeadContact:true});
+  else if(headStart)lastTouch=freeze({tick:next,playerId:headStart.actorId,team:headStart.team,...(headStart.version==='me-628-native-aerial-head-v1'?{nativeHeadContact:true}:{nativeAerialControlContact:true,surface:headStart.surface})});
   else if(gloveStart&&foot.started.length===0)
    lastTouch=freeze({tick:next,playerId:keeperDive.keeperId,team:keeperDive.keeperId.split('-')[0],nativeGloveContact:true});
   else if(gloveStart&&foot.started.some(id=>id!==keeperDive.keeperId))lastTouch=null;

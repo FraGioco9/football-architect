@@ -67,7 +67,9 @@ const definitions=freeze([
 const headerDefinition=freeze({id:'header-pair',nativeOpenPlay:true,title:'Header · from cross',
  attackers:freeze([10,9]),defenders:freeze([]),includeGoalkeeper:false,
  description:'A grounded ball and two canonical teammates in crossing geometry. The shared policy selects a real lofted cross, then a reachable physical header; no staged airborne ball or awarded outcome.'});
-const byId=new Map([...definitions,headerDefinition].map(s=>[s.id,s]));
+const chestDefinition=freeze({...headerDefinition,id:'chest-control',title:'Control · Chest',description:'Real cross from a teammate, then a physically reachable chest cushion. No automatic control.'});
+const footDefinition=freeze({...headerDefinition,id:'aerial-foot-control',title:'Control · Aerial foot',attackers:freeze([10]),description:'One player receives a descending ball with a reachable raised foot. No automatic control.'});
+const byId=new Map([...definitions,headerDefinition,chestDefinition,footDefinition].map(s=>[s.id,s]));
 // Private full-field research fixture: initial geometry only. Not in the
 // visible LAB catalog until the full native participant path is certified.
 byId.set('full-field-native',freeze({id:'full-field-native',nativeOpenPlay:true,fullField:true}));
@@ -293,9 +295,9 @@ export const SMALL_SIDED_LAB_SCENARIOS=freeze(definitions.map(s=>
 ));
 // Keep grounded baseline matrix stable; aerial fixtures have their own
 // contact-source assertions while sharing the same scenario registry.
-export const AERIAL_LAB_SCENARIOS=freeze([freeze({...headerDefinition,mode:'situation',goal:'situation',
- initial:freeze({preset:'roll',seed:'me-small-header-home',x:27,y:28,z:0,vx:0,vy:0,vz:0}),
- focus:freeze(['home-9','home-10']),source:'original-rapier-selected-head-and-shoe-colliders',officialResult:false})]);
+export const AERIAL_LAB_SCENARIOS=freeze([headerDefinition,chestDefinition,footDefinition].map(d=>freeze({...d,mode:'situation',goal:'situation',
+ initial:freeze({preset:d.id==='aerial-foot-control'?'drop':'roll',seed:'me-small-'+d.id+'-home',x:27,y:26,z:d.id==='aerial-foot-control'?1.6:0,vx:0,vy:0,vz:d.id==='aerial-foot-control'?-2:0}),
+ focus:freeze(d.attackers.slice().sort((a,b)=>a-b).map(n=>'home-'+n)),source:'original-rapier-selected-aerial-and-shoe-colliders',officialResult:false})));
 export function getSmallSidedScenario(id){
  const d=byId.get(id);
  if(!d)throw new RangeError('Unknown private small-sided situation');
@@ -363,7 +365,7 @@ export function smallSidedSetup(id,side,canonicalPlayers,{
  }
  // AERIAL-02 LAB: before-tick-zero placement only. All action choices
  // are made by the same live native policy; no heading intent override.
- if(id==='header-pair'){
+ if(id==='header-pair'||id==='chest-control'){
   const random=seededGeometry(id,variantIndex);
   for(let attempt=0;attempt<96;attempt++){
    const flank=variantIndex%2===0?1:-1;
@@ -374,10 +376,22 @@ export function smallSidedSetup(id,side,canonicalPlayers,{
     freeze({...p,facingRad:Math.atan2(by-ry,dir*(bx-rx))}):p));
    if(!physicallySeparated(staged,1.15))continue;
    return freeze({id,side,opponent,variantIndex,activeIds,staged,
-    ball:freeze({preset:'roll',seed:'me-small-header-v'+variantIndex+'-'+side,
-     x:dir*bx,y:by,z:0,vx:0,vy:0,vz:0}),genuinePhysicalPlayers:2,officialMatchResult:null});
+    ball:freeze({preset:'roll',seed:'me-small-'+id+'-v'+variantIndex+'-'+side,
+     x:dir*bx,y:by,z:0,vx:0,vy:0,vz:0}),aerialSurface:id==='header-pair'?'head':'chest',genuinePhysicalPlayers:2,officialMatchResult:null});
   }
   throw new RangeError('No collision-free original aerial header setup');
+ }
+ if(id==='aerial-foot-control'){
+  const random=seededGeometry(id,variantIndex);
+  for(let attempt=0;attempt<96;attempt++){
+   const x=20+random()*10,y=-12+random()*24,gap=0.35+random()*0.12;
+   const staged=stage(new Map([[side+'-10',[x,y]]]));
+   if(!physicallySeparated(staged,1.15))continue;
+   return freeze({id,side,opponent,variantIndex,activeIds,staged,aerialSurface:'foot',
+    ball:freeze({preset:'drop',seed:'me-small-foot-v'+variantIndex+'-'+side,x:dir*(x+gap),y,z:1.5+random()*0.3,vx:-dir*0.4,vy:0,vz:-2}),
+    genuinePhysicalPlayers:1,officialMatchResult:null});
+  }
+  throw new RangeError('No collision-free original raised foot setup');
  }
  // PASS-01: before-tick-zero geometry only. No opponent or keeper.
  if(id==='pass-pair'){

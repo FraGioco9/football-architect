@@ -2657,7 +2657,7 @@ export function createPlayerMovement(options={}){
    // Predict the descending crossing point from the live ball, not the
    // fixture. The receiving player runs there using normal acceleration.
    if(delivery.kind==='cross'&&recipient&&[ballPosition.z,realBallVelocity.z].every(Number.isFinite)){
-    const h=1.95,z=ballPosition.z,vz=realBallVelocity.z;
+    const h=smallSided.aerialSurface==='chest'?1.35:smallSided.aerialSurface==='foot'?0.85:1.95,z=ballPosition.z,vz=realBallVelocity.z;
     const discriminant=vz*vz+19.62*(z-h);
     if(discriminant>=0){
      const t=(vz+Math.sqrt(discriminant))/9.81;

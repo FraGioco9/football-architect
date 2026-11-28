@@ -14,7 +14,7 @@ import {createCollectiveBallControlObserver,createNativeBallControlObserver,crea
 import {observeNativeShotBlock,planNativeShotBlock} from '../src/defensive-intervention-selection.mjs';
 import {selectUniformAutonomousContactAction,chooseRecipient,eligibleLiveKeeperSave,chooseNativeHeaderIntent} from '../src/player-ball-uniform-autonomous-action.mjs';
 import {planNativeCarryTouch,chooseNativePassInterceptionTouch} from '../src/isolated-dribble-touches.mjs';
-import {planNativeKeeperDive,planNativeKeeperChallenge,eligibleKeeperGrip,planNativeKeeperDistribution,createNativeAerialHead,planNativeAerialJump,aerialHeadHeight,AERIAL_JUMP_TICKS} from '../src/small-sided-native-body-guard.mjs';
+import {planNativeKeeperDive,planNativeKeeperChallenge,eligibleKeeperGrip,planNativeKeeperDistribution,createNativeAerialHead,planNativeAerialJump,aerialHeadHeight,AERIAL_JUMP_TICKS,planNativeAerialControl,planNativeAerialCushion,createNativeAerialControl} from '../src/small-sided-native-body-guard.mjs';
 import {planSlidingTackle} from '../src/sliding-tackle.mjs';
 import {detectFirstFullyOutBallB05} from '../src/basic-match-referee-b05.mjs';
 import {SOLO_CARRY_PHASES,advanceSoloCarryPhase} from '../src/solo-carry-phases.mjs';
@@ -2129,4 +2129,45 @@ test('AERIAL-02 LAB all 30 mirrored starts require a genuine cross before the re
  }
  process.stdout.write('ME_628_HEADER_FROM_CROSS '+JSON.stringify({counts,misses})+'\n');
  assert.deepEqual(misses,[],'all original cross-to-header sequences required');
+});
+
+// AERIAL-03: decision evidence, native surface contact and one bounded cushion.
+test('AERIAL-03 shared chest and raised foot reject unreachable, ascending and dead-ball contacts',async()=>{
+ const R=await initializeRapier(rapier);
+ for(const surface of ['chest','foot']){
+  const z=surface==='chest'?1.35:0.85,actor={id:'home-10',team:'home',role:'forward',x:0,y:0,vx:0,vy:0};
+  const sample={position:{x:0.12,y:0,z:z+0.25},velocity:{x:0,y:0,z:-2}};
+  assert.ok(planNativeAerialControl(actor,sample,surface));
+  assert.equal(planNativeAerialControl(actor,{...sample,position:{...sample.position,x:10}},surface),null);
+  assert.equal(planNativeAerialControl(actor,{...sample,velocity:{...sample.velocity,z:2}},surface),null);
+  const cushion=planNativeAerialCushion({surface,incoming:sample.velocity,velocity:{x:3,y:0,z:-2},massKg:0.43,actor});
+  assert.ok(cushion);assert.ok(Math.hypot(...Object.values(cushion.impulseNs))<=5+1e-8);assert.equal(cushion.officialPossession,false);
+  assert.equal(planNativeAerialCushion({surface,incoming:{x:0,y:0,z:2},velocity:{x:3,y:0,z:-2},massKg:0.43,actor}),null);
+ }
+});
+test('AERIAL-03 LABs use actual mirrored cross/chest and descending foot contacts, no granted possession',{timeout:120000},async()=>{
+ const R=await initializeRapier(rapier),rows=[];
+ for(const id of ['chest-control','aerial-foot-control'])for(const side of ['home','away'])for(let variantIndex=0;variantIndex<30;variantIndex++){
+  const lab=createControlledActionLab(R,id,{shotSide:side,variantIndex});
+  try{
+   let hit=null;
+   for(let tick=1;tick<=300;tick++){
+    const a=lab.step();
+    if(a.aerialControlAudit){
+     hit=a.aerialControlAudit;
+     assert.equal(hit.surface,id==='chest-control'?'chest':'foot');
+     assert.equal(hit.playerId,side+(id==='chest-control'?'-9':'-10'));
+     assert.equal(hit.nativeExclusiveAerialControlStart,true);assert.equal(hit.actualNativeSolverContact,true);
+     assert.equal(hit.actualPhysicsImpulseApplied,true);assert.equal(hit.officialPossession,false);
+     assert.equal(a.collectiveControl.kind,'loose');assert.deepEqual(a.starts,[]);
+     assert.ok(Math.hypot(...Object.values(hit.impulseNs))<=5+1e-8);
+     if(id==='chest-control')assert.ok(a.headerCrossAudit&&a.headerCrossAudit.tick<hit.tick);
+     break;
+    }
+   }
+   rows.push({id,side,variantIndex,tick:hit?.tick??null});
+  }finally{lab.dispose();}
+ }
+ process.stdout.write('ME_628_AERIAL_CONTROL '+JSON.stringify(rows)+'\\n');
+ assert.ok(rows.every(r=>r.tick!==null),JSON.stringify(rows.filter(r=>r.tick===null)));
 });

@@ -85,9 +85,74 @@ export function createNativeAerialHead(R,world,ballCollider,actor){
  return freeze({prepare,observe});
 }
 
+// AERIAL-03: independent, opt-in physical receiving surfaces. A prediction
+// enables a reachable body part, never a ball touch or possession.
+export const NATIVE_AERIAL_CONTROL_VERSION='me-628-native-aerial-control-v1';
+export const AERIAL_CONTROL_HEIGHT=freeze({chest:1.35,foot:0.85});
+export function planNativeAerialControl(actor,ball,surface){
+ const z=AERIAL_CONTROL_HEIGHT[surface],p=ball?.position,v=ball?.velocity;
+ if(!z||!actor||actor.role==='goalkeeper'||![actor.x,actor.y,actor.vx,actor.vy,p?.x,p?.y,p?.z,v?.x,v?.y,v?.z].every(finite)||
+    v.z>=-0.15||p.z<z-0.20||p.z>4.5||Math.hypot(v.x,v.y)>25)return null;
+ for(let k=1;k<=18;k++){
+  const t=k*PLAYER_DT,h=p.z+v.z*t-4.905*t*t;
+  const dx=p.x+v.x*t-actor.x-actor.vx*t,dy=p.y+v.y*t-actor.y-actor.vy*t;
+  const gap=Math.hypot(dx,dy),reach=surface==='chest'?0.32:0.55;
+  if(Math.abs(h-z)<=0.16&&gap<=reach+0.12){
+   const offset=Math.min(reach,gap);
+   return freeze({surface,actorId:actor.id,dx:gap>1e-8?dx/gap*offset:0,dy:gap>1e-8?dy/gap*offset:0,decisionOnly:true});
+  }
+ }
+ return null;
+}
+export function createNativeAerialControl(R,world,ballCollider,actor,surface){
+ const z=AERIAL_CONTROL_HEIGHT[surface];
+ if(!z)throw new TypeError('Known aerial receiving surface required');
+ const rigid=world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased()
+  .setTranslation(actor.x,actor.y,z).setCcdEnabled(true));
+ const collider=world.createCollider(R.ColliderDesc.ball(surface==='chest'?0.19:0.14)
+  .setFriction(0.2).setRestitution(0).setCollisionGroups(0),rigid);
+ let prepared=null,lastTick=0,previousContact=false,recoverUntil=0;
+ function prepare(player,tick,ball,deadBall=false,headPriority=false){
+  if(prepared||tick!==lastTick+1||player?.id!==actor.id||player.team!==actor.team)
+   throw new TypeError('Native aerial receiving surface requires consecutive canonical ticks');
+  const plan=!deadBall&&!headPriority&&tick>=recoverUntil?planNativeAerialControl(player,ball,surface):null;
+  collider.setCollisionGroups(plan?(LEG_CATEGORY<<16)|BALL_CATEGORY:0);
+  rigid.setNextKinematicTranslation({x:player.x+(plan?.dx??0),y:player.y+(plan?.dy??0),z});
+  prepared={tick,plan,incomingVelocity:freeze({...ball.velocity})};
+ }
+ function observe(tick){
+  if(prepared?.tick!==tick)throw new TypeError('Native receiving surface needs current solver tick');
+  let contact=false;
+  if(prepared.plan)world.contactPair(ballCollider,collider,manifold=>{
+   if(manifold.numContacts()>0&&manifold.numSolverContacts()>0)contact=true;
+  });
+  const contactStarted=contact&&!previousContact;
+  if(contactStarted)recoverUntil=tick+18;
+  const result=freeze({version:NATIVE_AERIAL_CONTROL_VERSION,surface,tick,actorId:actor.id,team:actor.team,
+   contact,contactStarted,actualNativeSolverContact:contact,incomingVelocity:prepared.incomingVelocity,
+   sameOriginalRapierWorld:true,officialPossession:false});
+  previousContact=contact;lastTick=tick;prepared=null;return result;
+ }
+ return freeze({prepare,observe});
+}
+// One mass-aware cushion on the real ball after exclusive solver contact.
+// No possession, attachment, position mutation or automatic second touch.
+export function planNativeAerialCushion({surface,incoming,velocity,massKg,actor}={}){
+ if(!AERIAL_CONTROL_HEIGHT[surface]||!actor||![incoming?.x,incoming?.y,incoming?.z,velocity?.x,velocity?.y,velocity?.z,massKg,actor.vx,actor.vy].every(finite)||
+    massKg<=0||incoming.z>=-0.15)return null;
+ const desired={x:actor.vx*0.65,y:actor.vy*0.65,z:surface==='chest'?-1.4:-0.65};
+ const raw={x:massKg*(desired.x-velocity.x),y:massKg*(desired.y-velocity.y),z:massKg*(desired.z-velocity.z)};
+ const magnitude=Math.hypot(raw.x,raw.y,raw.z),scale=Math.min(1,5/Math.max(magnitude,1e-9));
+ if(magnitude<0.025)return null;
+ const impulseNs=freeze({x:raw.x*scale,y:raw.y*scale,z:raw.z*scale});
+ const result={x:velocity.x+impulseNs.x/massKg,y:velocity.y+impulseNs.y/massKg,z:velocity.z+impulseNs.z/massKg};
+ if(Math.hypot(result.x-actor.vx,result.y-actor.vy,result.z)>=Math.hypot(velocity.x-actor.vx,velocity.y-actor.vy,velocity.z))return null;
+ return freeze({impulseNs,decisionOnly:true,officialPossession:false});
+}
 export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
  initialPlayers,activePlayerIds,{feedbackEnabled=false,
-  dribbleGroundBallCentreZ=null,fullFieldNative=false,aerialEnabled=false}={}){
+  dribbleGroundBallCentreZ=null,fullFieldNative=false,aerialEnabled=false,aerialSurface='all'}={}){
+ if(!['all','head','chest','foot'].includes(aerialSurface))throw new TypeError('Known aerial training restriction required');
  if(typeof aerialEnabled!=='boolean'||aerialEnabled&&(!feedbackEnabled||dribbleGroundBallCentreZ!==null))
   throw new TypeError('Native aerial research requires original guarded movement feedback');
  if(typeof fullFieldNative!=='boolean'||fullFieldNative&&(activePlayerIds?.length!==22||feedbackEnabled!==true||dribbleGroundBallCentreZ!==null))throw new TypeError('Full field requires all 22 native bodies and canonical feedback');
@@ -131,7 +196,8 @@ export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
    .setDensity(80).setFriction(0.7).setRestitution(0)
    .setCollisionGroups((LEG_CATEGORY<<16)|BALL_CATEGORY),rigid);
   entries.push({id:actor.id,team:actor.team,rigid,torso,leg,
-   head:aerialEnabled&&actor.role!=='goalkeeper'?createNativeAerialHead(R,world,ballCollider,actor):null});
+   head:aerialEnabled&&actor.role!=='goalkeeper'&&['all','head'].includes(aerialSurface)?createNativeAerialHead(R,world,ballCollider,actor):null,
+   controls:aerialEnabled&&actor.role!=='goalkeeper'?['chest','foot'].filter(surface=>aerialSurface==='all'||aerialSurface===surface).map(surface=>createNativeAerialControl(R,world,ballCollider,actor,surface)):[]});
  }
  if(entries.length!==activePlayerIds.length)
   throw new Error('Selected physical body identity mismatch');
@@ -164,6 +230,7 @@ export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
    const actor=frame.players.find(p=>p.id===e.id);
    e.rigid.setLinvel({x:actor.vx,y:actor.vy,z:0},true);
    e.head?.prepare(actor,nextTick,ball,deadBall);
+   for(const control of e.controls)control.prepare(actor,nextTick,ball,deadBall,!!e.head&&!!planNativeAerialJump(actor,ball));
   }
   prior=frame.players.map(p=>({id:p.id,x:p.x,y:p.y}));
   prepared=nextTick;
@@ -200,7 +267,7 @@ export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
     velocity:freeze({x:v.x,y:v.y,z:v.z}),
     originalCanonicalDriftM:Math.hypot(p.x-canonical.x,p.y-canonical.y)});
   }));
-  const aerial=aerialEnabled?freeze(entries.filter(e=>e.head).map(e=>e.head.observe(nextTick))):null;
+  const aerial=aerialEnabled?freeze(entries.flatMap(e=>[...(e.head?[e.head.observe(nextTick)]:[]),...e.controls.map(control=>control.observe(nextTick))])):null;
   tick=nextTick;prepared=null;previousBallIds=now;
   latest=freeze({
    version:SMALL_SIDED_BODY_VERSION,tick,
@@ -209,8 +276,10 @@ export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
    lowerLegBallStarts:starts,lowerLegBallEnds:ends,
    nativeOpposingTorsoPairs:freeze(opponentBodyPairs.sort()),
    bodies:sourceBodies,
-   ...(aerialEnabled?{aerial,headBallContacts:freeze(aerial.filter(x=>x.contact).map(x=>x.actorId)),
-    headBallStarts:freeze(aerial.filter(x=>x.contactStarted).map(x=>x.actorId))}:{}),
+   ...(aerialEnabled?{aerial,headBallContacts:freeze(aerial.filter(x=>x.version===NATIVE_AERIAL_VERSION&&x.contact).map(x=>x.actorId)),
+    headBallStarts:freeze(aerial.filter(x=>x.version===NATIVE_AERIAL_VERSION&&x.contactStarted).map(x=>x.actorId)),
+    aerialControlContacts:freeze(aerial.filter(x=>x.version===NATIVE_AERIAL_CONTROL_VERSION&&x.contact).map(x=>x.actorId)),
+    aerialControlStarts:freeze(aerial.filter(x=>x.version===NATIVE_AERIAL_CONTROL_VERSION&&x.contactStarted).map(x=>x.actorId))}:{}),
    ballProtectionProven:false,successfulPossession:false,
    tackleWon:false,officialMatchResult:null,
    evidenceSource:'native-rapier-solver-manifold'
@@ -240,7 +309,7 @@ export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
   oneOriginalRapierWorld:true,selectedColliderIds:freeze(entries.map(e=>e.id)),
   lowerLegBallContacts:freeze([]),lowerLegBallStarts:freeze([]),
   lowerLegBallEnds:freeze([]),nativeOpposingTorsoPairs:freeze([]),
-  bodies:freeze([]),...(aerialEnabled?{aerial:freeze([]),headBallContacts:freeze([]),headBallStarts:freeze([])}:{}),ballProtectionProven:false,
+  bodies:freeze([]),...(aerialEnabled?{aerial:freeze([]),headBallContacts:freeze([]),headBallStarts:freeze([]),aerialControlContacts:freeze([]),aerialControlStarts:freeze([])}:{}),ballProtectionProven:false,
   successfulPossession:false,tackleWon:false,officialMatchResult:null,
   evidenceSource:'native-rapier-solver-manifold'});
  return freeze({prepare,observe,snapshot,dispose,

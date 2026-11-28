@@ -743,7 +743,7 @@ export function createEngine(RAPIER, input = {}, {
   const smallBodyGuard=diagnosticSmallSidedBodyGuardEnabled?
    createSmallSidedNativeBodyGuard(RAPIER,world,ballCollider,
      stagedShoes,smallSided.activeIds,{
-      feedbackEnabled:diagnosticSmallSidedBodyFeedbackEnabled,fullFieldNative:smallSided.fullField===true,aerialEnabled:diagnosticNativeAerialEnabled,
+      feedbackEnabled:diagnosticSmallSidedBodyFeedbackEnabled,fullFieldNative:smallSided.fullField===true,aerialEnabled:diagnosticNativeAerialEnabled,aerialSurface:smallSided.aerialSurface??'all',
       ...(isolatedCarry?{
        dribbleGroundBallCentreZ:BALL_RADIUS
       }:{})
@@ -1014,15 +1014,15 @@ export function createEngine(RAPIER, input = {}, {
        (diagnosticKeeperSingleShot&&keeperSingleShotTick!==null&&
         shoeBridge.snapshot().started.includes(smallSided.side+'-10')),
       suppressPhysicalBodyContact:smallBodyGuard?.snapshot()
-       .lowerLegBallContacts.length>0||(smallBodyGuard?.snapshot().headBallContacts?.length??0)>0||keeperDives.some(controller=>controller.snapshot().contact===true||controller.snapshot().catchState?.active===true||controller.snapshot().distribution?.tick===tick)
+       .lowerLegBallContacts.length>0||(smallBodyGuard?.snapshot().headBallContacts?.length??0)>0||(smallBodyGuard?.snapshot().aerialControlContacts?.length??0)>0||keeperDives.some(controller=>controller.snapshot().contact===true||controller.snapshot().catchState?.active===true||controller.snapshot().distribution?.tick===tick)
     });
     if(collectiveObserver){
      const shoe=shoeBridge.snapshot(),physical=smallBodyGuard.snapshot();
      const handStarts=hands.filter(x=>x.contactStarted).map(x=>x.keeperId);
      const handContacts=hands.filter(x=>x.contact||x.catchState?.active).map(x=>x.keeperId);
      collectiveObserver.observe({tick,players:playerFrame.players,ball:{position:body.translation(),velocity:body.linvel()},starts:shoe.started,active:shoe.active,
-      bodyStarts:[...physical.lowerLegBallStarts,...(physical.headBallStarts??[]),...handStarts],bodyActive:[...physical.lowerLegBallContacts,...(physical.headBallContacts??[]),...handContacts],
-      ...(diagnosticNativeAerialEnabled?{headStarts:physical.headBallStarts,headActive:physical.headBallContacts}:{}),
+      bodyStarts:[...physical.lowerLegBallStarts,...(physical.headBallStarts??[]),...(physical.aerialControlStarts??[]),...handStarts],bodyActive:[...physical.lowerLegBallContacts,...(physical.headBallContacts??[]),...(physical.aerialControlContacts??[]),...handContacts],
+      ...(diagnosticNativeAerialEnabled?{headStarts:physical.headBallStarts,headActive:physical.headBallContacts,aerialControlStarts:physical.aerialControlStarts,aerialControlActive:physical.aerialControlContacts}:{}),
       action:actionExecutor?.actionSnapshot()??null,shoulderPlans:Object.values(playerFrame.nativeShoulders??{}),torsoPairs:physical.nativeOpposingTorsoPairs,bodies:physical.bodies,beforeBallVelocity:preStepBall.velocity,afterSolverVelocity:collectiveSolverVelocity,keeperStates:hands,attackPolarity:nativeAttackPolarity});
     }
     if(duelTransition){

@@ -170,7 +170,7 @@ export function createControlledActionLab(RAPIER,id,{
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
- const aerialLab=id==='header-pair';
+ const aerialLab=['header-pair','chest-control','aerial-foot-control'].includes(id);
  if(aerialLab){bodyGuardEnabled=true;collectiveApproaches=true;}
  if(typeof collectiveApproaches!=='boolean'||(collectiveApproaches&&(!supportsNativeOpenPlay(id)||!bodyGuardEnabled||keeperSingleShot||directedDribble||duelTackleProfile!=='mixed')))
   throw new TypeError('Native open play requires guarded participants without isolated overrides');
@@ -507,7 +507,7 @@ export function createControlledActionLab(RAPIER,id,{
  const baseFootworkObserver=basicFootwork?
   createBasicReceiveDribbleObserverB04({side:selectedControlSide,kind:id}):null;
  const collectiveCounts=collectiveApproaches?{carry:0,pass:0,shot:0,tackle:0,interception:0,save:0,other:0}:null;
- let headerAudit=null,headerCrossAudit=null;
+ let headerAudit=null,headerCrossAudit=null,aerialControlAudit=null;
  function record(physics,playerFrame){
   const foot=engine.footContactSnapshot();
   const starts=Object.freeze([...foot.started]);
@@ -630,7 +630,9 @@ export function createControlledActionLab(RAPIER,id,{
   // A gameplay-proximity impulse is NOT native shoe evidence. Keep the
   // actual Rapier ball action visible, but do not feed it to any observer
   // whose proofs require a genuine shoe START.
-  const nativeAction=intentDrivenSoloCarry||action?.nativeExclusiveHeadStart===true?null:action;
+  const nativeAction=intentDrivenSoloCarry||action?.nativeExclusiveHeadStart===true||action?.nativeExclusiveAerialControlStart===true?null:action;
+  if(aerialLab&&action?.nativeExclusiveAerialControlStart===true&&!aerialControlAudit&&
+     (id==='aerial-foot-control'||headerCrossAudit&&action.playerId===headerCrossAudit.recipientId&&action.tick>headerCrossAudit.tick))aerialControlAudit=action;
   if(aerialLab&&action?.action==='cross'&&action.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true&&
      starts.length===1&&starts[0]===action.playerId&&!headerCrossAudit)headerCrossAudit=action;
   if(aerialLab&&action?.nativeExclusiveHeadStart===true&&headerCrossAudit&&
@@ -1023,7 +1025,7 @@ export function createControlledActionLab(RAPIER,id,{
    // velocity and no authority outside the existing closed Action LAB.
    observedMovementPlayers:playerFrame.players,
    starts,action,evidence,decisionEvidence,contactContinuity,
-   ...(aerialLab?{headerAudit,headerCrossAudit}:{}),
+   ...(aerialLab?{headerAudit,headerCrossAudit,aerialControlAudit}:{}),
    ...(collectiveControl?{collectiveControl,collectiveCounts:Object.freeze({...collectiveCounts}),nativeKeeperStates:engine.nativeKeeperSnapshots()}:{}),
     labDynamicsVersion:currentDynamics?CURRENT_LAB_DYNAMICS_VERSION:null,
     latestOrientedReception:currentDynamics?(engine.latestLabReceptionSnapshot?.()??null):null,

@@ -1,4 +1,5 @@
 import {validateAttackPolarity} from './match-directions.mjs';
+import {planNativeAerialCushion,NATIVE_AERIAL_CONTROL_VERSION} from './small-sided-native-body-guard.mjs';
 // Extracted #481 A4.2b.1 physical impulse boundary.
 // A private, opt-in adapter for the SAME Rapier ball body and canonical
 // 22-shoe event source. No world, policy/mover override or official results.
@@ -229,7 +230,7 @@ export function createPrivatePhysicalActionExecutor({
   // requested action or a second ball. No shoe action on the same contact.
   if(aerialEvidence!==null){
    if(!nativeActionPolicy||!physicalBodyGuardEnabled||!Array.isArray(aerialEvidence)||typeof aerialConflict!=='boolean'||
-      aerialEvidence.some(s=>s.version!=='me-628-native-aerial-head-v1'||s.tick!==nextTick||
+      aerialEvidence.some(s=>!['me-628-native-aerial-head-v1',NATIVE_AERIAL_CONTROL_VERSION].includes(s.version)||s.tick!==nextTick||
        !activePlayerIds.includes(s.actorId)||s.sameOriginalRapierWorld!==true||
        s.actualNativeSolverContact!==s.contact||s.contactStarted&&!s.contact))
     throw new TypeError('Current native head solver evidence required');
@@ -242,9 +243,20 @@ export function createPrivatePhysicalActionExecutor({
        !contact.started.length&&!contact.active.length&&keeperDistribution===null&&
        nextTick-lastActionTick>=UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS){
      const origin=Object.freeze({...ballBody.translation()}),before=Object.freeze({...ballBody.linvel()});
-     const plan=chooseNativeHeaderIntent(actor,origin,before,playerFrame.players.filter(p=>activePlayerIds.includes(p.id)),attackPolarity);
+     const control=head.version===NATIVE_AERIAL_CONTROL_VERSION;
+     const plan=control?null:chooseNativeHeaderIntent(actor,origin,before,playerFrame.players.filter(p=>activePlayerIds.includes(p.id)),attackPolarity);
      const mass=ballBody.mass();
-     if(plan&&Number.isFinite(mass)&&mass>0){
+     if(control){
+      const cushion=planNativeAerialCushion({surface:head.surface,incoming:head.incomingVelocity,velocity:before,massKg:mass,actor});
+      if(cushion){
+       ballBody.applyImpulse(cushion.impulseNs,true);
+       result=Object.freeze({version:NATIVE_AERIAL_CONTROL_VERSION,tick:nextTick,playerId:actor.id,team:actor.team,
+        action:'aerial-control',surface:head.surface,recipientId:null,origin,before,after:Object.freeze({...ballBody.linvel()}),
+        impulseNs:cushion.impulseNs,nativeExclusiveAerialControlStart:true,actualNativeSolverContact:true,sameOriginalRapierWorld:true,
+        appliedByRapier:true,actualPhysicsImpulseApplied:true,officialMatchAction:false,officialPossession:false});
+       lastActionTick=nextTick;
+      }
+     }else if(plan&&Number.isFinite(mass)&&mass>0){
       const raw={x:mass*(plan.desiredVelocity.x-before.x),y:mass*(plan.desiredVelocity.y-before.y),z:mass*(plan.desiredVelocity.z-before.z)};
       const norm=Math.hypot(raw.x,raw.y,raw.z),scale=Math.min(1,5/Math.max(norm,1e-9));
       if(norm>0.025){
