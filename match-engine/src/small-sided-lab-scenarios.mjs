@@ -280,18 +280,27 @@ export function keeperDuelCloseDownTarget(side,keeper,attacker,ball,velocity){
 // Open play and the isolated keeper experiment share this geometry.
 // AERIAL-07: same live ballistic prediction for keeper movement and
 // hand reach. Only descending points inside the keeper's own box qualify.
+// Reuse the existing 2.45 m dive height envelope; a high claim can
+// meet the underside of a descending ball rather than waiting at 2.05 m.
+export const NATIVE_HIGH_HAND_MAX_Z=2.40;
 export function planNativeKeeperHighIntercept(keeper,ball,velocity,attackPolarity=1){
- if(!keeper||keeper.role!=='goalkeeper'||![keeper.x,keeper.y,ball?.x,ball?.y,ball?.z,velocity?.x,velocity?.y,velocity?.z].every(Number.isFinite))return null;
- const dir=attackDirection(keeper.team,attackPolarity),height=2.05;
- const disc=velocity.z*velocity.z+19.62*(ball.z-height);
- if(disc<0||ball.z<0.30)return null;
- const eta=(velocity.z+Math.sqrt(disc))/9.81;
- if(!(eta>=0.08&&eta<=2.6))return null;
- const x=ball.x+velocity.x*eta,y=ball.y+velocity.y*eta;
- if(-dir*x<36.2||-dir*x>52.1||Math.abs(y)>19.8)return null;
- const gap=Math.hypot(x-keeper.x,y-keeper.y);
- if(gap>1.4+Math.min(7*eta,Math.hypot(keeper.vx??0,keeper.vy??0)*eta+4.5*eta*eta))return null;
- return freeze({point:freeze({x,y,z:height}),target:freeze({x:bounded(x-dir*0.35,-51.99,51.99),y}),eta,decisionOnly:true,officialPossession:false});
+ if(!keeper||keeper.role!=='goalkeeper'||![keeper.x,keeper.y,ball?.x,ball?.y,ball?.z,velocity?.x,velocity?.y,velocity?.z].every(Number.isFinite)||ball.z<0.30)return null;
+ const dir=attackDirection(keeper.team,attackPolarity);
+ for(const [height,handHeight] of [[NATIVE_HIGH_HAND_MAX_Z+0.20,NATIVE_HIGH_HAND_MAX_Z],[2.05,2.05]]){
+  const disc=velocity.z*velocity.z+19.62*(ball.z-height);
+  if(disc<0)continue;
+  const eta=(velocity.z+Math.sqrt(disc))/9.81;
+  if(!(eta>=0.08&&eta<=2.6))continue;
+  const x=ball.x+velocity.x*eta,y=ball.y+velocity.y*eta;
+  if(-dir*x<36.2||-dir*x>52.1||Math.abs(y)>19.8)continue;
+  const gap=Math.hypot(x-keeper.x,y-keeper.y);
+  if(gap>1.4+Math.min(7*eta,Math.hypot(keeper.vx??0,keeper.vy??0)*eta+4.5*eta*eta))continue;
+  // Near-term extended reach must fit the existing glove speed and
+  // reach envelope; otherwise keep the original lower forecast.
+  if(handHeight>2.05&&eta<=0.85&&Math.hypot(x-keeper.x-dir*0.35,y-keeper.y,handHeight-0.85)>Math.min(2.65,8.5*Math.max(6,Math.min(51,Math.round(eta*60)))/60)+0.30)continue;
+  return freeze({point:freeze({x,y,z:handHeight}),ballCentreZ:height,target:freeze({x:bounded(x-dir*0.35,-51.99,51.99),y}),eta,decisionOnly:true,officialPossession:false});
+ }
+ return null;
 }
 export function planNativeKeeperCloseDown(keeper,attacker,ball,velocity,attackPolarity=1){
  validateAttackPolarity(attackPolarity);

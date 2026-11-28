@@ -6,7 +6,7 @@ import {attackDirection,validateAttackPolarity} from './match-directions.mjs';
 import {INITIAL_PLAYERS,PLAYER_VERSION,PLAYER_DT,PLAYER_MAX_SPEED_MPS}
  from './player-movement.mjs';
 import {chooseRecipient} from './player-ball-uniform-autonomous-action.mjs';
-import {planNativeKeeperHighIntercept} from './small-sided-lab-scenarios.mjs';
+import {planNativeKeeperHighIntercept,NATIVE_HIGH_HAND_MAX_Z} from './small-sided-lab-scenarios.mjs';
 
 export const SMALL_SIDED_BODY_VERSION='me-628-native-physical-body-guard-v1';
 const TORSO_CATEGORY=0x0020,LEG_CATEGORY=0x0040,BALL_CATEGORY=0x0001;
@@ -381,9 +381,9 @@ export const KEEPER_DIVE_VERSION='me-628-native-keeper-dive-v1';
 // Full reaching pose includes lateral body extension, not just arm length.
 // These are provisional geometric/kinematic limits, not attribute tuning.
 const DIVE_REACH_M=2.65,DIVE_GLOVE_RADIUS_M=0.21,DIVE_SPEED_MPS=8.5;
-// Maximum high ball-centre height at the existing 2.05m hand target:
-// hand collider radius + regulation ball radius, not extra arm reach.
-const HIGH_CLAIM_BALL_MAX_Z=2.05+DIVE_GLOVE_RADIUS_M+0.11;
+// Ball-centre limit follows the bounded high hand target plus collider
+// radii; no change to the native glove size or overall extension.
+const HIGH_CLAIM_BALL_MAX_Z=NATIVE_HIGH_HAND_MAX_Z+DIVE_GLOVE_RADIUS_M+0.11;
 export function planNativeKeeperDive(keeper,ball,attackPolarity=1){
  const dir=attackDirection(keeper.team,attackPolarity),p=ball.position,v=ball.velocity;
  if(![keeper.x,keeper.y,p.x,p.y,p.z,v.x,v.y,v.z].every(finite)||
@@ -623,7 +623,7 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
      const dir=attackDirection(actor.team,attackPolarity);
      const localGap=Math.hypot(candidate.x-actor.x,candidate.y-actor.y,candidate.z-0.85);
      // Never extend the original keeper's reachable/legal envelope.
-     if(localGap<=DIVE_REACH_M&&-dir*candidate.x>=36.36&&-dir*candidate.x<=52.03&&Math.abs(candidate.y)<=19.8&&candidate.z>=0.45&&candidate.z<=2.25)target=candidate;
+     if(localGap<=DIVE_REACH_M&&-dir*candidate.x>=36.36&&-dir*candidate.x<=52.03&&Math.abs(candidate.y)<=19.8&&candidate.z>=0.45&&candidate.z<=2.45)target=candidate;
     }else highGripSettling=null;
    }
   }else if(plan){

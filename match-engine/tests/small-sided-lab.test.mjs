@@ -7,7 +7,7 @@ import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {createEngine,initializeRapier} from '../src/core.mjs';
 import {createPlayerMovement,INITIAL_PLAYERS,goalkeeperPosition} from '../src/player-movement.mjs';
 import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT,
- keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget,planCollectiveApproaches,planCollectiveSupport,planCollectiveDefense,planNativeFootballMovement,supportsNativeOpenPlay,planNativeKeeperCloseDown,planNativeKeeperHighIntercept,planNativeAerialContest}
+ keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget,planCollectiveApproaches,planCollectiveSupport,planCollectiveDefense,planNativeFootballMovement,supportsNativeOpenPlay,planNativeKeeperCloseDown,planNativeKeeperHighIntercept,NATIVE_HIGH_HAND_MAX_Z,planNativeAerialContest}
  from '../src/small-sided-lab-scenarios.mjs';
 import {createControlledActionLab,projectActiveLabDecisions,createNativeFullFieldSession} from '../src/action-labs.mjs';
 import {createCollectiveBallControlObserver,createNativeBallControlObserver,createDribbleTransitionObserver,chooseCollectiveDefensiveTouch,planNativeDefensiveIntervention,isNativeRecoveryLocked,applyNativeSlideRecovery} from '../src/isolated-dribble-touches.mjs';
@@ -2367,7 +2367,12 @@ test('AERIAL-07 high claim prediction is mirrored and rejects unreachable or out
   const dir=team==='home'?1:-1,keeper={id:team+'-1',team,role:'goalkeeper',x:-dir*46,y:0,vx:0,vy:0};
   const ball={position:{x:-dir*45.65,y:0.2,z:3.0},velocity:{x:0,y:0,z:-2}};
   const plan=planNativeKeeperHighClaim(keeper,ball);
-  assert.ok(plan);assert.equal(plan.kind,'high-claim');assert.ok(plan.target.z<=2.05+1e-8);
+  assert.ok(plan);assert.equal(plan.kind,'high-claim');assert.ok(plan.target.z<=NATIVE_HIGH_HAND_MAX_Z+1e-8);
+  const early={position:{...ball.position,z:4},velocity:{x:0,y:0,z:-1}};
+  const earlyPlan=planNativeKeeperHighClaim(keeper,early);
+  assert.ok(earlyPlan);assert.ok(earlyPlan.target.z>2.05);assert.ok(earlyPlan.target.z<=NATIVE_HIGH_HAND_MAX_Z+1e-8);
+  const lower=planNativeKeeperHighClaim(keeper,{position:{...ball.position,z:2.3},velocity:{x:0,y:0,z:-0.5}});
+  assert.ok(lower);assert.ok(lower.target.z<=2.05+1e-8);
   assert.equal(planNativeKeeperHighClaim(keeper,{...ball,position:{...ball.position,x:0}}),null);
   assert.equal(planNativeKeeperHighClaim(keeper,{...ball,position:{...ball.position,y:21}}),null);
  }
@@ -2409,7 +2414,8 @@ test('AERIAL-07 real cross precedes native high-claim attempts and observed hand
    rows.push({id,side,variantIndex,cross:!!cross,attempt:!!audit,contact:audit?.contactTick??null,confirmed:audit?.confirmedTick??null,punch:audit?.punchTick??null,catchAttempt,gripFailure,handDiagnostic,flight});
   }finally{lab.dispose();}
  }
- process.stdout.write('ME_628_HIGH_CLAIM '+JSON.stringify(rows)+'\\n');
+ for(const id of ['keeper-high-cross','keeper-high-intercept'])for(const side of ['home','away'])
+ process.stdout.write('ME_628_HIGH_CLAIM '+JSON.stringify(rows.filter(r=>r.id===id&&r.side===side))+'\\n');
  for(const side of ['home','away']){
   const group=rows.filter(r=>r.side===side);
   assert.ok(group.every(r=>r.cross),JSON.stringify(group));
@@ -2441,7 +2447,9 @@ test('AERIAL-07B high hand decision catches reachable unpressured deliveries or 
   assert.equal(eligibleKeeperGrip({...gripEvidence,highClaim:true}),true);
   const highCentre={...ballPosition,z:2.29};
   assert.equal(eligibleKeeperGrip({...gripEvidence,ballPosition:highCentre,highClaim:true}),true);
-  assert.equal(eligibleKeeperGrip({...gripEvidence,ballPosition:{...ballPosition,z:2.40},highClaim:true}),false);
+  const extended={...ballPosition,z:NATIVE_HIGH_HAND_MAX_Z+0.20},extendedHand={...handPosition,z:NATIVE_HIGH_HAND_MAX_Z};
+  assert.equal(eligibleKeeperGrip({...gripEvidence,ballPosition:extended,glovePosition:extendedHand,highClaim:true}),true);
+  assert.equal(eligibleKeeperGrip({...gripEvidence,ballPosition:{...extended,z:NATIVE_HIGH_HAND_MAX_Z+0.33},glovePosition:extendedHand,highClaim:true}),false);
   assert.equal(planNativeHighHandAction({...input,ballPosition:highCentre}).kind,'catch');
   assert.equal(eligibleKeeperGrip({...gripEvidence,highClaim:true,after:{x:5,y:0,z:0}}),false);
  }
