@@ -100,3 +100,13 @@ test('pinned Playwright containers trust only exact checkout workspace for git o
  }
  assert.doesNotMatch(browserStep+adminStep,/safe\.directory '\*'/);
 });
+
+
+test('Admin economic source discovery includes internal stacked PRs but retains same-repository trust',()=>{
+ const step=workflow.split('      - name: Find certified economic source for unchanged test inputs')[1]?.split('      - name:')[0];
+ assert.ok(step);
+ assert.match(step,/head\.repo\.full_name == github\.repository/);
+ assert.match(step,/base\.repo\.full_name == github\.repository/);
+ assert.doesNotMatch(step,/base\.ref == 'main'/);
+ assert.match(step,/economicSource\(/);
+});

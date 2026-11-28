@@ -94,10 +94,23 @@ function isolatedConsumers(ref) {
 
 const {inputs}=require('./ci-economic-inputs.cjs');
 async function economicSource({ github, owner, repo, pr,workflow='admin-world-checks.yml' }) {
-  const base = pr.base.sha, head = pr.head.sha;
-  if (pr.base.ref !== 'main' || pr.head.repo?.full_name !== owner + '/' + repo ||
-      git('rev-parse', 'HEAD').trim() !== head || git('merge-base', base, head).trim() !== base ||
-      git('rev-parse',base).trim()!==base) return null;
+  const prBase = pr.base.sha, head = pr.head.sha;
+  if (pr.head.repo?.full_name !== owner + '/' + repo ||
+      !/^[a-f0-9]{40}$/.test(prBase) || !/^[a-f0-9]{40}$/.test(head) ||
+      git('rev-parse', 'HEAD').trim() !== head || git('merge-base', prBase, head).trim() !== prBase ||
+      git('rev-parse',prBase).trim()!==prBase) return null;
+  let base=prBase;
+  const stacked=pr.base.ref!=='main';
+  if(stacked){
+    // Never treat a parent feature branch as a certified source. Verify
+    // the current main ref against GitHub and require it to be an ancestor
+    // of the exact parent and candidate. Stale/divergent stacks fail closed.
+    if(workflow!=='admin-world-checks.yml'||pr.base.repo?.full_name!==owner+'/'+repo)return null;
+    const {data:main}=await github.rest.repos.getBranch({owner,repo,branch:'main'});
+    base=main.commit.sha;
+    if(!/^[a-f0-9]{40}$/.test(base)||git('rev-parse','refs/remotes/origin/main').trim()!==base||
+       git('merge-base',base,prBase).trim()!==base||git('merge-base',base,head).trim()!==base)return null;
+  }
   let selected=[];
   function repairShape(from,to){
     const raw=git('diff','--raw','--no-renames','-z',from,to).split('\0');
@@ -110,7 +123,7 @@ async function economicSource({ github, owner, repo, pr,workflow='admin-world-ch
   }
   async function scope(from){
     if(workflow==='admin-world-checks.yml'&&from===economicRepairAnchor){
-      if(base===from&&pr.head.ref===economicRepairBranch&&repairShape(from,head))return 'economic-only';
+      if(!stacked&&base===from&&pr.head.ref===economicRepairBranch&&repairShape(from,head))return 'economic-only';
       if(base!==from){
         const history=git('log','--first-parent','--reverse','--format=%H',from+'..'+base).trim().split('\n');
         const repair=history[0];
@@ -118,14 +131,16 @@ async function economicSource({ github, owner, repo, pr,workflow='admin-world-ch
           return scope(repair);
       }
     }
-    const owned=require('./ci-owned-selection.cjs').ownedTests(from,head);
+    const owned=stacked?null:require('./ci-owned-selection.cjs').ownedTests(from,head);
     if(owned){
       selected=owned.filter(t=>workflow==='admin-world-checks.yml'?t.owner!=='site-node':t.owner==='site-node').map(t=>t.path);
       return 'owned-tests';
     }
     if(workflow==='admin-world-checks.yml'){
+      const economicChanged=git('diff','--name-only',from,head,'--',...inputs,'.github','tools/ci-*','.npmrc','backend/.npmrc','.node-version','.nvmrc','package*.json').trim();
+      if(stacked&&economicChanged)return null;
       if(isolatedDiff(from,head)&&isolatedConsumers(head))return 'match-engine';
-      return git('diff','--name-only',from,head,'--',...inputs,'.github','tools/ci-*','.npmrc','backend/.npmrc','.node-version','.nvmrc','package*.json').trim()?null:'economic-only';
+      return economicChanged?null:'economic-only';
     }
     const paths=git('diff','--no-renames','--name-only','-z',from,head).split('\0').filter(Boolean);
     if(!paths.length||paths.some(p=>p.startsWith('.github/')||p.startsWith('match-engine/')||(p.startsWith('docs/')&&!p.endsWith('.md'))))return null;
@@ -165,7 +180,7 @@ async function economicSource({ github, owner, repo, pr,workflow='admin-world-ch
         'Verify operator bootstrap, recovery and local persistence across restart'].every(name =>
         operator?.steps?.some(step => step.name === name && step.conclusion === 'success'));
       const rehearsal=operator?.steps?.some(s=>s.name==='Execute isolated economic rehearsal'&&s.conclusion==='success');
-      if (verdict.state === 'PASS' && (workflow!=='admin-world-checks.yml'||(executed&&rehearsal))) return { mode, selected, merge, head, base, source: source.head.sha, tree: commit.tree.sha, run: run.html_url, attempt: run.run_attempt };
+      if (verdict.state === 'PASS' && (workflow!=='admin-world-checks.yml'||(executed&&rehearsal))) return { mode, selected, merge, head, base:prBase, ...(stacked?{mainBase:base}:{}), source: source.head.sha, tree: commit.tree.sha, run: run.html_url, attempt: run.run_attempt };
       if (['FAIL', 'CANCELLED', 'PENDING'].includes(verdict.state)) break;
     }
   }

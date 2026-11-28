@@ -266,6 +266,34 @@ test('economic inheritance walks merged main trees and rejects changed consumers
    actions:{listWorkflowRuns:'runs',listJobsForWorkflowRun:'jobs'}},paginate:async method=>method==='runs'?[receipt]:proof};
   const check=()=>economicSource({github,owner:'owner',repo:'repo',pr});
   assert.equal((await check()).source,sourceSha);
+  // An internal stacked PR must prove the entire main-to-head diff,
+  // not just its immediate parent diff, using the same executed receipt.
+  git('update-ref','refs/remotes/origin/main',base);
+  github.rest.repos={getBranch:async()=>({data:{commit:{sha:base}}})};
+  const stackParent=head;
+  put('match-engine/src/player-movement.mjs','export const speed=7;');
+  const stackHead=commit('stacked isolated lab');
+  const stacked={base:{ref:'feat/parent',sha:stackParent,repo:identity},head:{sha:stackHead,repo:identity}};
+  const stackedCheck=()=>economicSource({github,owner:'owner',repo:'repo',pr:stacked});
+  const inherited=await stackedCheck();
+  assert.equal(inherited.source,sourceSha);
+  assert.equal(inherited.base,stackParent);
+  assert.equal(inherited.mainBase,base);
+  assert.equal(inherited.mode,'match-engine');
+  operator.steps.at(-1).conclusion='skipped';assert.equal(await stackedCheck(),null);operator.steps.at(-1).conclusion='success';
+  stacked.base.repo={full_name:'foreign/repo'};assert.equal(await stackedCheck(),null);stacked.base.repo=identity;
+  github.rest.repos.getBranch=async()=>({data:{commit:{sha:parent}}});
+  assert.equal(await stackedCheck(),null);
+  github.rest.repos.getBranch=async()=>({data:{commit:{sha:base}}});
+  // Parent contains an economic change; the child's isolated diff cannot
+  // launder it. Main-to-candidate must deny the inherited rehearsal.
+  git('checkout','--detach',base);
+  put('backend/src/economy.ts','export const balance=2;');const unsafeParent=commit('economic parent');
+  put('match-engine/src/core.mjs','export const gravity=11;');const unsafeHead=commit('isolated child');
+  stacked.base.sha=unsafeParent;stacked.head.sha=unsafeHead;
+  assert.equal(await stackedCheck(),null);
+  git('checkout','--detach',head);
+  // Continue the original direct-main negative cases at their exact HEAD.
   operator.steps.at(-1).conclusion='skipped';assert.equal(await check(),null);operator.steps.at(-1).conclusion='success';
   commitData.tree.sha=parent;assert.equal(await check(),null);commitData.tree.sha=tree;
   pr.head.sha=base;assert.equal(await check(),null);pr.head.sha=head;
