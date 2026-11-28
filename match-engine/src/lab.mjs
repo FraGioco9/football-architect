@@ -38,6 +38,7 @@ const fields = ['x', 'y', 'z', 'vx', 'vy', 'vz'];
 const controls = ['play', 'pause', 'step', 'reset', 'apply', 'compare', 'measure', 'action-labs-open', 'movement-labs-open',
  'preset-trigger','me-inline-side-trigger','speed-trigger','me-inline-variant-prev','me-inline-variant-next'];
 let rapier, engine, history = [], playing = false, lastFrame = 0, accumulator = 0;
+let playbackFailure=null;
 let physicsTickSnapshot = null;
 let playerWorld=createPlayerMovement(),playerSnapshot=playerWorld.snapshot();
 let playersShown=false;
@@ -389,7 +390,7 @@ function restart() {
     onFieldDecisionEvents=[];
     physicsTickSnapshot=inlinePhysics(next.snapshot());
     history=[physicsTickSnapshot];
-    accumulator=0;playing=false;inspectedPlayerId=null;
+    accumulator=0;playing=false;playbackFailure=null;inspectedPlayerId=null;
     byId('player-inspect-choice').value='';
     syncScenarioSurface();
     resetPerformedActions();
@@ -412,7 +413,7 @@ function restart() {
   playerWorld=createPlayerMovement();playerSnapshot=playerWorld.snapshot();
   inspectedPlayerId=null;byId('player-inspect-choice').value='';
   accumulator = 0;
-  playing = false;
+  playing = false;playbackFailure=null;
   byId('compare-result').textContent = '';
   byId('compare-result').hidden = true;
   syncScenarioSurface();
@@ -467,13 +468,20 @@ function advance() {
   if (history.length > 1400) history.shift();
 }
 function play() {
+  if(playbackFailure){say(playbackFailure,true);return;}
   if(activeScene?.kind==='action'&&(activeLab?.snapshot().refereeEvidence?.lastEvent||keeperSingleShotFinished(activeLab?.snapshot()))){
     playing=false;say('Exercise complete · Reset to retry');
     return;
   }
   playing = true; say('Running');
 }
-function pause() { playing = false; say('Paused'); }
+function pause() { playing = false; say(playbackFailure??'Paused',playbackFailure!==null); }
+function reportPlaybackFailure(error){
+ playing=false;accumulator=0;
+ playbackFailure='Simulation failed: '+(error?.message??String(error))+' · Reset to retry';
+ say(playbackFailure,true);
+ console.error(error);
+}
 function drawInlinePlayers(ctx,X,Y){
  const frame=activeLab.snapshot();
  const all=frame.observedMovementPlayers??frame.players;
@@ -2116,17 +2124,24 @@ function compareReplay() {
   } catch (error) { say(error.message, true); }
 }
 function frame(now) {
-  if ((engine||activeLab) && playing) {
-    accumulator += Math.min(Math.max(0, now - lastFrame) / 1000, 0.08) * Number(byId('speed').value);
-    let iterations = 0;
-    while (accumulator >= FIXED_DT && iterations < 24) {
-      advance(); accumulator -= FIXED_DT; iterations++;
+  try {
+    if ((engine||activeLab) && playing) {
+      accumulator += Math.min(Math.max(0, now - lastFrame) / 1000, 0.08) * Number(byId('speed').value);
+      let iterations = 0;
+      while (playing && accumulator >= FIXED_DT && iterations < 24) {
+        advance(); accumulator -= FIXED_DT; iterations++;
+      }
+      if (!playing || iterations === 24) accumulator = 0;
+      render();
     }
-    if (iterations === 24) accumulator = 0;
-    render();
+  } catch(error) {
+    // Fail closed on a real simulation exception, but keep the UI's
+    // animation loop alive so a successful Reset can recover playback.
+    reportPlaybackFailure(error);
+  } finally {
+    lastFrame = now;
+    requestAnimationFrame(frame);
   }
-  lastFrame = now;
-  requestAnimationFrame(frame);
 }
 // Use the same language-trigger / language-menu patterns as the site.
 // A hidden input preserves the existing engine API and emits the same change event.
@@ -2305,8 +2320,9 @@ byId('play').addEventListener('click', play);
 byId('pause').addEventListener('click', pause);
 byId('step').addEventListener('click', () => {
   playing=false;
+  if(playbackFailure){say(playbackFailure,true);return;}
   const before=physicsTickSnapshot?.tick;
-  advance();render();
+  try{advance();render();}catch(error){reportPlaybackFailure(error);return;}
   if(activeScene?.kind==='action'&&activeLab?.snapshot().refereeEvidence?.lastEvent)
     say('Observed real full-ball crossing · dead ball · Reset to retry');
   else say(physicsTickSnapshot?.tick===before?

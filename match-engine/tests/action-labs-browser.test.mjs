@@ -179,6 +179,20 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   const headerExceptions=[];
   const captureHeaderException=e=>{const m=JSON.parse(e.data);if(m.method==='Runtime.exceptionThrown')headerExceptions.push(m.params.exceptionDetails.exception?.description??m.params.exceptionDetails.text);};
   socket.addEventListener('message',captureHeaderException);
+  // Real requestAnimationFrame path: clicking Play must advance time,
+  // physically perform the cross and allow Pause/Reset/Play again.
+  await evalJs(`(()=>{const el=id=>document.getElementById(id);
+   el('preset-trigger').click();el('preset-options').querySelector('[data-value="action:header-pair"]').click();
+   el('reset').click();el('play').click();})()`);
+  await wait("Number(document.getElementById('tick').textContent.split(' ')[1])>=3");
+  await wait("[...document.querySelectorAll('#me-performed-rows tr')].some(r=>r.dataset.action==='cross')");
+  await evalJs("document.getElementById('pause').click()");
+  const pausedHeaderTick=await evalJs("document.getElementById('tick').textContent");
+  await delay(200);
+  assert.equal(await evalJs("document.getElementById('tick').textContent"),pausedHeaderTick);
+  await evalJs("document.getElementById('reset').click();document.getElementById('play').click()");
+  await wait("Number(document.getElementById('tick').textContent.split(' ')[1])>=3");
+  await evalJs("document.getElementById('pause').click();document.getElementById('reset').click()");
   const headers=await evalJs(`(()=>{
    const el=id=>document.getElementById(id);
    el('preset-trigger').click();
