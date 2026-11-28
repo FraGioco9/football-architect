@@ -13,7 +13,7 @@ import {eligibleLiveKeeperSave,selectUniformAutonomousContactAction,chooseKeeper
 import {initializeRapier,FIXED_DT} from '../src/core.mjs';
 import {advanceGoalkeeperBallOrientation} from '../src/individual-kinematics.mjs';
 import {keeperDuelReboundTarget,keeperDuelCloseDownTarget} from '../src/small-sided-lab-scenarios.mjs';
-import {planNativeKeeperDive,planNativeKeeperChallenge,createNativeKeeperDive,eligibleKeeperGrip,createNativeKeeperGrip,planNativeKeeperDistribution,NATIVE_KEEPER_DISTRIBUTION_DELAY_TICKS} from '../src/small-sided-native-body-guard.mjs';
+import {planNativeKeeperDive,planNativeKeeperChallenge,createNativeKeeperDive,eligibleKeeperGrip,createNativeKeeperGrip,planNativeHighHandAction,planNativeKeeperDistribution,NATIVE_KEEPER_DISTRIBUTION_DELAY_TICKS} from '../src/small-sided-native-body-guard.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 
 function candidate(side,players,ball,active=[side+'-1'],started=active){
@@ -336,6 +336,55 @@ test('ACTIONS-B02 real HOME/AWAY original Rapier keeper shoe START, parry, dive 
     const released={...ball.translation()};
     hand.setNextKinematicTranslation({x:-dir*48,y:0.8,z:1});world.step();
     assert.ok(Math.abs(ball.translation().y-released.y)<0.1);
+   }finally{world.free();}
+  }
+ });
+
+ // Component-level isolation only: no claim of a cross launch or of a
+ // full-field keeper decision. The original cross journey remains a
+ // separate mandatory gate in small-sided-lab.test.mjs.
+ test('AERIAL-07D real descending high hand contact can confirm grip without pressure and punch under pressure',{timeout:120000},async()=>{
+  const R=await initializeRapier(rapier);
+  for(const team of ['home','away'])for(const pressured of [false,true]){
+   const dir=team==='home'?1:-1,world=new R.World({x:0,y:0,z:-9.81});world.timestep=FIXED_DT;
+   const keeper={id:team+'-1',team,role:'goalkeeper',x:-dir*48,y:0};
+   const rival={id:(team==='home'?'away':'home')+'-9',team:team==='home'?'away':'home',role:'forward',x:-dir*48,y:0.8};
+   const players=pressured?[keeper,rival]:[keeper];
+   const hand=world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(-dir*48,0,2.05));
+   const glove=world.createCollider(R.ColliderDesc.ball(0.21).setRestitution(0),hand);
+   const ball=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(-dir*48+dir*0.42,0,2.45)
+    .setLinvel(-dir*3,0,-3).setCcdEnabled(true));
+   const collider=world.createCollider(R.ColliderDesc.ball(0.11).setMass(0.43).setRestitution(0),ball);
+   const grip=createNativeKeeperGrip(R,world,hand,ball,team);
+   let started=null,confirmed=null,decision=null;
+   try{
+    for(let tick=1;tick<=40;tick++){
+     const incoming={...ball.linvel()};world.step();
+     let contact=false;world.contactPair(collider,glove,m=>{if(m.numContacts()>0&&m.numSolverContacts()>0)contact=true;});
+     if(started===null&&contact){
+      started=tick;
+      const evidence={keeper,players,contact,ballPosition:ball.translation(),incoming,velocity:ball.linvel(),
+       handPosition:hand.translation(),handVelocity:hand.linvel(),massKg:ball.mass()};
+      const plan=planNativeHighHandAction(evidence);
+      assert.ok(plan,JSON.stringify({team,pressured,tick,evidence}));
+      decision=plan.kind;assert.equal(decision,pressured?'punch':'catch');
+      assert.ok(Math.hypot(...Object.values(plan.impulseNs))<=(pressured?8:6)+1e-8);
+      ball.applyImpulse(plan.impulseNs,true);
+      if(pressured){
+       assert.ok(dir*ball.linvel().x>0);assert.equal(grip.active(),false);
+      }else{
+       assert.equal(grip.tryGrip(tick,{contact,ballPosition:ball.translation(),before:incoming,after:ball.linvel(),
+        glovePosition:hand.translation(),gloveVelocity:hand.linvel(),highClaim:true}),true);
+      }
+     }
+     const state=grip.observe(tick);
+     assert.equal(state.officialPossession,false);assert.equal(state.officialSave,false);
+     if(state.confirmedTick!==null){confirmed=state.confirmedTick;break;}
+     if(pressured&&started!==null)break;
+    }
+    assert.notEqual(started,null,'actual high solver contact required');
+    if(pressured){assert.equal(decision,'punch');assert.equal(confirmed,null);}
+    else{assert.equal(decision,'catch');assert.ok(confirmed!==null&&confirmed>=started+6,'six-tick physical grip confirmation required');}
    }finally{world.free();}
   }
  });
