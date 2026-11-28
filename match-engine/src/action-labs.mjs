@@ -509,7 +509,10 @@ export function createControlledActionLab(RAPIER,id,{
   createBasicReceiveDribbleObserverB04({side:selectedControlSide,kind:id}):null;
  const collectiveCounts=collectiveApproaches?{carry:0,pass:0,shot:0,tackle:0,interception:0,save:0,other:0}:null;
  let headerAudit=null,headerCrossAudit=null,aerialControlAudit=null,aerialDuelAudit=null,loftedPassAudit=null,volleyAudit=null,highClaimAudit=null;
+ let priorRecordedBallVelocity=null;
  function record(physics,playerFrame){
+  const incomingVelocity=priorRecordedBallVelocity;
+  priorRecordedBallVelocity=Object.freeze({...physics.ball.velocity});
   const foot=engine.footContactSnapshot();
   const starts=Object.freeze([...foot.started]);
   if(foot.tick!==physics.tick||playerFrame.tick!==physics.tick)
@@ -640,8 +643,13 @@ export function createControlledActionLab(RAPIER,id,{
     loftedPassAudit=Object.freeze({launch:action,peakZM:physics.ball.position.z,receiverContact:null});
    if(loftedPassAudit&&!loftedPassAudit.receiverContact){
     const launch=loftedPassAudit.launch,body=engine.smallSidedBodyGuardSnapshot();
-    const hit=physics.tick>launch.tick&&physics.ball.velocity.z<0&&
-     (starts.length===1&&starts[0]===launch.recipientId||body.aerialControlStarts?.length===1&&body.aerialControlStarts[0]===launch.recipientId);
+    const receiver=launch.recipientId;
+    const receivingSurface=body.aerial?.find(s=>s.actorId===receiver&&s.surface==='foot'&&s.contactStarted&&s.actualNativeSolverContact);
+    // The solver may reverse vertical velocity at the very contact being
+    // measured. Use real incoming velocity and exclusive contact evidence.
+    const sole=starts.length===1&&starts[0]===receiver&&foot.active.length===1&&foot.active[0]===receiver&&!body.aerialControlContacts?.length&&!body.lowerLegBallContacts.length;
+    const raised=receivingSurface&&body.aerialControlStarts.length===1&&body.aerialControlContacts.length===1&&!foot.active.length&&!body.lowerLegBallContacts.length;
+    const hit=physics.tick>launch.tick&&((sole&&incomingVelocity?.z<0)||(raised&&receivingSurface.incomingVelocity.z<0));
     loftedPassAudit=Object.freeze({...loftedPassAudit,peakZM:Math.max(loftedPassAudit.peakZM,physics.ball.position.z),
      receiverContact:hit?Object.freeze({tick:physics.tick,actorId:launch.recipientId,officialPossession:false}):null});
    }

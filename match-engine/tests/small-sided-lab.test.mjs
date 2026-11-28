@@ -682,7 +682,9 @@ test('#628 small-sided catalog replaces only visible elementary exercise UI; arc
    'original research scene stays in hidden regression catalog');
  for(const id of ['keeper-1v1','overload-2v1','duel-3v3'])
   assert.match(ui,new RegExp("'action:"+id+"'"));
- assert.match(ui,/length!==\(archiveMode\?24:29\)/);
+ assert.match(ui,/renderedValues\.length!==expectedValues\.length/);
+ assert.match(ui,/renderedValues\.some\(\(value,index\)=>value!==expectedValues\[index\]\)/);
+ assert.match(ui,/new Set\(expectedValues\)\.size!==expectedValues\.length/);
  assert.doesNotMatch(ui,/visibleMovement/);
  assert.match(ui,/Carry phases/);
  assert.match(ui,/Small-sided situations/);
@@ -2019,7 +2021,16 @@ test('AERIAL-01 core integration enables native heads only on guarded collective
   const initial=engine.snapshot(),frame=mover.step(initial.ball.position,null,null,initial.ball.velocity,null,false,false,null,null,null,engine.collectiveControlSnapshot());
   engine.step(frame);
   const body=engine.smallSidedBodyGuardSnapshot();
-  assert.equal(body.aerial.length,20);assert.deepEqual(body.headBallContacts,[]);assert.deepEqual(body.headBallStarts,[]);
+  assert.equal(body.aerial.length,60);
+  const head=body.aerial.filter(s=>s.version==='me-628-native-aerial-head-v1');
+  assert.equal(head.length,20);
+  for(const surface of ['chest','foot']){
+   const samples=body.aerial.filter(s=>s.surface===surface);
+   assert.equal(samples.length,20);
+   assert.deepEqual(new Set(samples.map(s=>s.actorId)),new Set(head.map(s=>s.actorId)));
+  }
+  assert.deepEqual(body.headBallContacts,[]);assert.deepEqual(body.headBallStarts,[]);
+  assert.deepEqual(body.aerialControlContacts,[]);assert.deepEqual(body.aerialControlStarts,[]);
   assert.ok(body.aerial.every(s=>s.tick===1&&!s.jumping&&!s.contact&&s.sameOriginalRapierWorld));
   mover.reconcileSmallSidedNativeBodyResponse(body);engine.acknowledgeSmallSidedBodyFeedback(mover.snapshot());
  }finally{engine.dispose();}

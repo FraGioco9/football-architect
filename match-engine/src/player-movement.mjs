@@ -2662,8 +2662,13 @@ export function createPlayerMovement(options={}){
     if(discriminant>=0){
      const t=(vz+Math.sqrt(discriminant))/9.81;
      if(t>0&&t<=3){
-      const target=Object.freeze({x:Math.max(-51.99,Math.min(51.99,ball.x+realBallVelocity.x*t)),
-       y:Math.max(-33.49,Math.min(33.49,ball.y+realBallVelocity.y*t))});
+      const px=ball.x+realBallVelocity.x*t,py=ball.y+realBallVelocity.y*t;
+      // Receive a descending ball in front of the raised foot, not under
+      // the torso/lower-leg proxy. Keep ordinary movement acceleration.
+      const speed=Math.hypot(realBallVelocity.x,realBallVelocity.y);
+      const offset=h===0.85&&speed>0.15?0.42/speed:0;
+      const target=Object.freeze({x:Math.max(-51.99,Math.min(51.99,px+realBallVelocity.x*offset)),
+       y:Math.max(-33.49,Math.min(33.49,py+realBallVelocity.y*offset))});
       nativeDeliveryPlans[recipient.id]=Object.freeze({kind:'aerial-approach',plan:Object.freeze({target})});
      }
     }

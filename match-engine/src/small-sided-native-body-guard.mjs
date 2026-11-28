@@ -116,6 +116,21 @@ export function planNativeAerialControl(actor,ball,surface){
  const z=AERIAL_CONTROL_HEIGHT[surface],p=ball?.position,v=ball?.velocity;
  if(!z||!actor||actor.role==='goalkeeper'||![actor.x,actor.y,actor.vx,actor.vy,p?.x,p?.y,p?.z,v?.x,v?.y,v?.z].every(finite)||
     v.z>=-0.15||p.z<z-0.20||p.z>4.5||Math.hypot(v.x,v.y)>25)return null;
+ // The raised foot must follow the immediate reachable ball, rather than
+ // jumping between a predicted future crossing and the resting body.
+ // Plan a receiving reach from live geometry; keep the same solver gate.
+ if(surface==='foot'){
+  const disc=v.z*v.z+19.62*(p.z-z);
+  const eta=disc>=0?(v.z+Math.sqrt(disc))/9.81:NaN;
+  if(!finite(eta)||eta>0.30||p.z<z-0.20)return null;
+  const t=Math.max(PLAYER_DT,eta),px=p.x+v.x*t,py=p.y+v.y*t;
+  const predictedGap=Math.hypot(px-actor.x-actor.vx*Math.max(0,t-PLAYER_DT),py-actor.y-actor.vy*Math.max(0,t-PLAYER_DT));
+  if(predictedGap>0.78)return null;
+  const dx=p.x+v.x*PLAYER_DT-actor.x,dy=p.y+v.y*PLAYER_DT-actor.y;
+  const gap=Math.hypot(dx,dy),reach=0.62;
+  const offset=Math.min(reach,gap);
+  return freeze({surface,actorId:actor.id,dx:gap>1e-8?dx/gap*offset:0,dy:gap>1e-8?dy/gap*offset:0,decisionOnly:true});
+ }
  for(let k=1;k<=18;k++){
   const t=k*PLAYER_DT,h=p.z+v.z*t-4.905*t*t;
   const dx=p.x+v.x*t-actor.x-actor.vx*t,dy=p.y+v.y*t-actor.y-actor.vy*t;
@@ -163,7 +178,12 @@ export function createNativeAerialControl(R,world,ballCollider,actor,surface){
 export function planNativeAerialCushion({surface,incoming,velocity,massKg,actor}={}){
  if(!AERIAL_CONTROL_HEIGHT[surface]||!actor||![incoming?.x,incoming?.y,incoming?.z,velocity?.x,velocity?.y,velocity?.z,massKg,actor.vx,actor.vy].every(finite)||
     massKg<=0||incoming.z>=-0.15)return null;
- const desired={x:actor.vx*0.65,y:actor.vy*0.65,z:surface==='chest'?-1.4:-0.65};
+ // A raised foot drops the ball gently towards the turf; when the solver
+ // has already removed most speed, do not accelerate the ball to a preset.
+ const relativeSpeed=Math.hypot(velocity.x-actor.vx,velocity.y-actor.vy,velocity.z);
+ const down=surface==='chest'?1.4:Math.min(0.65,relativeSpeed*0.45);
+ const blend=surface==='chest'?0.65:Math.max(0.65,1-relativeSpeed/Math.max(0.1,Math.hypot(actor.vx,actor.vy))*0.35);
+ const desired={x:actor.vx*blend,y:actor.vy*blend,z:-down};
  const raw={x:massKg*(desired.x-velocity.x),y:massKg*(desired.y-velocity.y),z:massKg*(desired.z-velocity.z)};
  const magnitude=Math.hypot(raw.x,raw.y,raw.z),scale=Math.min(1,5/Math.max(magnitude,1e-9));
  if(magnitude<0.025)return null;
