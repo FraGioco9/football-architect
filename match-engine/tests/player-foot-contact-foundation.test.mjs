@@ -15,7 +15,7 @@ import {FOOT_CONTACT_VERSION,FOOT_CONTACT_HALF_LENGTH_M,
  FOOT_CONTACT_RESTITUTION,initialFootPositions,footProxyTransform,
  validateFootContactFrame} from '../src/player-foot-contact.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
-import {createPrivateRapierFootContactBridge,usesNativePairedShoeBridge,hasExclusiveNativeShoeStart,soloCarryTwoFootPositions,nativeNeutralShoePositions,planNativeFirstTimeFootRecovery,nativeFirstTimeRecoveryTarget,nativeShoeContactProfile,nativePairedCarryReadout} from '../src/rapier-foot-contact-bridge.mjs';
+import {createPrivateRapierFootContactBridge,usesNativePairedShoeBridge,hasExclusiveNativeShoeStart,soloCarryTwoFootPositions,nativeSprintSupportTargets,nativeNeutralShoePositions,nativeLowDeliveryShoeTarget,planNativeFirstTimeFootRecovery,nativeFirstTimeRecoveryTarget,nativeShoeContactProfile,nativePairedCarryReadout} from '../src/rapier-foot-contact-bridge.mjs';
 import {createFootContactTimeline,FOOT_CONTACT_TIMELINE_VERSION}
  from '../src/player-foot-contact-timeline.mjs';
 import {summarizeFootSolverEvidence,FOOT_SOLVER_EVIDENCE_VERSION}
@@ -409,5 +409,46 @@ test('ME-01-QA U-03c: first-time paired recovery chooses side of actual outgoing
   }
   assert.deepEqual(prev,{x:0,y:0});
   assert.equal(planNativeFirstTimeFootRecovery({contact,actorId:id,ballPosition,ballVelocity:{x:NaN,y:0}}),null);
+ }
+});
+
+test('ME-01-QA U-04b: neutral receiving shoe follows bounded actual low descending delivery',()=>{
+ for(const dir of [1,-1])for(const lateral of [1,-1]){
+  const actor={x:dir*40,y:4,facingRad:dir===1?0:Math.PI};
+  const stance=nativeNeutralShoePositions(actor),pose=stance[stance.leadFoot];
+  const velocity={x:dir*8,y:lateral*14,z:-5};
+  const ball={position:{x:actor.x-dir*.3,y:actor.y-lateral*.5,z:.5},velocity};
+  const target=nativeLowDeliveryShoeTarget(pose,actor,ball);
+  assert.ok(Math.abs(Math.hypot(target.x-pose.x,target.y-pose.y)-.06)<1e-10);
+  assert.ok((target.x-pose.x)*velocity.x+(target.y-pose.y)*velocity.y>0);
+  assert.equal(target.facingRad,pose.facingRad);
+  for(const patch of [{position:{...ball.position,z:.11}},{position:{...ball.position,z:1.35}},{velocity:{...velocity,z:2}},{velocity:{x:.1,y:.1,z:-1}},{position:{...ball.position,y:actor.y+3}}])
+   assert.equal(nativeLowDeliveryShoeTarget(pose,actor,{...ball,...patch}),pose);
+ }
+});
+
+test('ME-01-QA U-04c3: shared Sprint support proposal preserves active shoe and mirrored geometry',()=>{
+ const profile=nativeShoeContactProfile();
+ for(const facingRad of [0,Math.PI,Math.PI/2,-Math.PI/2,.4,-2.4])for(const track of [.075,.08,.10]){
+  const c=Math.cos(facingRad),s=Math.sin(facingRad),p={x:1,y:2,facingRad};
+  const at=(forward,lateral)=>({...p,x:p.x+forward*c-lateral*s,y:p.y+forward*s+lateral*c});
+  const stance={left:at(0,track),right:at(0,-track)};
+  const ball={...at(.30,0),z:BALL_RADIUS};
+  const result=nativeSprintSupportTargets(stance,p,ball,[],profile,BALL_RADIUS);
+  const moved=['left','right'].filter(f=>result[f]!==stance[f]);
+  assert.equal(moved.length,1);
+  assert.ok(Math.abs((result[moved[0]].x-stance[moved[0]].x)*c+(result[moved[0]].y-stance[moved[0]].y)*s+.20)<1e-9);
+  for(const active of ['left','right']){
+   const support=active==='left'?'right':'left';
+   const single=nativeSprintSupportTargets(stance,p,ball,[active],profile,BALL_RADIUS);
+   assert.equal(single[active],stance[active]);
+   assert.notEqual(single[support],stance[support]);
+  }
+  const both=nativeSprintSupportTargets(stance,p,ball,['left','right'],profile,BALL_RADIUS);
+  assert.notEqual(both.left,stance.left);assert.notEqual(both.right,stance.right);
+  for(const far of [{...at(1,0),z:BALL_RADIUS},{...at(.30,0),z:1},{...at(-.10,0),z:BALL_RADIUS}]){
+   assert.equal(nativeSprintSupportTargets(stance,p,far,[],profile,BALL_RADIUS),stance);
+  }
+  assert.throws(()=>nativeSprintSupportTargets(stance,p,ball,['left','left'],profile,BALL_RADIUS),TypeError);
  }
 });

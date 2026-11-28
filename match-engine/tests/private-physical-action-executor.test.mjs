@@ -151,7 +151,7 @@ test('ME-01-QA U-01F1: explicit fundamental masks never grant an action or mutat
   [{id:'defender-1v1',blockStart:true},['shot','save','block']],
   [{id:'keeper-1v1',keeperSingleShot:true},['carry','shot','save']],
   [{id:'full-field-native',collective:true},NATIVE_FUNDAMENTALS],
-  [{id:'dribble-1v1',collective:true},NATIVE_FUNDAMENTALS],
+  [{id:'dribble-1v1',collective:true},['carry','tackle','interception','clearance','standing-tackle','sliding-tackle','shoulder-challenge']],
   [{id:'header-pair',collective:true},['cross','header','header-shot','header-pass','header-clearance']],
   [{id:'chest-control',collective:true},['cross','aerial-control']],
   [{id:'aerial-foot-control',collective:true},['aerial-control']],

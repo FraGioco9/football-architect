@@ -707,7 +707,8 @@ test('ME-01-QA U-02d2b: modern LAB sessions expose and respect bounded native ca
   ['volley-solo','mixed',['cross','volley'],['foot']],
   ...['lofted-pass','lofted-short','lofted-switch'].map(id=>[id,'mixed',['pass','reception','aerial-control'],['foot']]),
   ...['keeper-high-cross','keeper-high-intercept'].map(id=>[id,'mixed',['cross','save','pass','clearance'],[]]),
-  ...['dribble-1v1','defender-1v1','overload-2v1','duel-2v2','duel-3v3'].map(id=>[id,'mixed',full,['head','chest','foot']])
+  ['dribble-1v1','mixed',['carry','tackle','interception','clearance','standing-tackle','sliding-tackle','shoulder-challenge'],[]],
+  ...['defender-1v1','overload-2v1','duel-2v2','duel-3v3'].map(id=>[id,'mixed',full,['head','chest','foot']])
  ];
  for(const [id,profile,allowed,surfaces] of cases)for(const side of ['home','away']){
   const label=id+'/'+profile+'/'+side;
