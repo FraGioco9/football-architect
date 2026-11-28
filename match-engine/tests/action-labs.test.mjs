@@ -679,3 +679,61 @@ test('ME-01-QA U-02d1: visible action menu selects current shared paths and expl
  assert.equal(resolveInlineActionLabOptions('keeper-1v1',{archiveMode:true}).keeperSingleShot,false);
  assert.equal(resolveInlineActionLabOptions('duel-3v3',{archiveMode:true}).collectiveApproaches,false);
 });
+
+
+// The visible modern LAB configuration must reach the actual physical session,
+// not merely return the right flags. These short mirrored smoke runs are
+// negative authorization checks, not positive contact/outcome acceptance.
+test('ME-01-QA U-02d2b: modern LAB sessions expose and respect bounded native capabilities',{timeout:120000},async()=>{
+ const R=await initializeRapier(rapier);
+ const full=['carry','pass','cross','shot','save','tackle','interception','clearance','reception','aerial-control','header','volley','standing-tackle','sliding-tackle','shoulder-challenge','block','header-shot','header-pass','header-clearance'];
+ const head=['header','header-shot','header-pass','header-clearance'];
+ const cases=[
+  ['carry-solo','mixed',['carry'],[]],
+  ['pass-pair','mixed',['pass','reception'],[]],
+  ['cross-pair','mixed',['cross','reception'],[]],
+  ['shot-solo','mixed',['shot'],[]],
+  ['keeper-1v1','mixed',['carry','shot','save'],[]],
+  ['dribble-1v1','standing',['carry','clearance','tackle','standing-tackle'],[]],
+  ['dribble-1v1','sliding',['carry','clearance','tackle','sliding-tackle'],[]],
+  ['dribble-1v1','shoulder',['carry','clearance','shoulder-challenge'],[]],
+  ['defender-1v1','block',['shot','save','block'],[]],
+  ['pass-pair','interception',['pass','interception','carry','reception'],[]],
+  ['header-pair','mixed',['cross',...head],['head']],
+  ['chest-control','mixed',['cross','aerial-control'],['chest']],
+  ['aerial-foot-control','mixed',['aerial-control'],['foot']],
+  ['aerial-duel','mixed',head,['head']],
+  ['volley-solo','mixed',['cross','volley'],['foot']],
+  ...['lofted-pass','lofted-short','lofted-switch'].map(id=>[id,'mixed',['pass','reception','aerial-control'],['foot']]),
+  ...['keeper-high-cross','keeper-high-intercept'].map(id=>[id,'mixed',['cross','save','pass','clearance'],[]]),
+  ...['dribble-1v1','defender-1v1','overload-2v1','duel-2v2','duel-3v3'].map(id=>[id,'mixed',full,['head','chest','foot']])
+ ];
+ for(const [id,profile,allowed,surfaces] of cases)for(const side of ['home','away']){
+  const label=id+'/'+profile+'/'+side;
+  const session=createCurrentActionLab(R,id,{shotSide:side,...resolveInlineActionLabOptions(id,{duelTackleProfile:profile})});
+  try{
+   const initial=session.snapshot();
+   assert.equal(initial.physicsTick,0,label);
+   assert.deepEqual([...initial.allowedFundamentals].sort(),[...allowed].sort(),label);
+   assert.deepEqual(initial.permittedAerialSurfaces,surfaces,label);
+   assert.ok(Object.isFrozen(initial.allowedFundamentals),label);
+   assert.ok(Object.isFrozen(initial.permittedAerialSurfaces),label);
+   assert.equal(initial.action,null,label);
+   for(let tick=1;tick<=60;tick++){
+    const f=session.step(),a=f.action;
+    assert.equal(f.physicsTick,tick,label);
+    assert.deepEqual(f.allowedFundamentals,initial.allowedFundamentals,label);
+    assert.deepEqual(f.permittedAerialSurfaces,surfaces,label);
+    assert.equal(f.officialMatchResult,null,label);
+    if(a){
+     const kind=a.nativeExclusiveHeadStart?'header-'+a.action:a.nativeVolley?'volley':a.action;
+     assert.ok(allowed.includes(kind),label+': unauthorized '+kind);
+     assert.equal(a.actualPhysicsImpulseApplied,true,label);
+     if(a.nativeExclusiveHeadStart)assert.ok(allowed.includes('header'),label);
+     if(a.action==='tackle'&&a.defensiveTarget?.intervention)assert.ok(allowed.includes(a.defensiveTarget.intervention),label);
+    }
+    if(f.latestOrientedReception?.tick===tick)assert.ok(allowed.includes('reception'),label);
+   }
+  }finally{session.dispose();}
+ }
+});

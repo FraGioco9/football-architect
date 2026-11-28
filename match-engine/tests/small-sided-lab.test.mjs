@@ -361,6 +361,8 @@ test('UME-06A/B full field native 22-player deterministic replay from midfield a
    assert.deepEqual(x.snapshot().activeIds,fixture.activeIds);
    assert.deepEqual(x.snapshot().body.selectedColliderIds,fixture.activeIds);
    assert.equal(x.snapshot().playedTicks,0);
+   assert.deepEqual(x.snapshot().allowedFundamentals,['carry','pass','cross','shot','save','tackle','interception','clearance','reception','aerial-control','header','volley','standing-tackle','sliding-tackle','shoulder-challenge','block','header-shot','header-pass','header-clearance']);
+   assert.deepEqual(x.snapshot().permittedAerialSurfaces,['head','chest','foot']);
    assert.throws(()=>x.placeRestart(),/verified ready boundary ticket/);
    let prior=x.snapshot().ball.position,pathM=0,ticks=0,boundary=null;
    for(let k=1;k<=600;k++){
@@ -371,6 +373,8 @@ test('UME-06A/B full field native 22-player deterministic replay from midfield a
     assert.equal(a.realFull90MinutesVerified,false);
     assert.equal(a.tick,k);assert.deepEqual(a.ball,b.ball);assert.deepEqual(a.players,b.players);
     assert.deepEqual(a.starts,b.starts);assert.deepEqual(a.action,b.action);
+    assert.deepEqual(a.allowedFundamentals,b.allowedFundamentals);
+    assert.deepEqual(a.permittedAerialSurfaces,['head','chest','foot']);
     assert.deepEqual(a.control,b.control);assert.deepEqual(a.keepers,b.keepers);assert.deepEqual(a.reception,b.reception);
     assert.deepEqual(a.body.selectedColliderIds,fixture.activeIds);assert.equal(a.body.bodies.length,22);
     assert.equal(a.body.oneOriginalRapierWorld,true);assert.equal(a.decisions.length,22);
