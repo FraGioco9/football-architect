@@ -8,6 +8,7 @@ import {inspectPhysicalActionRejection,selectUniformAutonomousContactAction,choo
  from './player-ball-uniform-autonomous-action.mjs';
 import {FOOT_CONTACT_VERSION,footProxyTransform} from './player-foot-contact.mjs';
 import {hasExclusiveNativeShoeStart} from './rapier-foot-contact-bridge.mjs';
+import {createNativeFundamentalMask,nativeFundamentalAllowed} from './native-fundamental-mask.mjs';
 import {chooseIntentSoloCarryTouch} from './intent-driven-solo-carry.mjs';
 import {chooseNativeFixedCarryImpulse}
  from './native-fixed-carry-impulse.mjs';
@@ -67,8 +68,10 @@ export function createPrivatePhysicalActionExecutor({
  researchReceiverTapSide=null,activePlayerIds=null,
  smallSidedDecisionContext=null,isolatedDribbleContext=null,isolatedPassSide=null,interceptionPassSide=null,isolatedCrossSide=null,isolatedShotSide=null,isolatedShotProfile='power',firstTimeShot=false,
  physicalBodyGuardEnabled=false,intentDrivenSoloCarry=false,keeperSingleShotSide=null,blockShotSide=null,
- nativeFixedCarryResearch=false,nativeFixedSprintLongStride=false,latestLabDynamics=false,nativeActionPolicy=false
+ nativeFixedCarryResearch=false,nativeFixedSprintLongStride=false,latestLabDynamics=false,nativeActionPolicy=false,allowedFundamentals=null
 }={}){
+ const fundamentalMask=createNativeFundamentalMask(allowedFundamentals);
+ const permits=kind=>nativeFundamentalAllowed(fundamentalMask,kind);
  if(typeof nativeActionPolicy!=='boolean'||(nativeActionPolicy&&(!allowPhysicalCarry||!physicalBodyGuardEnabled||!Array.isArray(activePlayerIds)||smallSidedDecisionContext!==null||isolatedDribbleContext!==null||isolatedPassSide!==null||isolatedCrossSide!==null||isolatedShotSide!==null||keeperSingleShotSide!==null||blockShotSide!==null||interceptionPassSide!==null||researchReceivingCushionSide!==null||researchReceivingDecisionSide!==null||researchReceiverTapSide!==null)))throw new TypeError('Native action policy requires guarded physical participants without isolated overrides');
  if(typeof nativeFixedSprintLongStride!=='boolean'||
      (nativeFixedSprintLongStride&&!nativeFixedCarryResearch))
@@ -210,7 +213,7 @@ export function createPrivatePhysicalActionExecutor({
     p.id===isolatedDribbleContext.attackingSide+'-10');
    if(playerFrame?.tick!==nextTick)
     throw new TypeError('Same-tick original canonical movement required');
-   const proposed=suppressOriginalAction?null:chooseIntentSoloCarryTouch({
+   const proposed=suppressOriginalAction||!permits('carry')?null:chooseIntentSoloCarryTouch({
     tick:nextTick,lastTouchTick:lastActionTick,
     attackingSide:isolatedDribbleContext.attackingSide,
     phase:playerFrame.soloCarryPhase?.phase,
@@ -267,7 +270,7 @@ export function createPrivatePhysicalActionExecutor({
       const volley=head.surface==='foot'?chooseNativeVolleyIntent(actor,origin,head.incomingVelocity,playerFrame.players.filter(p=>activePlayerIds.includes(p.id)),attackPolarity):null;
       const raw=volley&&Number.isFinite(mass)&&mass>0?{x:mass*(volley.desiredVelocity.x-before.x),y:mass*(volley.desiredVelocity.y-before.y),z:mass*(volley.desiredVelocity.z-before.z)}:null;
       const norm=raw?Math.hypot(raw.x,raw.y,raw.z):0;
-      if(volley&&norm>0.025){
+      if(volley&&permits('shot')&&norm>0.025){
        const scale=Math.min(1,12/norm),impulseNs=Object.freeze({x:raw.x*scale,y:raw.y*scale,z:raw.z*scale});
        ballBody.applyImpulse(impulseNs,true);
        result=Object.freeze({version:NATIVE_AERIAL_CONTROL_VERSION,tick:nextTick,playerId:actor.id,team:actor.team,
@@ -277,7 +280,7 @@ export function createPrivatePhysicalActionExecutor({
        lastActionTick=nextTick;
       }
       const cushion=result?null:planNativeAerialCushion({surface:head.surface,incoming:head.incomingVelocity,velocity:before,massKg:mass,actor});
-      if(cushion){
+      if(cushion&&permits('aerial-control')){
        ballBody.applyImpulse(cushion.impulseNs,true);
        result=Object.freeze({version:NATIVE_AERIAL_CONTROL_VERSION,tick:nextTick,playerId:actor.id,team:actor.team,
         action:'aerial-control',surface:head.surface,recipientId:null,origin,before,after:Object.freeze({...ballBody.linvel()}),
@@ -285,7 +288,7 @@ export function createPrivatePhysicalActionExecutor({
         appliedByRapier:true,actualPhysicsImpulseApplied:true,officialMatchAction:false,officialPossession:false});
        lastActionTick=nextTick;
       }
-     }else if(plan&&Number.isFinite(mass)&&mass>0){
+     }else if(plan&&permits(plan.action)&&Number.isFinite(mass)&&mass>0){
       const raw={x:mass*(plan.desiredVelocity.x-before.x),y:mass*(plan.desiredVelocity.y-before.y),z:mass*(plan.desiredVelocity.z-before.z)};
       const norm=Math.hypot(raw.x,raw.y,raw.z),scale=Math.min(1,5/Math.max(norm,1e-9));
       if(norm>0.025){
@@ -344,7 +347,7 @@ export function createPrivatePhysicalActionExecutor({
     // First subsequent native contact consumes the delivery, even an
     // interruption or ambiguous contact. No later assisted trap.
     pendingDelivery=null;
-    if(eligible&&!suppressOriginalAction&&!suppressPhysicalBodyContact&&
+    if(eligible&&permits('reception')&&!suppressOriginalAction&&!suppressPhysicalBodyContact&&
        contact.started.length===1&&contact.active.length===1&&
        contact.started[0]===d.recipientId&&contact.active[0]===d.recipientId&&pairedSourceValid){
      const p=playerFrame.players.find(x=>x.id===d.recipientId);
@@ -374,7 +377,7 @@ export function createPrivatePhysicalActionExecutor({
    if(actualPriorPass&&nextTick>actualPriorPass.tick&&
       contact.started.some(id=>id!==receiverId))
     interrupted=true;
-   if(pairedSourceValid&&actualPriorPass&&!interrupted&&!firstCushion&&
+   if(permits('reception')&&pairedSourceValid&&actualPriorPass&&!interrupted&&!firstCushion&&
       nextTick>actualPriorPass.tick&&
       contact.started.length===1&&contact.active.length===1&&
       contact.started[0]===receiverId&&
@@ -418,7 +421,7 @@ export function createPrivatePhysicalActionExecutor({
   const deferOriginal=firstReceiverChoice?.tick===nextTick&&
    firstReceiverChoice.decision==='defer-clearance-to-keep-ball-near';
   // M30 exclusively uses this real second Rapier START after M27 defers.
-  const tapCandidate=researchReceiverTapSide===side&&deferOriginal?
+  const tapCandidate=permits('carry')&&researchReceiverTapSide===side&&deferOriginal?
    calculatePhysicalReceiverReleaseTap({
     choice:firstReceiverChoice,earlierCushion:firstCushion,
     nativeStarts:contact.started,nativeActive:contact.active,
@@ -431,7 +434,8 @@ export function createPrivatePhysicalActionExecutor({
   // defer an ORIGINAL second-touch clearance with zero additional impulse.
   // Filter existing action authority; never invent a contact or impulse.
   const restrictionRejected=!evaluateNativeActionRestriction(restriction,originalChoice,lastActionTick>=0?1:0);
-  const originalChosen=orientedCandidate||researchCandidate||deferOriginal||restrictionRejected?null:originalChoice;
+  const fundamentalRejected=originalChoice!==null&&!permits(originalChoice.action);
+  const originalChosen=orientedCandidate||researchCandidate||deferOriginal||restrictionRejected||fundamentalRejected?null:originalChoice;
   // The *existing* uniform policy and Rapier exclusive shoe START remain
   // the only action authority. Native phase calibration can adjust that
   // action's impulse or decline it, never generate an extra contact/action.
@@ -465,7 +469,7 @@ export function createPrivatePhysicalActionExecutor({
     'current-lab-oriented-first-touch-preempts-uniform-action':researchCandidate?
     'experimental-receiving-cushion-preempts-uniform-action':
     deferOriginal?'m27-native-decision-defers-original-clearance':
-    restrictionRejected?(restriction.action==='pass'?'isolated-pass-one-original-ground-pass-only':
+    fundamentalRejected?'native-fundamental-not-permitted':restrictionRejected?(restriction.action==='pass'?'isolated-pass-one-original-ground-pass-only':
      restriction.action==='cross'?'isolated-cross-one-original-lofted-cross-only':'isolated-shot-one-original-shot-only'):
     nativeTune?.impulseNs===null?
      'native-shoe-contact-no-extra-ball-impulse-needed':

@@ -1111,6 +1111,7 @@ export function createControlledActionLab(RAPIER,id,{
     }:{}),
     ...(smallSided?{smallSidedParticipants:smallSided.activeIds,
      physicalShoeColliderCount:engine.originalSmallSidedPhysicalShoeColliderCount(),
+     allowedFundamentals:engine.nativeFundamentalsSnapshot(),
      nativeContactMaterial:engine.nativeContactMaterialSnapshot(),
      smallSidedMovementDecisions:playerFrame.smallSidedMovementDecisions,
      ...(id==='carry-solo'?{

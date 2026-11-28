@@ -7,6 +7,7 @@ import {initializeRapier,createEngine,BALL_RADIUS,canonicalSnapshot}
  from '../src/core.mjs';
 import {INITIAL_PLAYERS,createPlayerMovement} from '../src/player-movement.mjs';
 import {footProxyTransform} from '../src/player-foot-contact.mjs';
+import {NATIVE_FUNDAMENTALS,createNativeFundamentalMask,nativeFundamentalAllowed,nativeLabFundamentalMask} from '../src/native-fundamental-mask.mjs';
 import {createNativeActionRestriction,evaluateNativeActionRestriction} from '../src/private-physical-action-executor.mjs';
 
 test('UME-05E isolated technical constraints filter the same native decision without creating actions',()=>{
@@ -131,4 +132,37 @@ test('actions are explicit opt-in, cannot be enabled without genuine shoe source
   assert.equal(normal.physicalRejectionAuditSnapshot,undefined);
   assert.equal(normal.step().tick,1);
  }finally{normal.dispose();}
+});
+
+test('ME-01-QA U-01F1: explicit fundamental masks never grant an action or mutate capabilities',()=>{
+ const cases=[
+  [{id:'pass-pair'},['pass','reception']],
+  [{id:'cross-pair'},['cross','reception']],
+  [{id:'shot-solo'},['shot']],
+  [{id:'carry-solo'},['carry']],
+  [{id:'dribble-1v1'},['carry']],
+  [{id:'dribble-1v1',directedDribble:true},['carry','tackle','interception','clearance']],
+  [{id:'pass-pair',interceptionStart:true},['pass','interception','carry','reception']],
+  [{id:'defender-1v1',blockStart:true},['shot','save']],
+  [{id:'keeper-1v1',keeperSingleShot:true},['carry','shot','save']],
+  [{id:'full-field-native',collective:true},NATIVE_FUNDAMENTALS],
+  [{id:'dribble-1v1',collective:true},NATIVE_FUNDAMENTALS],
+  [{id:'header-pair',collective:true},NATIVE_FUNDAMENTALS],
+  [{},NATIVE_FUNDAMENTALS]
+ ];
+ for(const [config,expected] of cases){
+  const mask=nativeLabFundamentalMask(config);
+  assert.ok(Object.isFrozen(mask));
+  assert.deepEqual(mask,NATIVE_FUNDAMENTALS.filter(a=>expected.includes(a)));
+  for(const kind of NATIVE_FUNDAMENTALS)assert.equal(nativeFundamentalAllowed(mask,kind),expected.includes(kind));
+  assert.equal(nativeFundamentalAllowed(mask,'invented-contact'),false);
+  assert.equal(nativeFundamentalAllowed(mask,null),false);
+ }
+ const empty=createNativeFundamentalMask([]);
+ for(const kind of NATIVE_FUNDAMENTALS)assert.equal(nativeFundamentalAllowed(empty,kind),false);
+ const input=['pass'];const mask=createNativeFundamentalMask(input);input.push('shot');
+ assert.deepEqual(mask,['pass']);
+ assert.throws(()=>createNativeFundamentalMask(['pass','pass']),/Unique/);
+ assert.throws(()=>createNativeFundamentalMask(['unknown']),/Unique/);
+ assert.throws(()=>createNativeFundamentalMask('pass'),/Unique/);
 });

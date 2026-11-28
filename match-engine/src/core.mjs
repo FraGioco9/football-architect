@@ -9,6 +9,7 @@ import {createPrivateRapierFootContactBridge,hasExclusiveNativeShoeStart,usesNat
 import {createPrivateRapier22BodyBridge} from './rapier-22-body-bridge.mjs';
 import {createPrivatePhysicalActionExecutor}
  from './private-physical-action-executor.mjs';
+import {nativeLabFundamentalMask} from './native-fundamental-mask.mjs';
 import {INITIAL_PLAYERS} from './player-movement.mjs';
 import {createBasicMatchRefereeB05} from './basic-match-referee-b05.mjs';
 import {smallSidedSetup,supportsNativeOpenPlay} from './small-sided-lab-scenarios.mjs';
@@ -773,10 +774,11 @@ export function createEngine(RAPIER, input = {}, {
   const keeperSnapshots=()=>Object.freeze(keeperDives.map(controller=>controller.snapshot()));
   const collectiveObserver=diagnosticCollectiveActions?createNativeBallControlObserver(smallSided.activeIds,stagedShoes.filter(p=>smallSided.activeIds.includes(p.id)&&p.role!=='goalkeeper').map(p=>p.id)):null;
   const duelTransition=diagnosticDirectedDribble?createDribbleTransitionObserver(smallSided.side,diagnosticDuelTackleProfile):null;
+  const nativeFundamentals=nativeLabFundamentalMask({id:smallSided?.id,collective:diagnosticCollectiveActions,interceptionStart:smallSided?.interceptionStart,blockStart:smallSided?.blockStart,keeperSingleShot:diagnosticKeeperSingleShot,directedDribble:diagnosticDirectedDribble});
   let sharedCollisionEventsLastTick=0,sharedForceEventsLastTick=0;
   const actionExecutor=diagnosticAutonomousFixtureActionEnabled?
     createPrivatePhysicalActionExecutor({
-      ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,latestLabDynamics:diagnosticLatestLabDynamics,
+      ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,latestLabDynamics:diagnosticLatestLabDynamics,allowedFundamentals:nativeFundamentals,
       physicalBodyGuardEnabled:diagnosticSmallSidedBodyGuardEnabled,
       keeperSingleShotSide:diagnosticKeeperSingleShot?smallSided.side:null,
       blockShotSide:smallSided?.blockStart?smallSided.side:null,
@@ -1555,6 +1557,7 @@ export function createEngine(RAPIER, input = {}, {
       originalSmallSidedPhysicalShoeIds:()=>shoeBridge.physicalColliderIds,
       originalSmallSidedPhysicalShoeColliderCount:()=>shoeBridge.physicalShoeColliderCount,
       nativeContactMaterialSnapshot:()=>Object.freeze({historicalCarryPhysics,...contactMaterial,shoe:shoeBridge.contactMaterialProfile}),
+      nativeFundamentalsSnapshot:()=>nativeFundamentals,
       ...(smallBodyGuard?{
         smallSidedBodyGuardSnapshot:()=>smallBodyGuard.snapshot(),
         ...(diagnosticSmallSidedBodyFeedbackEnabled?{
