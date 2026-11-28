@@ -7,7 +7,7 @@ import {initializeRapier,createEngine,BALL_RADIUS,canonicalSnapshot}
  from '../src/core.mjs';
 import {INITIAL_PLAYERS,createPlayerMovement} from '../src/player-movement.mjs';
 import {footProxyTransform} from '../src/player-foot-contact.mjs';
-import {NATIVE_FUNDAMENTALS,createNativeFundamentalMask,nativeFundamentalAllowed,nativeLabFundamentalMask,nativeAerialSurfaceAllowed,createNativeDuelFundamentalMask,nativeDefensiveInterventionAllowed,nativePhysicalActionAllowed} from '../src/native-fundamental-mask.mjs';
+import {NATIVE_FUNDAMENTALS,createNativeFundamentalMask,nativeFundamentalAllowed,nativeLabFundamentalMask,nativeAerialSurfaceAllowed,createNativeDuelFundamentalMask,nativeDefensiveInterventionAllowed,nativePhysicalActionAllowed,nativeLabAerialSequence,nativeSequenceDeliveryAllowed,nativeSequenceAerialAllowed,nativeSequenceGroundMask} from '../src/native-fundamental-mask.mjs';
 import {selectDefensiveIntervention} from '../src/defensive-intervention-selection.mjs';
 import {createNativeActionRestriction,evaluateNativeActionRestriction} from '../src/private-physical-action-executor.mjs';
 
@@ -148,11 +148,11 @@ test('ME-01-QA U-01F1: explicit fundamental masks never grant an action or mutat
   [{id:'keeper-1v1',keeperSingleShot:true},['carry','shot','save']],
   [{id:'full-field-native',collective:true},NATIVE_FUNDAMENTALS],
   [{id:'dribble-1v1',collective:true},NATIVE_FUNDAMENTALS],
-  [{id:'header-pair',collective:true},['cross','header','shot','pass','clearance']],
+  [{id:'header-pair',collective:true},['cross','header','header-shot','header-pass','header-clearance']],
   [{id:'chest-control',collective:true},['cross','aerial-control']],
   [{id:'aerial-foot-control',collective:true},['aerial-control']],
-  [{id:'aerial-duel',collective:true},['header','shot','pass','clearance']],
-  [{id:'volley-solo',collective:true},['cross','volley','shot']],
+  [{id:'aerial-duel',collective:true},['header','header-shot','header-pass','header-clearance']],
+  [{id:'volley-solo',collective:true},['cross','volley']],
   ...['lofted-pass','lofted-short','lofted-switch'].map(id=>[{id,collective:true},['pass','reception','aerial-control']]),
   ...['keeper-high-cross','keeper-high-intercept'].map(id=>[{id,collective:true},['cross','save','pass','clearance']]),
   [{},NATIVE_FUNDAMENTALS]
@@ -180,7 +180,7 @@ test('ME-01-QA U-01F3a: aerial surface capabilities are independent from ground 
   const mask=createNativeFundamentalMask(kinds.filter((_,i)=>bits&(1<<i)));
   assert.equal(nativeAerialSurfaceAllowed(mask,'head'),!!(bits&1));
   assert.equal(nativeAerialSurfaceAllowed(mask,'chest'),!!(bits&8));
-  assert.equal(nativeAerialSurfaceAllowed(mask,'foot'),!!(bits&8)||!!(bits&2)&&!!(bits&4));
+  assert.equal(nativeAerialSurfaceAllowed(mask,'foot'),!!(bits&8)||!!(bits&2));
   assert.equal(nativeAerialSurfaceAllowed(mask,'unknown'),false);
  }
 });
@@ -204,4 +204,28 @@ test('ME-01-QA U-01F3b: defense permissions precede selection, never grant evide
  assert.equal(selectDefensiveIntervention({actorId:'away-2',context:'shot',allowedFundamentals:blockMask}).kind,'none');
  assert.equal(nativePhysicalActionAllowed(createNativeFundamentalMask(['tackle']),{action:'tackle'}),false);
  assert.throws(()=>createNativeDuelFundamentalMask('invalid'),/Known/);
+});
+
+test('ME-01-QA U-01F4: aerial sequence permissions require real delivery provenance',()=>{
+ for(const side of ['home','away'])for(const id of ['header-pair','chest-control','volley-solo','lofted-pass','lofted-short','lofted-switch']){
+  const seq=nativeLabAerialSequence({id,side}),mask=nativeLabFundamentalMask({id,collective:true});
+  const choice={playerId:seq.actorId,team:side,action:seq.kind,[seq.kind==='pass'?'passTarget':'crossTarget']:{recipientId:seq.recipientId,deliveryProfile:'lofted',loftedProfile:seq.profile}};
+  const delivery={kind:seq.kind,actorId:seq.actorId,recipientId:seq.recipientId,team:side,profile:seq.profile,tick:3,airborne:true,actualPhysicsImpulseApplied:true};
+  const contact={actorId:seq.recipientId,team:side,surface:seq.surface,contactStarted:true,actualNativeSolverContact:true,sameOriginalRapierWorld:true,incomingVelocity:{z:-1}};
+  assert.equal(nativeSequenceDeliveryAllowed(seq,choice),true);
+  assert.equal(nativeSequenceDeliveryAllowed(seq,{...choice,playerId:seq.recipientId}),false);
+  assert.equal(nativeSequenceAerialAllowed(seq,delivery,contact,12),true);
+  for(const patch of [{actualPhysicsImpulseApplied:false},{airborne:false},{actorId:seq.recipientId},{recipientId:seq.actorId},{tick:12},{tick:-200}])
+   assert.equal(nativeSequenceAerialAllowed(seq,{...delivery,...patch},contact,12),false);
+  for(const patch of [{actorId:seq.actorId},{contactStarted:false},{actualNativeSolverContact:false},{sameOriginalRapierWorld:false},{surface:'other'},{incomingVelocity:{z:1}}])
+   assert.equal(nativeSequenceAerialAllowed(seq,delivery,{...contact,...patch},12),false);
+  assert.equal(nativeSequenceAerialAllowed(seq,null,contact,12),false);
+  assert.deepEqual(nativeSequenceGroundMask(mask,seq,seq.actorId,false),[seq.kind]);
+  assert.deepEqual(nativeSequenceGroundMask(mask,seq,seq.recipientId,false),[]);
+  assert.deepEqual(nativeSequenceGroundMask(mask,seq,seq.actorId,true),[]);
+  if(seq.profile)assert.equal(nativeSequenceDeliveryAllowed(seq,{...choice,passTarget:{...choice.passTarget,loftedProfile:'wrong'}}),false);
+  assert.equal(nativeFundamentalAllowed(mask,'shot'),false);
+ }
+ assert.equal(nativeLabAerialSequence({id:'aerial-duel'}),null);
+ assert.equal(nativeSequenceAerialAllowed(null,null,null,0),true);
 });

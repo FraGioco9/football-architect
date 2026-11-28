@@ -9,7 +9,7 @@ import {createPrivateRapierFootContactBridge,hasExclusiveNativeShoeStart,usesNat
 import {createPrivateRapier22BodyBridge} from './rapier-22-body-bridge.mjs';
 import {createPrivatePhysicalActionExecutor}
  from './private-physical-action-executor.mjs';
-import {nativeLabFundamentalMask} from './native-fundamental-mask.mjs';
+import {nativeLabFundamentalMask,nativeLabAerialSequence} from './native-fundamental-mask.mjs';
 import {INITIAL_PLAYERS} from './player-movement.mjs';
 import {createBasicMatchRefereeB05} from './basic-match-referee-b05.mjs';
 import {smallSidedSetup,supportsNativeOpenPlay} from './small-sided-lab-scenarios.mjs';
@@ -778,7 +778,7 @@ export function createEngine(RAPIER, input = {}, {
   let sharedCollisionEventsLastTick=0,sharedForceEventsLastTick=0;
   const actionExecutor=diagnosticAutonomousFixtureActionEnabled?
     createPrivatePhysicalActionExecutor({
-      ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,latestLabDynamics:diagnosticLatestLabDynamics,allowedFundamentals:nativeFundamentals,
+      ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,latestLabDynamics:diagnosticLatestLabDynamics,allowedFundamentals:nativeFundamentals,aerialSequence:nativeLabAerialSequence(smallSided??{}),
       physicalBodyGuardEnabled:diagnosticSmallSidedBodyGuardEnabled,
       keeperSingleShotSide:diagnosticKeeperSingleShot?smallSided.side:null,
       blockShotSide:smallSided?.blockStart?smallSided.side:null,

@@ -142,7 +142,7 @@ function chooseLiveCrossRecipient(actor,ball,players,attackPolarity=1){
 // AERIAL-05: a long pass is a pass subtype, never a disguised cross.
 // A distant forward teammate with a safe receiving area is preferred only
 // when the ordinary short ground pass or a viable shot is not available.
-export function chooseNativeLoftedRecipient(actor,ball,players,attackPolarity=1){
+export function chooseNativeLoftedRecipient(actor,ball,players,attackPolarity=1,requiredProfile=null){
  if(!actor||actor.role==='goalkeeper'||!Array.isArray(players)||![actor.x,actor.y,ball?.x,ball?.y].every(finite))return null;
  const dir=attackDirection(actor.team,attackPolarity);
  return players.filter(p=>p.team===actor.team&&p.id!==actor.id&&p.role!=='goalkeeper')
@@ -163,7 +163,7 @@ export function chooseNativeLoftedRecipient(actor,ball,players,attackPolarity=1)
    });
    return {player:p,distanceM,forwardM,gapM,laneClearanceM,profile:profile==='short'&&!middleBlock?null:profile};
   })
-  .filter(p=>p.profile&&p.gapM>=2.2)
+  .filter(p=>p.profile&&p.gapM>=2.2&&(requiredProfile===null||p.profile===requiredProfile))
   .sort((a,b)=>(Math.min(b.gapM,12)+b.forwardM*0.2-b.distanceM*0.1)-(Math.min(a.gapM,12)+a.forwardM*0.2-a.distanceM*0.1)||a.player.id.localeCompare(b.player.id))[0]??null;
 }
 export function chooseRecipient(actor,ball,players,attackPolarity=1){
@@ -199,7 +199,7 @@ export function chooseRecipient(actor,ball,players,attackPolarity=1){
 // executor is the sole authority for the same-tick physical impulse.
 export function chooseNativeVolleyIntent(actor,ball,incoming,players,attackPolarity=1,allowedFundamentals=null){
  const mask=createNativeFundamentalMask(allowedFundamentals);
- if(!nativeFundamentalAllowed(mask,'volley')||!nativeFundamentalAllowed(mask,'shot'))return null;
+ if(!nativeFundamentalAllowed(mask,'volley'))return null;
  validateAttackPolarity(attackPolarity);
  if(!actor||actor.role==='goalkeeper'||!Array.isArray(players)||!players.some(p=>p.id===actor.id&&p.team===actor.team)||
     ![actor.x,actor.y,ball?.x,ball?.y,ball?.z,incoming?.x,incoming?.y,incoming?.z].every(finite)||
@@ -225,17 +225,17 @@ export function chooseNativeHeaderIntent(actor,ball,velocity,players,attackPolar
     ball.z<1.45||ball.z>2.55)return null;
  const dir=attackDirection(actor.team,attackPolarity),goalX=dir*52.5;
  const goalDistance=Math.hypot(goalX-ball.x,ball.y);
- const lane=permits('shot')&&goalDistance<=16?chooseLiveShotLane(ball,goalX,actor.team,players):null;
- const recipient=permits('pass')?chooseRecipient(actor,ball,players.filter(p=>p.role!=='goalkeeper'),attackPolarity):null;
+ const lane=permits('header-shot')&&goalDistance<=16?chooseLiveShotLane(ball,goalX,actor.team,players):null;
+ const recipient=permits('header-pass')?chooseRecipient(actor,ball,players.filter(p=>p.role!=='goalkeeper'),attackPolarity):null;
  let action,target,recipientId=null,speed,vz;
  if(lane){action='shot';target=lane.target;speed=11;vz=-1.5;}
- else if(permits('clearance')&&dir*ball.x<-32&&nearOpponent(ball,actor.team,players)<4){
+ else if(permits('header-clearance')&&dir*ball.x<-32&&nearOpponent(ball,actor.team,players)<4){
   action='clearance';target={x:ball.x+dir*16,y:ball.y*.5};speed=10;vz=1.4;
  }else if(recipient){
   action='pass';target={x:recipient.player.x,y:recipient.player.y};recipientId=recipient.player.id;
   speed=Math.min(9,4+recipient.ballDistance*.28);vz=-1.6;
  }else{
-  if(!permits('clearance'))return null;
+  if(!permits('header-clearance'))return null;
   action='clearance';target={x:ball.x+dir*14,y:ball.y*.5};speed=9;vz=0.6;
  }
  const dx=target.x-ball.x,dy=target.y-ball.y,distance=Math.hypot(dx,dy);
@@ -352,7 +352,7 @@ export function selectUniformAutonomousContactAction({
  tick,contactStarted,contactActive,playerFrame,ballPosition,ballVelocity,
  lastActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS,ballRadiusM,
  allowPhysicalCarry=false,activePlayerIds=null,smallSidedDecisionContext=null,
- isolatedDribbleContext=null,keeperSingleShotSide=null,duelTransition=null,interceptionContext=null,blockContext=null,collectiveControl=null,nativeActionPolicy=false,attackPolarity=1,allowedFundamentals=null
+ isolatedDribbleContext=null,keeperSingleShotSide=null,duelTransition=null,interceptionContext=null,blockContext=null,collectiveControl=null,nativeActionPolicy=false,attackPolarity=1,allowedFundamentals=null,requiredLoftedProfile=null
 }){
  const mask=createNativeFundamentalMask(allowedFundamentals),permits=kind=>nativeFundamentalAllowed(mask,kind);
  validateAttackPolarity(attackPolarity);
@@ -465,7 +465,7 @@ export function selectUniformAutonomousContactAction({
   const contextualAttacker=!activeKeeperAttacker&&isolatedDribbleContext===null&&
    (collective?!opponentControl:smallSidedDecisionContext!==null&&player.team===smallSidedDecisionContext.attackingSide)&&
    player.role!=='goalkeeper'&&!defensiveAttempt&&!collectiveTouch;
-  const contextualRecipient=contextualAttacker&&permits('pass')?
+  const contextualRecipient=contextualAttacker&&permits('pass')&&requiredLoftedProfile===null?
    chooseRecipient(player,ballPosition,actors,attackPolarity):null;
   const carryPossible=contextualAttacker&&permits('carry')&&allowPhysicalCarry&&
    Math.abs(ballPosition.y)<=20&&
@@ -557,7 +557,7 @@ export function selectUniformAutonomousContactAction({
    recipient=crossInfo.player;action='cross';dx=recipient.x-ballPosition.x;
    dy=recipient.y-ballPosition.y;vertical=0.42;rule='wide-live-teammate-lofted-cross';
   }else if(collective&&permits('pass')&&contextualAttacker&&!contextualRecipient&&!chosenShotLane&&
-    (loftedInfo=chooseNativeLoftedRecipient(player,ballPosition,actors,attackPolarity))){
+    (loftedInfo=chooseNativeLoftedRecipient(player,ballPosition,actors,attackPolarity,requiredLoftedProfile))){
    recipient=loftedInfo.player;action='pass';dx=recipient.x-ballPosition.x;dy=recipient.y-ballPosition.y;
    vertical=0.65;rule='live-'+loftedInfo.profile+'-teammate-lofted-pass';
   }else if(contextualChoice?.selected==='pass'){
@@ -576,7 +576,7 @@ export function selectUniformAutonomousContactAction({
     'unblocked-goal-lane':'unblocked-near-post-lane';
   }else{
    crossInfo=permits('cross')?chooseLiveCrossRecipient(player,ballPosition,actors,attackPolarity):null;
-   recipientInfo=crossInfo||!permits('pass')?null:chooseRecipient(player,ballPosition,actors,attackPolarity);
+   recipientInfo=crossInfo||!permits('pass')||requiredLoftedProfile!==null?null:chooseRecipient(player,ballPosition,actors,attackPolarity);
    if(crossInfo){
     recipient=crossInfo.player;
     action='cross';dx=recipient.x-ballPosition.x;

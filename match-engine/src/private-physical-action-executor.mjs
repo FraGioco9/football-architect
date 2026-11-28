@@ -8,7 +8,7 @@ import {inspectPhysicalActionRejection,selectUniformAutonomousContactAction,choo
  from './player-ball-uniform-autonomous-action.mjs';
 import {FOOT_CONTACT_VERSION,footProxyTransform} from './player-foot-contact.mjs';
 import {hasExclusiveNativeShoeStart} from './rapier-foot-contact-bridge.mjs';
-import {createNativeFundamentalMask,nativeFundamentalAllowed,nativePhysicalActionAllowed} from './native-fundamental-mask.mjs';
+import {createNativeFundamentalMask,nativeFundamentalAllowed,nativePhysicalActionAllowed,nativeSequenceDeliveryAllowed,nativeSequenceAerialAllowed,nativeSequenceGroundMask} from './native-fundamental-mask.mjs';
 import {chooseIntentSoloCarryTouch} from './intent-driven-solo-carry.mjs';
 import {chooseNativeFixedCarryImpulse}
  from './native-fixed-carry-impulse.mjs';
@@ -68,7 +68,7 @@ export function createPrivatePhysicalActionExecutor({
  researchReceiverTapSide=null,activePlayerIds=null,
  smallSidedDecisionContext=null,isolatedDribbleContext=null,isolatedPassSide=null,interceptionPassSide=null,isolatedCrossSide=null,isolatedShotSide=null,isolatedShotProfile='power',firstTimeShot=false,
  physicalBodyGuardEnabled=false,intentDrivenSoloCarry=false,keeperSingleShotSide=null,blockShotSide=null,
- nativeFixedCarryResearch=false,nativeFixedSprintLongStride=false,latestLabDynamics=false,nativeActionPolicy=false,allowedFundamentals=null
+ nativeFixedCarryResearch=false,nativeFixedSprintLongStride=false,latestLabDynamics=false,nativeActionPolicy=false,allowedFundamentals=null,aerialSequence=null
 }={}){
  const fundamentalMask=createNativeFundamentalMask(allowedFundamentals);
  const permits=kind=>nativeFundamentalAllowed(fundamentalMask,kind);
@@ -179,7 +179,7 @@ export function createPrivatePhysicalActionExecutor({
  let actualPriorPass=null,interrupted=false,firstCushion=null;
  if(typeof latestLabDynamics!=='boolean')throw new TypeError('Boolean current LAB dynamics required');
  const sharedDynamics=latestLabDynamics||interceptionPassSide!==null||isolatedPassSide!==null||isolatedCrossSide!==null||isolatedShotSide!==null;
- let pendingDelivery=null,latestCushion=null,interceptionPhase='ready',blockShotTaken=false;
+ let pendingDelivery=null,latestCushion=null,interceptionPhase='ready',blockShotTaken=false,sequenceDeliveryApplied=false;
  let firstReceiverChoice=null,firstReceiverTap=null;
  const ensureOpen=()=>{if(closed)throw new Error('Physical action executor disposed');};
  function apply(nextTick,playerFrame,{
@@ -260,7 +260,7 @@ export function createPrivatePhysicalActionExecutor({
     let result=null;
     const head=heads[0],actor=playerFrame.players.find(p=>p.id===head.actorId&&p.team===head.team&&p.role!=='goalkeeper');
     if(!actor||playerFrame.tick!==nextTick)throw new TypeError('Canonical native header actor required');
-    if(!suppressOriginalAction&&exclusive===head&&keeperDistribution===null&&
+    if(!suppressOriginalAction&&exclusive===head&&keeperDistribution===null&&nativeSequenceAerialAllowed(aerialSequence,pendingDelivery,head,nextTick)&&
        nextTick-lastActionTick>=UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS){
      const origin=Object.freeze({...ballBody.translation()}),before=Object.freeze({...ballBody.linvel()});
      const control=head.version===NATIVE_AERIAL_CONTROL_VERSION;
@@ -270,7 +270,7 @@ export function createPrivatePhysicalActionExecutor({
       const volley=head.surface==='foot'?chooseNativeVolleyIntent(actor,origin,head.incomingVelocity,playerFrame.players.filter(p=>activePlayerIds.includes(p.id)),attackPolarity,fundamentalMask):null;
       const raw=volley&&Number.isFinite(mass)&&mass>0?{x:mass*(volley.desiredVelocity.x-before.x),y:mass*(volley.desiredVelocity.y-before.y),z:mass*(volley.desiredVelocity.z-before.z)}:null;
       const norm=raw?Math.hypot(raw.x,raw.y,raw.z):0;
-      if(volley&&permits('volley')&&permits('shot')&&norm>0.025){
+      if(volley&&permits('volley')&&norm>0.025){
        const scale=Math.min(1,12/norm),impulseNs=Object.freeze({x:raw.x*scale,y:raw.y*scale,z:raw.z*scale});
        ballBody.applyImpulse(impulseNs,true);
        result=Object.freeze({version:NATIVE_AERIAL_CONTROL_VERSION,tick:nextTick,playerId:actor.id,team:actor.team,
@@ -288,7 +288,7 @@ export function createPrivatePhysicalActionExecutor({
         appliedByRapier:true,actualPhysicsImpulseApplied:true,officialMatchAction:false,officialPossession:false});
        lastActionTick=nextTick;
       }
-     }else if(plan&&permits('header')&&permits(plan.action)&&Number.isFinite(mass)&&mass>0){
+     }else if(plan&&permits('header')&&permits('header-'+plan.action)&&Number.isFinite(mass)&&mass>0){
       const raw={x:mass*(plan.desiredVelocity.x-before.x),y:mass*(plan.desiredVelocity.y-before.y),z:mass*(plan.desiredVelocity.z-before.z)};
       const norm=Math.hypot(raw.x,raw.y,raw.z),scale=Math.min(1,5/Math.max(norm,1e-9));
       if(norm>0.025){
@@ -335,11 +335,12 @@ export function createPrivatePhysicalActionExecutor({
   const pairedSourceValid=contact.nativePairedFeet===undefined||hasExclusiveNativeShoeStart(contact,contact.started[0]);
   const originalChoice=suppressOriginalAction||suppressPhysicalBodyContact||
    !isolatedNativeShoeSourceValid||!pairedSourceValid?null:
-   selectUniformAutonomousContactAction({...input,activePlayerIds,allowedFundamentals:fundamentalMask,
+   selectUniformAutonomousContactAction({...input,activePlayerIds,allowedFundamentals:nativeSequenceGroundMask(fundamentalMask,aerialSequence,contact.started[0],sequenceDeliveryApplied),requiredLoftedProfile:aerialSequence?.profile??null,
     smallSidedDecisionContext,isolatedDribbleContext,keeperSingleShotSide,duelTransition,collectiveControl,nativeActionPolicy,attackPolarity,
     interceptionContext:interceptionPassSide===null?null:{side:interceptionPassSide,phase:interceptionPhase},
     blockContext:blockShotSide===null?null:{side:blockShotSide,shotTaken:blockShotTaken}});
   let orientedCandidate=null,orientedDelivery=null;
+  if(aerialSequence!==null&&pendingDelivery&&suppressPhysicalBodyContact)pendingDelivery=null;
   if(sharedDynamics&&pendingDelivery&&nextTick>pendingDelivery.tick){
    const d=pendingDelivery,pos=ballBody.translation(),v=ballBody.linvel();
    const eligible=d.kind==='pass'&&!d.lofted||(d.airborne&&d.descending);
@@ -434,7 +435,7 @@ export function createPrivatePhysicalActionExecutor({
   // defer an ORIGINAL second-touch clearance with zero additional impulse.
   // Filter existing action authority; never invent a contact or impulse.
   const restrictionRejected=!evaluateNativeActionRestriction(restriction,originalChoice,lastActionTick>=0?1:0);
-  const fundamentalRejected=originalChoice!==null&&!nativePhysicalActionAllowed(fundamentalMask,originalChoice);
+  const fundamentalRejected=originalChoice!==null&&(!nativePhysicalActionAllowed(fundamentalMask,originalChoice)||!nativeSequenceDeliveryAllowed(aerialSequence,originalChoice));
   const originalChosen=orientedCandidate||researchCandidate||deferOriginal||restrictionRejected||fundamentalRejected?null:originalChoice;
   // The *existing* uniform policy and Rapier exclusive shoe START remain
   // the only action authority. Native phase calibration can adjust that
@@ -605,9 +606,11 @@ export function createPrivatePhysicalActionExecutor({
   }
   if(sharedDynamics&&applied&&['pass','cross'].includes(applied.action)){
    const target=applied.action==='pass'?applied.passTarget:applied.crossTarget;
-   if(target?.recipientId)pendingDelivery={kind:applied.action,tick:nextTick,
+   if(target?.recipientId){pendingDelivery={kind:applied.action,tick:nextTick,
     actorId:applied.playerId,recipientId:target.recipientId,team:applied.team,
-    airborne:false,descending:false,lofted:target.deliveryProfile==='lofted'};
+    airborne:false,descending:false,lofted:target.deliveryProfile==='lofted',profile:target.loftedProfile??null,actualPhysicsImpulseApplied:applied.actualPhysicsImpulseApplied===true};
+    if(aerialSequence!==null)sequenceDeliveryApplied=true;
+   }
   }
   if(keeperDistribution!==null){
    const d=keeperDistribution;
