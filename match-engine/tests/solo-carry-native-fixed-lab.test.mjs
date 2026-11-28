@@ -5,7 +5,7 @@ import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {uniformSoloCarryAttributes} from '../src/solo-carry-attribute-calibration.mjs';
 import {planNativeCarryTouch} from '../src/isolated-dribble-touches.mjs';
-import {planNativeCarryPhaseImpulse,advanceSoloCarryPhase,nativeReferenceCarryKinematics,planNativeOpenCarryMotion,hasNativeOpenCarrySpace} from '../src/solo-carry-phases.mjs';
+import {planNativeCarryPhaseImpulse,advanceSoloCarryPhase,nativeReferenceCarryKinematics,planNativeOpenCarryMotion,hasNativeOpenCarrySpace,nearestNativeCarryOpponent,nativeCarryMotionHasPriority} from '../src/solo-carry-phases.mjs';
 import {chooseNativeFixedCarryImpulse}
  from '../src/native-fixed-carry-impulse.mjs';
 
@@ -636,5 +636,28 @@ test('ME-01-QA U-01C: distant opposition shares reference movement and selected 
   assert.equal(hasNativeOpenCarrySpace(ball,near),false);
   assert.equal(planNativeOpenCarryMotion({player,ball,velocity,opponent:near,attackPolarity}),null);
   assert.equal(planNativeCarryTouch({attacker:player,attackingSide:team,defender:near,ballPosition:ball,ballVelocity:velocity,phase,attackPolarity}).phaseProposal,undefined);
+ }
+});
+
+test('ME-01-QA U-01C-R2: shared active-opponent context and higher-priority motion exclusion',()=>{
+ for(const team of ['home','away'])for(const polarity of [1,-1]){
+  const rival=team==='home'?'away':'home',dir=(team==='home'?1:-1)*polarity;
+  const ball={x:dir*12,y:0},player={id:team+'-10',team,x:ball.x-dir*0.5,y:0};
+  const mate={id:team+'-9',team,x:ball.x,y:0};
+  const a={id:rival+'-2',team:rival,x:ball.x+dir*4,y:0};
+  const b={id:rival+'-3',team:rival,x:ball.x-dir*4,y:0};
+  const keeper={id:rival+'-1',team:rival,x:ball.x+dir*8,y:0,role:'goalkeeper'};
+  const actors=[b,mate,keeper,player,a],snapshot=[...actors];
+  assert.equal(nearestNativeCarryOpponent(player,ball,actors),a);
+  assert.equal(nearestNativeCarryOpponent(player,ball,[...actors].reverse()),a);
+  assert.deepEqual(actors,snapshot);
+  assert.equal(nearestNativeCarryOpponent(player,ball,[player,mate,keeper]),keeper);
+  assert.equal(nearestNativeCarryOpponent(player,ball,[player,mate]),null);
+  const eligible={movementKind:'carry-ball'};
+  assert.equal(nativeCarryMotionHasPriority(eligible),true);
+  for(const kind of ['approach-ball','press-ball','support-run','goalkeeping','aerial-approach','getting-up'])
+   assert.equal(nativeCarryMotionHasPriority({movementKind:kind}),false);
+  for(const blocked of [{restartPlacement:{}},{recoveryLocked:true},{balance:{}},{slide:{phase:'slide'}},{slide:{phase:'recovery'}},{shoulder:{}},{deliveryPlan:{kind:'aerial-approach'}}])
+   assert.equal(nativeCarryMotionHasPriority({...eligible,...blocked}),false);
  }
 });

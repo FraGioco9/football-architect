@@ -114,6 +114,17 @@ export function hasNativeOpenCarrySpace(ball,opponent=null){
   throw new TypeError('Live carry space geometry required');
  return opponent===null||Math.hypot(opponent.x-ball.x,opponent.y-ball.y)>NATIVE_OPEN_CARRY_GAP_M;
 }
+// Both movement and contact policy use the same live, active participants.
+// Sorting a copy preserves canonical actor ordering and deterministic ties.
+export function nearestNativeCarryOpponent(player,ball,activePlayers){
+ return activePlayers.filter(p=>p.team!==player.team).sort((a,b)=>
+  Math.hypot(a.x-ball.x,a.y-ball.y)-Math.hypot(b.x-ball.x,b.y-ball.y)||a.id.localeCompare(b.id))[0]??null;
+}
+// A carry phase is a movement intent, not permission to override recovery,
+// an already selected physical intervention, a delivery or a restart.
+export function nativeCarryMotionHasPriority({movementKind,restartPlacement=null,recoveryLocked=false,balance=null,slide=null,shoulder=null,deliveryPlan=null}={}){
+ return movementKind==='carry-ball'&&!restartPlacement&&!recoveryLocked&&!balance&&!slide&&!shoulder&&!deliveryPlan;
+}
 export function planNativeOpenCarryMotion({player,ball,velocity,opponent=null,phase=null,attackPolarity=1}={}){
  if(!player||!hasNativeOpenCarrySpace(ball,opponent))return null;
  const selected=phase??selectNativeOpenCarryPhase({playerSpeedMps:Math.hypot(player.vx,player.vy),

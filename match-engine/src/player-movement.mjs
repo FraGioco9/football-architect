@@ -6,7 +6,7 @@ import {advanceSlidingTackle,planSlidingTackle,SLIDE_MAX_SPEED_MPS,SLIDE_ACCEL_M
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
 // Research LAB only. No Rapier bodies, ball contact, official world or club data.
 import {advanceFreePlayerKinematics,advancePlayerOrientation,advanceGoalkeeperBallOrientation} from './individual-kinematics.mjs';
-import {advanceSoloCarryPhase,SOLO_CARRY_PHASES,planNativeOpenCarryMotion,nativeCarryPursuitOffset} from './solo-carry-phases.mjs';
+import {advanceSoloCarryPhase,SOLO_CARRY_PHASES,planNativeOpenCarryMotion,nativeCarryPursuitOffset,nearestNativeCarryOpponent,nativeCarryMotionHasPriority} from './solo-carry-phases.mjs';
 import {validateSoloCarryAttributes}
  from './solo-carry-attribute-calibration.mjs';
 import {projectNativeShoeBodyStep,projectNativeShoeBodyFacing}
@@ -2659,14 +2659,6 @@ export function createPlayerMovement(options={}){
   }
   const shoulderBalance=directedDribble?Object.fromEntries(players.map(p=>[p.id,planShoulderBalanceRecovery(p,duelTransition,tick+1)])):{};
   const collectiveApproaches=options.researchCollectiveApproaches===true?planNativeFootballMovement(players.filter(p=>smallActive.has(p.id)&&p.role!=='goalkeeper'),ball,realBallVelocity??{x:0,y:0},collectiveControl,players.filter(p=>smallActive.has(p.id)&&p.role==='goalkeeper'),attackPolarity):null;
-  const openCarryMotion={};
-  if(collectiveApproaches&&!restartPlacement){
-   for(const p of players.filter(p=>smallActive.has(p.id)&&collectiveApproaches[p.id]?.kind==='carry-ball'&&!isNativeRecoveryLocked(collectiveControl,p.id,tick+1))){
-    const opponent=players.filter(q=>smallActive.has(q.id)&&q.team!==p.team).sort((a,b)=>Math.hypot(a.x-ball.x,a.y-ball.y)-Math.hypot(b.x-ball.x,b.y-ball.y)||a.id.localeCompare(b.id))[0]??null;
-    const motion=planNativeOpenCarryMotion({player:p,ball,velocity:realBallVelocity,opponent,attackPolarity});
-    if(motion)openCarryMotion[p.id]=motion;
-   }
-  }
   // Actual delivery provenance permits trajectory-based positioning for
   // any active outfielder. It does not manufacture a block or interception.
   const nativeDeliveryPlans={};
@@ -2739,6 +2731,20 @@ export function createPlayerMovement(options={}){
    }
   }
   nativeSlides=Object.freeze(nextNativeSlides);nativeShoulders=Object.freeze(nextNativeShoulders);
+  // Resolve carry only after higher-priority live movement decisions. Its
+  // target, limits and emitted phase must all describe the same decision.
+  const openCarryMotion={};
+  if(collectiveApproaches){
+   const activePlayers=players.filter(p=>smallActive.has(p.id));
+   for(const p of activePlayers){
+    if(!nativeCarryMotionHasPriority({movementKind:collectiveApproaches[p.id]?.kind,restartPlacement,
+     recoveryLocked:isNativeRecoveryLocked(collectiveControl,p.id,tick+1),balance:nativeBalance[p.id],
+     slide:nativeSlides[p.id],shoulder:nativeShoulders[p.id],deliveryPlan:nativeDeliveryPlans[p.id]}))continue;
+    const opponent=nearestNativeCarryOpponent(p,ball,activePlayers);
+    const motion=planNativeOpenCarryMotion({player:p,ball,velocity:realBallVelocity,opponent,attackPolarity});
+    if(motion)openCarryMotion[p.id]=motion;
+   }
+  }
   nativeAttackPolarity=attackPolarity;
   const halfPreparation=restartPlacement?.periodRestart==='second-half';
   if(halfPreparation){

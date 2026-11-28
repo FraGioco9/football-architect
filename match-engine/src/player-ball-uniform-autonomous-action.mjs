@@ -1,4 +1,5 @@
 import {attackDirection,validateAttackPolarity} from './match-directions.mjs';
+import {nearestNativeCarryOpponent} from './solo-carry-phases.mjs';
 // ME-PB-55 / A4.2b.1: self-contained, uniform 22-player football action
 // policy, called ONLY after an INTERNAL genuine Rapier shoe START.
 // Pure decision: never applies impulses, never accepts an authenticated
@@ -602,7 +603,7 @@ export function selectUniformAutonomousContactAction({
   // satisfactory rolling ball. Other action kinds remain untouched.
   let nativeCarryTouch=null;
   if(collective&&action==='carry'){
-   const nearest=actors.filter(p=>p.team!==player.team).sort((a,b)=>Math.hypot(a.x-ballPosition.x,a.y-ballPosition.y)-Math.hypot(b.x-ballPosition.x,b.y-ballPosition.y)||a.id.localeCompare(b.id))[0]??null;
+   const nearest=nearestNativeCarryOpponent(player,ballPosition,actors);
    nativeCarryTouch=planNativeCarryTouch({attacker:player,attackingSide:player.team,defender:nearest,ballPosition,ballVelocity,attackPolarity,
     phase:playerFrame.smallSidedMovementDecisions?.find(d=>d.id===id&&d.tick===tick&&d.kind==='carry-ball')?.carryPhase??null});
    if(nativeCarryTouch.magnitudeNs<0.025)continue;
