@@ -90,7 +90,7 @@ export function createNativeAerialHead(R,world,ballCollider,actor){
   const target={x:player.x,y:player.y,z:active?aerialHeadHeight(elapsed):AERIAL_HEAD_REST_Z_M};
   collider.setCollisionGroups(active?(LEG_CATEGORY<<16)|BALL_CATEGORY:0);
   head.setNextKinematicTranslation(target);
-  prepared={tick,active,started,elapsed:active?elapsed:null};
+  prepared={tick,active,started,elapsed:active?elapsed:null,incomingVelocity:freeze({...ball.velocity})};
  }
  function observe(tick){
   if(prepared?.tick!==tick)throw new TypeError('Native aerial evidence requires original post-step solver tick');
@@ -100,6 +100,7 @@ export function createNativeAerialHead(R,world,ballCollider,actor){
   });
   const point=head.translation();
   const result=freeze({version:NATIVE_AERIAL_VERSION,tick,actorId:actor.id,team:actor.team,
+   surface:'head',incomingVelocity:prepared.incomingVelocity,
    jumping:prepared.active,jumpStarted:prepared.started,jumpElapsedTicks:prepared.elapsed,
    headPosition:freeze({x:point.x,y:point.y,z:point.z}),
    contact,contactStarted:contact&&!previousContact,actualNativeSolverContact:contact,
