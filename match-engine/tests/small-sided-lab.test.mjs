@@ -364,6 +364,8 @@ test('UME-06A/B full field native 22-player deterministic replay from midfield a
    assert.equal(x.snapshot().playedTicks,0);
    assert.deepEqual(x.snapshot().allowedFundamentals,['carry','pass','cross','shot','save','tackle','interception','clearance','reception','aerial-control','header','volley','standing-tackle','sliding-tackle','shoulder-challenge','block','header-shot','header-pass','header-clearance']);
    assert.deepEqual(x.snapshot().permittedAerialSurfaces,['head','chest','foot']);
+   assert.deepEqual(x.snapshot().movementFundamentals,x.snapshot().allowedFundamentals);
+   assert.ok(Object.isFrozen(x.snapshot().movementFundamentals));
    assert.throws(()=>x.placeRestart(),/verified ready boundary ticket/);
    let prior=x.snapshot().ball.position,pathM=0,ticks=0,boundary=null;
    for(let k=1;k<=600;k++){
@@ -375,6 +377,8 @@ test('UME-06A/B full field native 22-player deterministic replay from midfield a
     assert.equal(a.tick,k);assert.deepEqual(a.ball,b.ball);assert.deepEqual(a.players,b.players);
     assert.deepEqual(a.starts,b.starts);assert.deepEqual(a.action,b.action);
     assert.deepEqual(a.allowedFundamentals,b.allowedFundamentals);
+    assert.deepEqual(a.movementFundamentals,a.allowedFundamentals);
+    assert.deepEqual(b.movementFundamentals,b.allowedFundamentals);
     assert.deepEqual(a.permittedAerialSurfaces,['head','chest','foot']);
     assert.deepEqual(a.control,b.control);assert.deepEqual(a.keepers,b.keepers);assert.deepEqual(a.reception,b.reception);
     assert.deepEqual(a.body.selectedColliderIds,fixture.activeIds);assert.equal(a.body.bodies.length,22);
@@ -413,6 +417,8 @@ test('UME-06A/B full field native 22-player deterministic replay from midfield a
       assert.equal(Math.hypot(...Object.values(placed.ball.velocity)),0,'placed ball is exactly stationary (including IEEE signed zero)');
       assert.equal(placed.control.kind,'loose');assert.equal(placed.control.playerId,null);
       assert.equal(placed.control.delivery,null);assert.equal(placed.control.keeperHold,null);
+      assert.deepEqual(placed.allowedFundamentals,a.allowedFundamentals);
+      assert.deepEqual(placed.movementFundamentals,placed.allowedFundamentals);
       assert.ok(placed.keepers.every(p=>!p.catchState?.active));
       assert.equal(placed.action,null);assert.equal(placed.reception,null);
       assert.throws(()=>x.placeRestart(),/verified ready boundary ticket/);
@@ -426,6 +432,7 @@ test('UME-06A/B full field native 22-player deterministic replay from midfield a
         assert.deepEqual(u,v);
         assert.equal(u.tick,k+n);assert.equal(u.playedTicks,k);
         assert.equal(u.action,null);
+        assert.deepEqual(u.movementFundamentals,u.allowedFundamentals);
         if(u.restartTake?.tick===u.tick){taken=u;break;}
         assert.equal(u.phase,'dead-ball-placed-awaiting-native-take');
         if(throwIn&&u.throwHands?.active)sawGrip=true;
