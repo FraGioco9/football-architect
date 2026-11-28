@@ -6,7 +6,7 @@ import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {initializeRapier} from '../src/core.mjs';
 import {ACTION_LAB_SCENARIOS,getActionLabScenario,
  classifyActionLabEvidence} from '../src/action-lab-scenarios.mjs';
-import {createControlledActionLab as createCurrentActionLab} from '../src/action-labs.mjs';
+import {createControlledActionLab as createCurrentActionLab,resolveInlineActionLabOptions} from '../src/action-labs.mjs';
  // Historical M/B evidence comparator only. Current gameplay uses the default.
  const createControlledActionLab=(R,id,options={})=>createCurrentActionLab(R,id,{
   ...options,historicalEvidenceBaseline:!['shot-solo','pass-pair','cross-pair','carry-solo','dribble-1v1','keeper-1v1','defender-1v1','overload-2v1','duel-2v2','duel-3v3'].includes(id)
@@ -656,4 +656,26 @@ test('CONTROL opponent-first options do not spoof a Rapier PASS or expose unsafe
  assert.throws(()=>initialResearchControlLineup(INITIAL_PLAYERS,ball,{
   opponentFirst:'true'
  }),/flag must be boolean/);
+});
+
+test('ME-01-QA U-02d1: visible action menu selects current shared paths and explicit restrictions',()=>{
+ for(const id of ['dribble-1v1','defender-1v1','overload-2v1','duel-2v2','duel-3v3','header-pair','chest-control','aerial-foot-control','aerial-duel','lofted-pass','lofted-short','lofted-switch','volley-solo','keeper-high-cross','keeper-high-intercept']){
+  const o=resolveInlineActionLabOptions(id);
+  assert.equal(o.collectiveApproaches,true,id);
+  assert.equal(o.bodyGuardEnabled,true,id);
+  assert.equal(o.historicalCarryPhysics,false,id);
+  assert.equal(o.historicalEvidenceBaseline,false,id);
+ }
+ for(const [id,profile] of [['dribble-1v1','standing'],['dribble-1v1','sliding'],['dribble-1v1','shoulder'],['defender-1v1','block'],['pass-pair','interception']]){
+  const o=resolveInlineActionLabOptions(id,{duelTackleProfile:profile});
+  assert.equal(o.collectiveApproaches,false);assert.equal(o.duelTackleProfile,profile);
+  assert.equal(o.directedDribble,id==='dribble-1v1');
+ }
+ for(const id of ['carry-solo','pass-pair','cross-pair','shot-solo']){
+  const o=resolveInlineActionLabOptions(id);
+  assert.equal(o.collectiveApproaches,false);assert.equal(o.bodyGuardEnabled,false);assert.equal(o.historicalCarryPhysics,false);
+ }
+ assert.equal(resolveInlineActionLabOptions('keeper-1v1').keeperSingleShot,true);
+ assert.equal(resolveInlineActionLabOptions('keeper-1v1',{archiveMode:true}).keeperSingleShot,false);
+ assert.equal(resolveInlineActionLabOptions('duel-3v3',{archiveMode:true}).collectiveApproaches,false);
 });

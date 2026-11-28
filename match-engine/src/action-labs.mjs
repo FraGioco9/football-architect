@@ -157,6 +157,22 @@ export function createNativeFullFieldSession(RAPIER,{side='home',variantIndex=0,
  }catch(error){engine.dispose();throw error;}
 }
 
+// Visible exercise configuration is independent of the action engine.
+export function resolveInlineActionLabOptions(id,{archiveMode=false,duelTackleProfile='mixed'}={}){
+ if(typeof archiveMode!=='boolean')throw new TypeError('Known LAB surface mode required');
+ const aerial=AERIAL_LAB_SCENARIOS.some(s=>s.id===id);
+ const collectiveApproaches=aerial||(!archiveMode&&supportsNativeOpenPlay(id)&&id!=='keeper-1v1'&&duelTackleProfile==='mixed');
+ return Object.freeze({
+  bodyGuardEnabled:!['carry-solo','pass-pair','cross-pair','shot-solo'].includes(id),
+  collectiveApproaches,
+  keeperSingleShot:!archiveMode&&id==='keeper-1v1',
+  directedDribble:!archiveMode&&id==='dribble-1v1'&&!collectiveApproaches,
+  duelTackleProfile,
+  historicalCarryPhysics:false,
+  historicalEvidenceBaseline:false
+ });
+}
+
 export function createControlledActionLab(RAPIER,id,{
  shotSide='home',shotLane='open',carrySide='home',controlScene='receive',
  controlSide='home',controlDecisionEnabled=true,
@@ -499,6 +515,7 @@ export function createControlledActionLab(RAPIER,id,{
   throw new Error('Small-sided participants differ from physical Rapier shoe colliders');
  const keeperShotObserver=id==='keeper-1v1'?createKeeperShotObserver(shotSide):null;
  const shieldObserver=directedDribble?createDribbleShieldObserver(shotSide):null;
+ const effectiveAerialSurfaces=smallSided?engine.nativeAerialSurfacesSnapshot():Object.freeze([]);
  const refereeObserver=(refereeMode||smallSided)?
   createBasicMatchRefereeB05():null;
  const matchTimelineObserver=(refereeMode||smallSided)?
@@ -982,9 +999,10 @@ export function createControlledActionLab(RAPIER,id,{
   const keeperDive=engine.keeperDiveSnapshot?.()??(['keeper-high-cross','keeper-high-intercept'].includes(id)?engine.nativeKeeperSnapshots()[0]??null:null);
   const refereeEvidence=refereeObserver?.observe({
    physics,playerFrame,foot,solver:engine.footContactSolverSnapshot(),
-   action:aerialLab?action:nativeAction,...(keeperDive?{keeperDive}: {}),
-   ...(aerialLab&&physics.tick>0?{aerialEvidence:engine.smallSidedBodyGuardSnapshot().aerial,
-    aerialConflict:engine.smallSidedBodyGuardSnapshot().lowerLegBallContacts.length>0}:{})
+   action:effectiveAerialSurfaces.length?action:nativeAction,...(keeperDive?{keeperDive}: {}),
+   ...(effectiveAerialSurfaces.length&&physics.tick>0?{aerialEvidence:engine.smallSidedBodyGuardSnapshot().aerial,
+    aerialConflict:engine.smallSidedBodyGuardSnapshot().lowerLegBallContacts.length>0||
+     (collectiveApproaches?engine.nativeKeeperSnapshots():keeperDive?[keeperDive]:[]).some(k=>k.contact||k.catchState?.active||k.distribution?.tick===physics.tick||k.boundedRelease?.tick===physics.tick)}:{})
   })??null;
   if(refereeEvidence?.lastEvent?.tick===physics.tick){
    count++;
@@ -1112,6 +1130,7 @@ export function createControlledActionLab(RAPIER,id,{
     ...(smallSided?{smallSidedParticipants:smallSided.activeIds,
      physicalShoeColliderCount:engine.originalSmallSidedPhysicalShoeColliderCount(),
      allowedFundamentals:engine.nativeFundamentalsSnapshot(),
+     permittedAerialSurfaces:effectiveAerialSurfaces,
      nativeContactMaterial:engine.nativeContactMaterialSnapshot(),
      smallSidedMovementDecisions:playerFrame.smallSidedMovementDecisions,
      ...(id==='carry-solo'?{
