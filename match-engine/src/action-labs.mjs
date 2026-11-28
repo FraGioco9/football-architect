@@ -19,7 +19,7 @@ import {createRealSecondTouchFollowThrough}
 import {createNativeControlEvidenceGateM29}
  from './native-control-evidence-gate-m29.mjs';
 import {createRealBallReleaseAuditM30} from './real-ball-release-audit-m30.mjs';
-import {createBasicMatchRefereeB05} from './basic-match-referee-b05.mjs';
+import {createBasicMatchRefereeB05,nativeRefereeKeeperEvidence} from './basic-match-referee-b05.mjs';
 import {createBasicMatchTimelineB06,basicMatchClockB06,B06_HALF_TICKS} from './basic-match-clock-score-b06.mjs';
 import {createBasicReceiveDribbleObserverB04}
  from './basic-receive-dribble-b04.mjs';
@@ -997,12 +997,13 @@ export function createControlledActionLab(RAPIER,id,{
    })].slice(-12));
   }
   const keeperDive=engine.keeperDiveSnapshot?.()??(['keeper-high-cross','keeper-high-intercept'].includes(id)?engine.nativeKeeperSnapshots()[0]??null:null);
+  const refereeKeeperStates=collectiveApproaches?engine.nativeKeeperSnapshots():keeperDive?[keeperDive]:[];
   const refereeEvidence=refereeObserver?.observe({
    physics,playerFrame,foot,solver:engine.footContactSolverSnapshot(),
-   action:effectiveAerialSurfaces.length?action:nativeAction,...(keeperDive?{keeperDive}: {}),
+   action:effectiveAerialSurfaces.length?action:nativeAction,...nativeRefereeKeeperEvidence(refereeKeeperStates),
    ...(effectiveAerialSurfaces.length&&physics.tick>0?{aerialEvidence:engine.smallSidedBodyGuardSnapshot().aerial,
     aerialConflict:engine.smallSidedBodyGuardSnapshot().lowerLegBallContacts.length>0||
-     (collectiveApproaches?engine.nativeKeeperSnapshots():keeperDive?[keeperDive]:[]).some(k=>k.contact||k.catchState?.active||k.distribution?.tick===physics.tick||k.boundedRelease?.tick===physics.tick)}:{})
+     refereeKeeperStates.some(k=>k.contact||k.catchState?.active||k.distribution?.tick===physics.tick||k.boundedRelease?.tick===physics.tick)}:{})
   })??null;
   if(refereeEvidence?.lastEvent?.tick===physics.tick){
    count++;

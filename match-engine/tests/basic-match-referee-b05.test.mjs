@@ -11,7 +11,7 @@ import {createControlledActionLab} from '../src/action-labs.mjs';
 import {ACTION_LAB_SCENARIOS,B05_LAB_STARTS}
  from '../src/action-lab-scenarios.mjs';
 import {B05_REFEREE_VERSION,detectFirstFullyOutBallB05,
- createBasicMatchRefereeB05} from '../src/basic-match-referee-b05.mjs';
+ createBasicMatchRefereeB05,nativeRefereeKeeperEvidence} from '../src/basic-match-referee-b05.mjs';
 
 test('B05 exact full-ball goal plane, posts, bar, corners and boundary ordering (pure geometry)',()=>{
  assert.deepEqual(ACTION_LAB_SCENARIOS.filter(s=>
@@ -152,4 +152,20 @@ test('B05 HOME/AWAY original physics verified full-ball exits and native same-wo
       officialMatchResult:null})+'\\n');
    }finally{a.dispose();b.dispose();}
   }
+});
+
+test('ME-01-QA U-02d2: common keeper last-touch source does not resolve ambiguous starts',()=>{
+ const home=Object.freeze({keeperId:'home-1',contact:true,contactStarted:true}),away=Object.freeze({keeperId:'away-1',contact:true,contactStarted:true});
+ const idle=Object.freeze({keeperId:'away-1',contact:false,contactStarted:false});
+ assert.deepEqual(nativeRefereeKeeperEvidence([]),{keeperDive:null,keeperContactConflict:false});
+ assert.deepEqual(nativeRefereeKeeperEvidence([idle]),{keeperDive:null,keeperContactConflict:false});
+ for(const s of [home,away]){
+  const evidence=nativeRefereeKeeperEvidence([s]);
+  assert.equal(evidence.keeperDive,s);
+  assert.equal(evidence.keeperContactConflict,false);
+  assert.ok(Object.isFrozen(evidence));
+ }
+ assert.equal(nativeRefereeKeeperEvidence([home,idle]).keeperDive,home);
+ for(const states of [[home,away],[away,home]])assert.deepEqual(nativeRefereeKeeperEvidence(states),{keeperDive:null,keeperContactConflict:true});
+ assert.throws(()=>nativeRefereeKeeperEvidence(null),/Native keeper states/);
 });

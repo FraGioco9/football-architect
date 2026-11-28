@@ -12,7 +12,7 @@ import {createPrivatePhysicalActionExecutor}
  from './private-physical-action-executor.mjs';
 import {nativeLabFundamentalMask,nativeLabAerialSequence,nativeKeeperSequenceInterrupted,nativePermittedAerialSurfaces} from './native-fundamental-mask.mjs';
 import {INITIAL_PLAYERS} from './player-movement.mjs';
-import {createBasicMatchRefereeB05} from './basic-match-referee-b05.mjs';
+import {createBasicMatchRefereeB05,nativeRefereeKeeperEvidence} from './basic-match-referee-b05.mjs';
 import {smallSidedSetup,supportsNativeOpenPlay} from './small-sided-lab-scenarios.mjs';
 import {createNativeBallControlObserver,createDribbleTransitionObserver} from './isolated-dribble-touches.mjs';
 import {createSmallSidedNativeBodyGuard,createNativeKeeperDive,createNativeThrowInHands}
@@ -1112,10 +1112,10 @@ export function createEngine(RAPIER, input = {}, {
     const result=snapshot();
     if(nativeMatchReferee){
      nativeMatchFrame=playerFrame;
-     const raw=actionExecutor.actionSnapshot(),hands=keeperSnapshots().filter(k=>k.contactStarted===true);
+     const raw=actionExecutor.actionSnapshot(),hands=keeperSnapshots();
      nativeMatchReferee.observe({physics:result,playerFrame,foot:shoeBridge.snapshot(),
       solver:shoeBridge.solver(),action:raw?.tick===tick?raw:null,
-      keeperDive:hands.length===1?hands[0]:null,
+      ...nativeRefereeKeeperEvidence(hands),
       ...(nativeAerialEnabled?{aerialEvidence:smallBodyGuard.snapshot().aerial,
        aerialConflict:smallBodyGuard.snapshot().lowerLegBallContacts.length>0||keeperSnapshots().some(k=>k.contact||k.catchState?.active||k.distribution?.tick===tick||k.boundedRelease?.tick===tick)}:{})});
      if(nativeRestartTake?.tick===tick&&nativeRestartTake.type==='throw-in')

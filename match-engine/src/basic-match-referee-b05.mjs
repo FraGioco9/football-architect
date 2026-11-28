@@ -6,6 +6,13 @@ import {BALL_RADIUS,FIXED_DT} from './core.mjs';
 import {PLAYER_PITCH,INITIAL_PLAYERS} from './player-movement.mjs';
 import {FOOT_SOLVER_EVIDENCE_VERSION} from './player-foot-contact-solver.mjs';
 import {validateAttackPolarity,teamAttackingEnd,oppositeTeam} from './match-directions.mjs';
+// Both referee callers consume the same native keeper evidence; no
+// keeper identity is inferred when more than one new glove contact exists.
+export function nativeRefereeKeeperEvidence(states){
+ if(!Array.isArray(states))throw new TypeError('Native keeper states required');
+ const starts=states.filter(k=>k?.contactStarted===true);
+ return Object.freeze({keeperDive:starts.length===1?starts[0]:null,keeperContactConflict:starts.length>1});
+}
 export const B05_REFEREE_VERSION='actions-b05-native-boundary-referee-v1';
 export const B05_GOAL_WIDTH_M=7.32;
 export const B05_GOAL_HEIGHT_M=2.44;
@@ -98,7 +105,7 @@ export function createBasicMatchRefereeB05({attackPolarity=1}={}){
    matchAuthority:false,officialMatchResult:null,
    officialPossession:false});
  }
- function observe({physics,playerFrame,foot,solver,action=null,keeperDive=null,aerialEvidence=null,aerialConflict=false}={}){
+ function observe({physics,playerFrame,foot,solver,action=null,keeperDive=null,keeperContactConflict=false,aerialEvidence=null,aerialConflict=false}={}){
   const next=physics?.tick,ball=physics?.ball;
   if(!Number.isSafeInteger(next)||next!==tick+1||next<0||
     playerFrame?.tick!==next||foot?.tick!==next||
@@ -143,12 +150,13 @@ export function createBasicMatchRefereeB05({attackPolarity=1}={}){
    throw new TypeError('B05 last touch requires authenticated original action');
   // A native sole START is touch evidence even without a uniform kick.
   // Simultaneous STARTs cannot be assigned to either team.
+  if(typeof keeperContactConflict!=='boolean'||keeperContactConflict&&keeperDive!==null)throw new TypeError('Unambiguous native keeper evidence required');
   const gloveStart=keeperDive?.contactStarted===true;
   if(gloveStart&&(keeperDive.version!=='me-628-native-keeper-dive-v1'||keeperDive.tick!==next||
      keeperDive.contact!==true||keeperDive.source!=='native-rapier-solver-manifold'||
      !playerFrame.players.some(p=>p.id===keeperDive.keeperId&&p.role==='goalkeeper')))
    throw new TypeError('B05 keeper glove touch requires same-tick native evidence');
-  if(heads.length&&(!headStart||gloveStart))lastTouch=null;
+  if(keeperContactConflict||heads.length&&(!headStart||gloveStart))lastTouch=null;
   else if(headStart)lastTouch=freeze({tick:next,playerId:headStart.actorId,team:headStart.team,...(headStart.version==='me-628-native-aerial-head-v1'?{nativeHeadContact:true}:{nativeAerialControlContact:true,surface:headStart.surface})});
   else if(gloveStart&&foot.started.length===0)
    lastTouch=freeze({tick:next,playerId:keeperDive.keeperId,team:keeperDive.keeperId.split('-')[0],nativeGloveContact:true});
