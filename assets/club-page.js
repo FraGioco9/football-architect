@@ -502,7 +502,8 @@
    const clubKey=selected.countryId+'-'+selected.clubId;
    const query=new URLSearchParams(location.search),stats=query.get('view')==='stats';
    const season=query.get('season');
-   const suffix=stats?'/stats'+(season!==null?'?season='+encodeURIComponent(season):''):'';
+   const contracts=query.get('view')==='contracts';
+    const suffix=stats?'/stats'+(season!==null?'?season='+encodeURIComponent(season):''):contracts?'/contracts':'';
    const cacheKey=clubKey+suffix;
    // Reuse both completed and in-flight reads when revisiting this club.
    // An unavailable response can be retried on the next Roster entry.
@@ -525,6 +526,7 @@
      const response=await fetch('/api/clubs/'+clubKey+'/roster'+suffix,{method:'GET',credentials:'omit',cache:'no-store',redirect:'error',signal,headers:{Accept:'application/json'}});
      if(!response.ok){const error=Error('roster_http_'+response.status);error.status=response.status;throw error;}
      const data=await response.json();
+     if(contracts&&(!Array.isArray(data?.players)||!data.players.every(p=>Number.isSafeInteger(p?.contract?.expiresSeason)&&p.contract.expiresSeason>=1&&Number.isSafeInteger(p.contract?.currentSeasonalSalaryArc)&&p.contract.currentSeasonalSalaryArc>=1)))throw Error('invalid_roster_contracts');
      if(stats){
       const count=v=>Number.isSafeInteger(v)&&v>=0;
       const nullableCount=v=>v===null||count(v);

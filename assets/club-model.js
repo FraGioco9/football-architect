@@ -110,7 +110,9 @@
  const rosterPitchPositions=Object.freeze(['GK','RB','RWB','CB','LWB','LB','DM','RM','CM','LM','RW','AM','LW','ST']);
  const rosterPositionRank=new Map(rosterPitchPositions.map((code,index)=>[code,rosterPitchPositions.length-index]));
  const rosterSortCommon=Object.freeze(['nationality','name','positions']);
- const rosterSortInfo=Object.freeze(['nationality','name','positions','age','height','foot','market_value_arc']);
+ const rosterContractWords={en:['Contracts','Expires','Salary','Season'],it:['Contratti','Scadenza','Stipendio','Stagione'],de:['Verträge','Ablauf','Gehalt','Saison'],es:['Contratos','Vence','Salario','Temporada'],fr:['Contrats','Expiration','Salaire','Saison']};
+  const rosterSortContracts=Object.freeze(['nationality','name','positions','age','expiresSeason','currentSeasonalSalaryArc']);
+  const rosterSortInfo=Object.freeze(['nationality','name','positions','age','height','foot','market_value_arc']);
  function rosterStatValue(stats,key){
   // Unknown legacy awards cannot be inferred as zero; played-and-covered is zero.
   if(key==='mvpAwards'&&stats?.appearances>0)return stats.mvpAwards??
@@ -122,6 +124,7 @@
   if(key==='name')return player.display_name;
   if(key==='nationality')return player.nationality;
   if(key==='age')return player.age;
+   if(key==='expiresSeason'||key==='currentSeasonalSalaryArc')return player.contract?.[key];
   if(key==='height')return player.height_cm;
   if(key==='market_value_arc')return Number.isSafeInteger(player.market_value_arc)&&player.market_value_arc>=0?player.market_value_arc:null;
   if(key==='foot')return player.preferred_foot;
@@ -175,12 +178,14 @@
  }
  function rosterView(params){
   if(params.get('view')==='stats')return 'stats';
+   if(params.get('view')==='contracts')return 'contracts';
   if(params.get('view')!=='attributes')return 'info';
   const group=params.get('group');
   return Object.hasOwn(rosterGroups,group)?group:'technical';
  }
  function rosterSortKeys(view){
   if(view==='info')return rosterSortInfo;
+   if(view==='contracts')return rosterSortContracts;
   return [...rosterSortCommon,...(view==='stats'?statKeys:rosterGroups[view])];
  }
  function rosterViewQuery(search,view){
@@ -197,8 +202,8 @@
  function renderRoster(clubKey,lang,t,snapshot,search=''){
   const w=rosterWords[lang],params=new URLSearchParams(search);
   const view=rosterView(params);
-  const mode=view==='info'?'overview':view==='stats'?'stats':'attributes';
-  const group=mode==='attributes'?view:'technical',words=rosterLabels[lang];
+  const mode=view==='info'?'overview':view==='stats'||view==='contracts'?view:'attributes';
+  const group=mode==='attributes'?view:'technical',words=rosterLabels[lang],contractWords=rosterContractWords[lang];
   const base='/clubs/'+clubKey.split('-')[0].toLowerCase()+'/'+clubKey.split('-')[1]+'/roster';
   const href=target=>base+'?'+rosterViewQuery(search,target);
   const attributeKeys=rosterGroups[group];
@@ -209,18 +214,19 @@
    ['name','nationality','positions','foot'].includes(sort)?'asc':'desc':'';
   const attrNames=rosterAttributeNames[lang].split('|');
   const ready=snapshot?.source==='ready'&&snapshot.clubKey===clubKey&&
-   Array.isArray(snapshot.players)&&Number.isSafeInteger(snapshot.count)&&snapshot.count===snapshot.players.length;
+   Array.isArray(snapshot.players)&&Number.isSafeInteger(snapshot.count)&&snapshot.count===snapshot.players.length&&
+   (mode!=='contracts'||snapshot.players.every(p=>Number.isSafeInteger(p.contract?.expiresSeason)&&p.contract.expiresSeason>=1&&Number.isSafeInteger(p.contract?.currentSeasonalSalaryArc)&&p.contract.currentSeasonalSalaryArc>=1));
   const unavailable=snapshot?.source==='unavailable',pending=!ready&&!unavailable;
   // A verified empty squad has no usable subviews or table columns. Render only
   // localized text; unknown/loading states still reserve the table first paint.
-  if(ready&&snapshot.count===0)
+  if(ready&&snapshot.count===0&&mode!=='contracts')
    return '<section class="club-roster" aria-busy="false" data-roster-mode="empty"><p class="club-roster-empty" role="status">'+escape(w.empty)+'</p></section>';
   const competitions=snapshot?.competitions||[];
   const scope=rosterCompetition(params);
   const groupIds=competitions.filter(id=>id.startsWith('int-')===(scope==='international'));
   const labels=mode==='attributes'
    ?['',w.name,w.positions,...attributeKeys.map(key=>attrNames[rosterAllAttributes.indexOf(key)])]
-   :mode==='stats'?['',w.name,w.positions,...words.slice(1,1+statKeys.length)]:['',w.name,w.positions,w.age,w.height,w.foot,marketUI?.label(lang)||'Market value'];
+   :mode==='stats'?['',w.name,w.positions,...words.slice(1,1+statKeys.length)]:mode==='contracts'?['',w.name,w.positions,w.age,contractWords[1],contractWords[2]]:['',w.name,w.positions,w.age,w.height,w.foot,marketUI?.label(lang)||'Market value'];
   const columns='<colgroup><col class="app-players-flag-column"><col class="app-players-name-column">'+
    '<col class="app-players-view-third-column">'+'<col>'.repeat(labels.length-3)+'</colgroup>';
   const colCount=labels.length;
@@ -257,17 +263,17 @@
     const flag=code?'<img class="app-players-nationality-flag" src="/assets/flags/'+escape(code)+'.svg" width="20" height="15" alt="'+escape(country)+'" title="'+escape(country)+'">':escape(country||'');
     const positions=[player.primary_position,...(Array.isArray(player.secondary_positions)?player.secondary_positions:[])].filter(Boolean).join(', ');
     const value=v=>Number.isSafeInteger(v)?String(v):'—';
-    const cells=mode==='stats'?'<td>'+escape(positions||'—')+'</td>'+statKeys.map(key=>statCell(player.stats,key)).join(''):mode==='attributes'
+    const cells=mode==='contracts'?'<td>'+escape(positions||'—')+'</td><td>'+value(player.age)+'</td><td>'+escape(contractWords[3]+' '+new Intl.NumberFormat(lang).format(player.contract.expiresSeason))+'</td><td>'+escape(new Intl.NumberFormat(lang).format(player.contract.currentSeasonalSalaryArc)+' $ARC')+'</td>':mode==='stats'?'<td>'+escape(positions||'—')+'</td>'+statKeys.map(key=>statCell(player.stats,key)).join(''):mode==='attributes'
      ?'<td>'+escape(positions||'—')+'</td>'+attributeKeys.map(key=>'<td>'+value(player.attributes?.[key])+'</td>').join('')
      :'<td>'+escape(positions||'—')+'</td><td>'+value(player.age)+'</td><td>'+(Number.isSafeInteger(player.height_cm)?player.height_cm+' cm':'—')+'</td><td>'+escape(player.preferred_foot==='left'?w.left:player.preferred_foot==='right'?w.right:'—')+'</td><td class="app-market-value-col">'+escape(marketUI?.format(player.market_value_arc,lang)||'—')+'</td>';
-    return '<tr><td>'+flag+'</td><td><a class="club-roster-player-link" href="/players/'+id+'" data-mobile-name="'+escape(compactPlayerName(player.display_name))+'" aria-label="'+escape(player.display_name)+'"><span class="fa-player-full-name">'+escape(player.display_name)+'</span><span class="fa-player-short-name">'+escape(compactPlayerName(player.display_name))+'</span></a></td>'+cells+'</tr>';
+    return '<tr><td>'+flag+'</td><td><a class="club-roster-player-link" href="/players/'+id+(mode==='contracts'?'?view=contract':'')+'" data-mobile-name="'+escape(compactPlayerName(player.display_name))+'" aria-label="'+escape(player.display_name)+'"><span class="fa-player-full-name">'+escape(player.display_name)+'</span><span class="fa-player-short-name">'+escape(compactPlayerName(player.display_name))+'</span></a></td>'+cells+'</tr>';
    }).join('');
   }
   const count=ready?new Intl.NumberFormat(lang).format(snapshot.count)+' '+(snapshot.count===1?w.one:w.many)
    :'<span class="app-players-count-placeholder" aria-hidden="true"></span>';
-  const viewTabs=['info','stats','attributes'].map((key,i)=>{
+  const viewTabs=['info','stats','attributes','contracts'].map((key,i)=>{
    const active=key===(mode==='overview'?'info':mode);
-   const label=[w.tabs[0],w.tabs[1],words[0]][i];
+   const label=[w.tabs[0],w.tabs[1],words[0],contractWords[0]][i];
    return '<a role="tab" class="app-competition-tab'+(active?' is-active':'')+'" href="'+escape(href(key==='attributes'?group:key))+'" data-club-roster-view="'+key+'" aria-selected="'+active+'" tabindex="'+(active?'0':'-1')+'">'+escape(label)+'</a>';
   }).join('');
   let selector='';

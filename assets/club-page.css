@@ -889,3 +889,11 @@ html[data-theme="light"] .app-players-table.club-roster-table[data-players-table
 :is(.club-records,.app-history-player-dialog) a.app-records-season-link:is(:hover,:focus-visible){
  text-decoration-line:underline;text-decoration-thickness:1px;text-underline-offset:3px;
 }
+
+/* #823: same identity columns, compact public signed contract terms. */
+.club-roster-table[data-players-table-mode="contracts"]{min-width:650px}
+.app-players-table.club-roster-table[data-players-table-mode="contracts"] :is(col,th):nth-child(4){width:13%}
+.app-players-table.club-roster-table[data-players-table-mode="contracts"] :is(col,th):nth-child(5){width:22%}
+.app-players-table.club-roster-table[data-players-table-mode="contracts"] :is(col,th):nth-child(6){width:25%}
+.club-roster-table[data-players-table-mode="contracts"] :is(th,td):nth-child(n+4){text-align:center;white-space:nowrap}
+.club-roster-table[data-players-table-mode="contracts"] th:nth-child(n+4) .app-players-sort-button{justify-content:center}

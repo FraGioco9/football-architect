@@ -33,8 +33,8 @@ test('Roster generated first paint exactly matches the canonical bootstrap and S
 
 test('Roster first paint exposes Info, Stats and Attributes and reserves five rows',()=>{
  const html=read('clubs/_shared/index.html');
- for(const view of ['info','stats','attributes'])assert.ok(html.includes('data-club-roster-view="'+view+'"'));
- assert.equal((html.match(/data-club-roster-view="/g)||[]).length,3);
+ for(const view of ['info','stats','attributes','contracts'])assert.ok(html.includes('data-club-roster-view="'+view+'"'));
+ assert.equal((html.match(/data-club-roster-view="/g)||[]).length,4);
  assert.match(html,/data-club-roster-view="stats"[^>]*>Stats<\/a>/);
  assert.doesNotMatch(html,/data-club-roster-view="stats"[^>]*>undefined<\/a>/);
  assert.equal((html.match(/class="app-players-loading-row"/g)||[]).length,5);
@@ -111,7 +111,7 @@ test('CLUB-ROSTER-01 keeps all current players, across five locales and five sub
  const pending=model.render(manifest,selected,'en','?view=attributes&group=technical',null,1,null,{source:'loading'});
  const pendingRoster=pending.match(/<section class="club-roster"[^>]*>[\s\S]*?<\/section>/)?.[0];
  assert.equal((pendingRoster.match(/aria-disabled="true"/g)||[]).length,0);
- assert.equal((pendingRoster.match(/tabindex="-1"/g)||[]).length,2);
+ assert.equal((pendingRoster.match(/tabindex="-1"/g)||[]).length,3);
  assert.match(pendingRoster,/\shref="\/clubs\/.*?\/roster\?view=/);
  assert.match(pendingRoster,/aria-busy="true"/);
  assert.equal((pending.match(/app-players-loading-row/g)||[]).length,5);
@@ -398,4 +398,18 @@ test('#763 Roster Overview preserves identity tracks and distributes surplus acr
    assert.equal(tracks[6]-fields[3],tracks[3]-fields[0]);
   }
  }
+});
+
+test('Contracts internal roster mode exposes only public signed salary and expiry sort keys',async()=>{
+ const {default:model}=await import('../assets/club-model.js');
+ const params=new URLSearchParams('view=contracts');
+ assert.equal(model.rosterView(params),'contracts');
+ assert.deepEqual(Array.from(model.rosterSortKeys('contracts')),['nationality','name','positions','age','expiresSeason','currentSeasonalSalaryArc']);
+ const q=model.rosterViewQuery('?view=stats&competition=domestic&sort=goals&order=desc','contracts');
+ assert.equal(q.toString(),'view=contracts');
+ const row={id:1,display_name:'Example Player',nationality:'ITA',primary_position:'GK',secondary_positions:[],age:21,contract:{expiresSeason:2,currentSeasonalSalaryArc:125}};
+ const html=model.renderRoster('IT-1','en',model.copies.en,{source:'ready',clubKey:'IT-1',count:1,players:[row]},'?view=contracts');
+ assert.match(html,/data-roster-mode="contracts"/);assert.match(html,/Season 2/);assert.match(html,/125 \$ARC/);
+ assert.match(html,/href="\/players\/1\?view=contract"/);
+ assert.doesNotMatch(html,/data-club-roster-control=|Annual payroll|Expiring|data-club-roster-sort="market_value_arc"/);
 });
