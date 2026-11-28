@@ -74,9 +74,10 @@ const aerialDuelDefinition=freeze({...headerDefinition,id:'aerial-duel',title:'A
 const loftedPassDefinition=freeze({...headerDefinition,id:'lofted-pass',title:'Pass · Lofted',description:'Two separated teammates, a genuine long lofted pass and physical receiving opportunity.'});
 const volleyDefinition=freeze({...headerDefinition,id:'volley-solo',title:'Shot · Volley from cross',description:'Two teammates with a grounded ball and open crossing geometry. A real cross precedes an exclusive raised-foot first-time shot.'});
 const highClaimDefinition=freeze({...headerDefinition,id:'keeper-high-cross',title:'Goalkeeper · High cross',includeGoalkeeper:true,description:'Two attacking teammates and an opposing goalkeeper. A real cross offers a high interception, grip or deflection opportunity.'});
+const highInterceptDefinition=freeze({...highClaimDefinition,id:'keeper-high-intercept',title:'Goalkeeper · High interception',description:'A shorter near-side cross and a keeper starting closer to the delivery lane, to investigate interception before the intended receiver. Real pressure and outcomes are measured, not assigned.'});
 const shortLoftDefinition=freeze({...loftedPassDefinition,id:'lofted-short',title:'Pass · Lofted short',defenders:freeze([2]),description:'Two teammates and one middle-lane opponent. A live blocked ground lane offers a short lofted pass.'});
 const switchDefinition=freeze({...loftedPassDefinition,id:'lofted-switch',title:'Pass · Switch of play',description:'Two teammates on opposite flanks, outside ordinary ground-pass range.'});
-const byId=new Map([...definitions,headerDefinition,chestDefinition,footDefinition,aerialDuelDefinition,loftedPassDefinition,volleyDefinition,highClaimDefinition,shortLoftDefinition,switchDefinition].map(s=>[s.id,s]));
+const byId=new Map([...definitions,headerDefinition,chestDefinition,footDefinition,aerialDuelDefinition,loftedPassDefinition,volleyDefinition,highClaimDefinition,highInterceptDefinition,shortLoftDefinition,switchDefinition].map(s=>[s.id,s]));
 // Private full-field research fixture: initial geometry only. Not in the
 // visible LAB catalog until the full native participant path is certified.
 byId.set('full-field-native',freeze({id:'full-field-native',nativeOpenPlay:true,fullField:true}));
@@ -337,7 +338,7 @@ export const SMALL_SIDED_LAB_SCENARIOS=freeze(definitions.map(s=>
 ));
 // Keep grounded baseline matrix stable; aerial fixtures have their own
 // contact-source assertions while sharing the same scenario registry.
-export const AERIAL_LAB_SCENARIOS=freeze([headerDefinition,chestDefinition,footDefinition,aerialDuelDefinition,loftedPassDefinition,volleyDefinition,highClaimDefinition,shortLoftDefinition,switchDefinition].map(d=>freeze({...d,mode:'situation',goal:'situation',
+export const AERIAL_LAB_SCENARIOS=freeze([headerDefinition,chestDefinition,footDefinition,aerialDuelDefinition,loftedPassDefinition,volleyDefinition,highClaimDefinition,highInterceptDefinition,shortLoftDefinition,switchDefinition].map(d=>freeze({...d,mode:'situation',goal:'situation',
  initial:freeze({preset:d.id==='aerial-foot-control'?'drop':'roll',seed:'me-small-'+d.id+'-home',x:d.id==='aerial-foot-control'?17:27,y:d.id==='aerial-foot-control'?0:26,z:d.id==='aerial-foot-control'?1.6:0,vx:0,vy:0,vz:d.id==='aerial-foot-control'?-2:0}),
  focus:freeze([...d.attackers.slice().sort((a,b)=>a-b).map(n=>'home-'+n),...(d.includeGoalkeeper?['away-1']:[]),...d.defenders.map(n=>'away-'+n)]),source:'original-rapier-selected-aerial-and-shoe-colliders',officialResult:false})));
 export function getSmallSidedScenario(id){
@@ -481,13 +482,17 @@ export function smallSidedSetup(id,side,canonicalPlayers,{
   }
   throw new RangeError('No collision-free original lofted pass setup');
  }
- if(id==='keeper-high-cross'){
+ if(id==='keeper-high-cross'||id==='keeper-high-intercept'){
+  const intercept=id==='keeper-high-intercept';
   const random=seededGeometry(id,variantIndex);
   for(let attempt=0;attempt<96;attempt++){
    const flank=variantIndex%2===0?1:-1;
-   const bx=29+random()*2,by=flank*(25+random()*2);
-   const rx=41+random()*2,ry=-flank*(2+random()*3);
-   const gx=49+random()*1.2,gy=flank*(random()*1.2);
+   const bx=intercept?38+random()*4:29+random()*2,by=flank*(intercept?20.5+random()*2:25+random()*2);
+   const rx=intercept?45+random()*2:41+random()*2,ry=flank*(intercept?8+random()*3:-(2+random()*3));
+   // Keeper is offset from the original passing lane; normal movement
+   // and the existing reach planner decide if he gets there first.
+   const gx=intercept?rx-2.8-random()*1.2:49+random()*1.2,
+    gy=flank*(intercept?Math.abs(ry)-2.4-random()*1.0:random()*1.2);
    const staged=stage(new Map([[side+'-10',[bx-0.30,by]],[side+'-9',[rx,ry]],[opponent+'-1',[gx,gy]]]));
    if(!physicallySeparated(staged,1.15))continue;
    return freeze({id,side,opponent,variantIndex,activeIds,staged,aerialSurface:'head',

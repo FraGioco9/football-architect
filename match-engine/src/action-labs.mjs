@@ -171,7 +171,7 @@ export function createControlledActionLab(RAPIER,id,{
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
- const aerialLab=['header-pair','chest-control','aerial-foot-control','aerial-duel','lofted-pass','volley-solo','keeper-high-cross','lofted-short','lofted-switch'].includes(id);
+ const aerialLab=['header-pair','chest-control','aerial-foot-control','aerial-duel','lofted-pass','volley-solo','keeper-high-cross','keeper-high-intercept','lofted-short','lofted-switch'].includes(id);
  if(aerialLab){bodyGuardEnabled=true;collectiveApproaches=true;}
  if(typeof collectiveApproaches!=='boolean'||(collectiveApproaches&&(!supportsNativeOpenPlay(id)||!bodyGuardEnabled||keeperSingleShot||directedDribble||duelTackleProfile!=='mixed')))
   throw new TypeError('Native open play requires guarded participants without isolated overrides');
@@ -659,7 +659,7 @@ export function createControlledActionLab(RAPIER,id,{
      (id==='aerial-foot-control'||headerCrossAudit&&action.playerId===headerCrossAudit.recipientId&&action.tick>headerCrossAudit.tick))aerialControlAudit=action;
   if(aerialLab&&action?.action==='cross'&&action.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true&&
      starts.length===1&&starts[0]===action.playerId&&!headerCrossAudit)headerCrossAudit=action;
-  if(id==='keeper-high-cross'&&headerCrossAudit){
+  if(['keeper-high-cross','keeper-high-intercept'].includes(id)&&headerCrossAudit){
    const k=engine.nativeKeeperSnapshots().find(k=>k.keeperId===smallSided.opponent+'-1');
    if(k?.plan?.kind==='high-claim'&&k.started&&!highClaimAudit)highClaimAudit=Object.freeze({cross:headerCrossAudit,attemptTick:k.tick,keeperId:k.keeperId,contactTick:null,confirmedTick:null,punchTick:null,gripReleased:false});
    if(highClaimAudit&&k){
@@ -978,7 +978,7 @@ export function createControlledActionLab(RAPIER,id,{
     tick:physics.tick,kind:id,actorId:baseFootworkAudit.actorId
    })].slice(-12));
   }
-  const keeperDive=engine.keeperDiveSnapshot?.()??(id==='keeper-high-cross'?engine.nativeKeeperSnapshots()[0]??null:null);
+  const keeperDive=engine.keeperDiveSnapshot?.()??(['keeper-high-cross','keeper-high-intercept'].includes(id)?engine.nativeKeeperSnapshots()[0]??null:null);
   const refereeEvidence=refereeObserver?.observe({
    physics,playerFrame,foot,solver:engine.footContactSolverSnapshot(),
    action:aerialLab?action:nativeAction,...(keeperDive?{keeperDive}: {}),

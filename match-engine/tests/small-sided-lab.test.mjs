@@ -2345,8 +2345,8 @@ test('AERIAL-07 high claim prediction is mirrored and rejects unreachable or out
 });
 test('AERIAL-07 real cross precedes native high-claim attempts and observed hand contacts',{timeout:120000},async()=>{
  const R=await initializeRapier(rapier),rows=[];
- for(const side of ['home','away'])for(let variantIndex=0;variantIndex<30;variantIndex++){
-  const lab=createControlledActionLab(R,'keeper-high-cross',{shotSide:side,variantIndex});
+ for(const id of ['keeper-high-cross','keeper-high-intercept'])for(const side of ['home','away'])for(let variantIndex=0;variantIndex<30;variantIndex++){
+  const lab=createControlledActionLab(R,id,{shotSide:side,variantIndex});
   try{
    const keeper=(side==='home'?'away':'home')+'-1';
    assert.equal(lab.snapshot().genuinePhysicalPlayerCount,3);
@@ -2366,7 +2366,7 @@ test('AERIAL-07 real cross precedes native high-claim attempts and observed hand
     }
     if(audit?.confirmedTick!=null)break;
    }
-   rows.push({side,variantIndex,cross:!!cross,attempt:!!audit,contact:audit?.contactTick??null,confirmed:audit?.confirmedTick??null,punch:audit?.punchTick??null,catchAttempt,gripFailure,handDiagnostic});
+   rows.push({id,side,variantIndex,cross:!!cross,attempt:!!audit,contact:audit?.contactTick??null,confirmed:audit?.confirmedTick??null,punch:audit?.punchTick??null,catchAttempt,gripFailure,handDiagnostic});
   }finally{lab.dispose();}
  }
  process.stdout.write('ME_628_HIGH_CLAIM '+JSON.stringify(rows)+'\\n');
@@ -2374,8 +2374,11 @@ test('AERIAL-07 real cross precedes native high-claim attempts and observed hand
   const group=rows.filter(r=>r.side===side);
   assert.ok(group.every(r=>r.cross),JSON.stringify(group));
   assert.ok(group.some(r=>r.attempt&&r.contact!==null),JSON.stringify(group));
-  assert.ok(group.some(r=>r.confirmed!==null), 'Observed high grip must confirm on '+side);
-  assert.ok(group.some(r=>r.punch!==null), 'Observed punch must occur on '+side);
+  const contested=group.filter(r=>r.id==='keeper-high-cross'),intercept=group.filter(r=>r.id==='keeper-high-intercept');
+  assert.equal(contested.length,30);assert.equal(intercept.length,30);
+  assert.ok(contested.some(r=>r.punch!==null), 'Observed punch must occur in original cross on '+side);
+  assert.ok(intercept.some(r=>r.contact!==null&&r.handDiagnostic?.nearestOpponentM>=1.5),'Measured unpressured native hand contact required on '+side);
+  assert.ok(intercept.some(r=>r.confirmed!==null&&r.catchAttempt!==null), 'Observed high grip from real interception cross must confirm on '+side);
  }
 });
 
