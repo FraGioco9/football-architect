@@ -15,7 +15,7 @@ import {createControlledActionLab,projectActiveLabDecisions,createNativeFullFiel
 import {createCollectiveBallControlObserver,createNativeBallControlObserver,createDribbleTransitionObserver,chooseCollectiveDefensiveTouch,planNativeDefensiveIntervention,isNativeRecoveryLocked,applyNativeSlideRecovery} from '../src/isolated-dribble-touches.mjs';
 import {observeNativeShotBlock,planNativeShotBlock} from '../src/defensive-intervention-selection.mjs';
 import {selectUniformAutonomousContactAction,chooseRecipient,eligibleLiveKeeperSave,chooseNativeHeaderIntent,chooseNativeLoftedRecipient,chooseNativeVolleyIntent} from '../src/player-ball-uniform-autonomous-action.mjs';
-import {planNativeCarryTouch,chooseNativePassInterceptionTouch} from '../src/isolated-dribble-touches.mjs';
+import {planNativeCarryTouch,chooseNativePassInterceptionTouch,planNativeOpposedCarryMotion,directedDribbleApproachTarget} from '../src/isolated-dribble-touches.mjs';
 import {planNativeKeeperDive,planNativeKeeperHighClaim,planNativeHighHandAction,planNativeKeeperChallenge,eligibleKeeperGrip,planNativeKeeperDistribution,createNativeAerialHead,planNativeAerialJump,aerialHeadHeight,AERIAL_JUMP_TICKS,planNativeAerialControl,planNativeAerialCushion,createNativeAerialControl,exclusiveNativeAerialStart,observeNativeAerialDuel} from '../src/small-sided-native-body-guard.mjs';
 import {planSlidingTackle} from '../src/sliding-tackle.mjs';
 import {detectFirstFullyOutBallB05} from '../src/basic-match-referee-b05.mjs';
@@ -400,7 +400,7 @@ test('UME-06A/B full field native 22-player deterministic replay from midfield a
    assert.deepEqual(x.snapshot().movementFundamentals,x.snapshot().allowedFundamentals);
    assert.ok(Object.isFrozen(x.snapshot().movementFundamentals));
    assert.throws(()=>x.placeRestart(),/verified ready boundary ticket/);
-   let prior=x.snapshot().ball.position,pathM=0,ticks=0,boundary=null;
+   let prior=x.snapshot().ball.position,pathM=0,ticks=0,boundary=null;const actionTrace=[];let longestControlled=0,controlledRun=0,lastCarrier=null;
    for(let k=1;k<=600;k++){
     const a=x.step(),b=y.step();
     assert.deepEqual(a.referee,b.referee);assert.deepEqual(a.timeline,b.timeline);
@@ -421,6 +421,10 @@ test('UME-06A/B full field native 22-player deterministic replay from midfield a
     assert.deepEqual(a.keepers.map(d=>d.keeperId),['home-1','away-1']);
     assert.ok(a.keepers.filter(d=>d.catchState?.active).length<=1);
     audit.observe(a);ticks=k;
+    const carrier=a.control.kind==='controlled'?a.control.playerId:null;
+    controlledRun=carrier===null?0:carrier===lastCarrier?controlledRun+1:1;
+    longestControlled=Math.max(longestControlled,controlledRun);lastCarrier=carrier;
+    if(a.action)actionTrace.push({tick:k,actorId:a.action.playerId,team:a.action.team,kind:a.action.action,ball:a.ball.position,velocity:a.ball.velocity,rule:a.action.decisionContext?.rule,shotTarget:a.action.shotTarget,passTarget:a.action.passTarget,choice:a.action.decisionContext?.smallSidedChoice});
     pathM+=Math.hypot(a.ball.position.x-prior.x,a.ball.position.y-prior.y);
     boundary=detectFirstFullyOutBallB05(prior,a.ball.position);
     prior=a.ball.position;
@@ -512,7 +516,8 @@ test('UME-06A/B full field native 22-player deterministic replay from midfield a
    }
    const report=audit.report();
    assert.ok(report.contacts>0);assert.ok(Object.values(report.actions).some(n=>n>0));
-   const result={side,variantIndex,players:22,ticks,pathM,boundary:boundary?.edge??null,deterministic:true,...report};
+   const terminal=x.snapshot();
+   const result={side,variantIndex,players:22,ticks,pathM,boundary:boundary?.edge??null,deterministic:true,...report,longestControlled,finalBall:terminal.ball,finalCarrier:lastCarrier,finalCarrierDecision:terminal.decisions.find(d=>d.id===lastCarrier)??null,actionTrace};
    results.push(result);
    process.stdout.write('ME_628_UME06_FULL '+JSON.stringify(result)+'\n');
   }catch(error){
@@ -2673,6 +2678,27 @@ test('ME-01-QA U-03e full-field audit distinguishes genuine surface evidence and
    assert.throws(()=>assertNativeReplayActionSource({...aerial,starts:[id],contactEvidence:{foot,solver}}));
    assert.throws(()=>assertNativeReplayActionSource({...aerial,keepers:[{contact:true}]}));
    assert.throws(()=>assertNativeReplayActionSource({...aerial,allowedFundamentals:[]}));
+  }
+ }
+});
+
+test('ME-01-QA U-04e: opposed native carry follows shared dribble approach in live mirrored geometry',()=>{
+ for(const team of ['home','away'])for(const attackPolarity of [1,-1]){
+  const dir=(team==='home'?1:-1)*attackPolarity,other=team==='home'?'away':'home';
+  for(const [ahead,lateral,rolling] of [[2,.1,0],[2,.3,2],[-.5,1.2,1],[-.5,-1.2,1],[5.5,0,3]]){
+   const player={id:team+'-10',team,x:dir*29.6,y:0,vx:dir*2,vy:0};
+   const ball={x:dir*30,y:0},velocity={x:dir*rolling,y:0};
+   const opponent={id:other+'-2',team:other,x:ball.x+dir*ahead,y:lateral};
+   const proposal=planNativeOpposedCarryMotion({player,ball,velocity,opponent,attackPolarity});
+   assert.deepEqual(proposal.target,directedDribbleApproachTarget(player,ball,velocity,team,opponent,attackPolarity));
+   assert.ok(['control','moderate','sprint'].includes(proposal.phase));
+   assert.ok(Math.abs(proposal.target.x)<=51.99&&Math.abs(proposal.target.y)<=33.49);
+   const mirror=p=>({...p,x:-p.x,...(p.vx!==undefined?{vx:-p.vx}:{})});
+   const reflected=planNativeOpposedCarryMotion({player:mirror(player),ball:mirror(ball),velocity:mirror(velocity),opponent:mirror(opponent),attackPolarity:-attackPolarity});
+   assert.equal(reflected.phase,proposal.phase);
+   assert.equal(reflected.target.x,-proposal.target.x);assert.equal(reflected.target.y,proposal.target.y);
+   assert.equal(planNativeOpposedCarryMotion({player,ball,velocity,opponent:{...opponent,x:ball.x+dir*7},attackPolarity}),null);
+   assert.equal(planNativeOpposedCarryMotion({player,ball,velocity,opponent:null,attackPolarity}),null);
   }
  }
 });

@@ -223,10 +223,10 @@ export function planNativeCarryTouch({attacker=null,attackingSide,defender=null,
 // Keep the original mover aligned with the real rolling ball so the next
 // authentic shoe contact can follow a lateral touch; do not chase a fixed
 // world-X offset after an evasion.
-export function directedDribbleApproachTarget(attacker,b,v,attackingSide,defender=null){
- const shield=planDribbleShield(attacker,defender,b,v,attackingSide);
+export function directedDribbleApproachTarget(attacker,b,v,attackingSide,defender=null,attackPolarity=1){
+ const shield=planDribbleShield(attacker,defender,b,v,attackingSide,attackPolarity);
  if(shield)return shield.target;
- const dir=attackingSide==='home'?1:-1;
+ const dir=attackDirection(attackingSide,attackPolarity);
  const gap=Math.hypot(b.x-attacker.x,b.y-attacker.y);
  const lead=clamp(gap/12,0,0.20);
  const speed=Math.hypot(v.x,v.y);
@@ -234,6 +234,15 @@ export function directedDribbleApproachTarget(attacker,b,v,attackingSide,defende
  const uy=speed>0.35&&v.x*dir>0.15?v.y/speed:0;
  return Object.freeze({x:clamp(b.x+v.x*lead-0.30*ux,-51.99,51.99),
   y:clamp(b.y+v.y*lead-0.30*uy,-33.49,33.49)});
+}
+
+// Current opposed carry shares directed dribble approach and shielding.
+// No new possession or contact permission.
+export function planNativeOpposedCarryMotion({player,ball,velocity,opponent,attackPolarity=1}={}){
+ if(!player||!opponent||opponent.team===player.team||hasNativeOpenCarrySpace(ball,opponent))return null;
+ const phase=selectNativeOpenCarryPhase({playerSpeedMps:Math.hypot(player.vx,player.vy),
+  ballSpeedMps:Math.hypot(velocity.x,velocity.y),ballGapM:Math.hypot(player.x-ball.x,player.y-ball.y)});
+ return Object.freeze({phase,target:directedDribbleApproachTarget(player,ball,velocity,player.team,opponent,attackPolarity)});
 }
 
 // D-03: protect a reachable ball from close side/rear pressure. The
