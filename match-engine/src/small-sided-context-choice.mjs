@@ -5,6 +5,7 @@
 // Rapier contact executor remains the sole authority to apply physical kicks.
 import {getSmallSidedScenario,SMALL_SIDED_VARIANT_COUNT}
  from './small-sided-lab-scenarios.mjs';
+import {createNativeFundamentalMask,nativeFundamentalAllowed} from './native-fundamental-mask.mjs';
 
 export const SMALL_SIDED_CONTEXT_CHOICE_VERSION=
  'me-628-live-situation-seeded-choice-v1';
@@ -18,17 +19,21 @@ function deterministicFraction(key){
 }
 // UME-02: pure shared scoring, no fixture metadata, actor identity or count.
 function scoreFootballAffordances({
- goalDistanceM,nearestOpponentM,shotLaneClearanceM=null,passLaneClearanceM=null,
- recipientOpponentGapM=null,passForwardM=null,canShoot=false,canPass=false,canCarry=false
+ goalDistanceM,nearestOpponentM,shotLaneClearanceM=null,passLaneClearanceM=null,minimumShotLaneClearanceM=2.4,
+ recipientOpponentGapM=null,passForwardM=null,canShoot=false,canPass=false,canCarry=false,allowedFundamentals=null
 }={}){
  if(!finite(goalDistanceM)||goalDistanceM<0||goalDistanceM>105||
     !finite(nearestOpponentM)||nearestOpponentM<0||nearestOpponentM>150||
     [canShoot,canPass,canCarry].some(x=>typeof x!=='boolean')||
-    (canShoot&&(!finite(shotLaneClearanceM)||shotLaneClearanceM<2.4))||
+    (canShoot&&(!finite(minimumShotLaneClearanceM)||minimumShotLaneClearanceM<0||minimumShotLaneClearanceM>2.4||!finite(shotLaneClearanceM)||shotLaneClearanceM<minimumShotLaneClearanceM))||
     (canPass&&(!finite(passLaneClearanceM)||passLaneClearanceM<1.9||
       !finite(recipientOpponentGapM)||recipientOpponentGapM<1.6||
       !finite(passForwardM)||passForwardM< -3)))
   throw new TypeError('Bounded live football affordances required');
+ const mask=createNativeFundamentalMask(allowedFundamentals);
+ canShoot=canShoot&&nativeFundamentalAllowed(mask,'shot');
+ canPass=canPass&&nativeFundamentalAllowed(mask,'pass');
+ canCarry=canCarry&&nativeFundamentalAllowed(mask,'carry');
  // Scores are contextual weights, NOT a forced action rotation or a claim
  // of shot completion/pass reception/dribble success. If an affordance is
  // blocked, its weight is exactly zero and cannot be chosen.
@@ -50,15 +55,16 @@ function scoreFootballAffordances({
  });
  const total=weights.shot+weights.pass+weights.carry;
  if(total<=0)return null; // caller retains the verified legacy fallback
- return freeze({weights,total,pressure});
+ return freeze({weights,total,pressure,canShoot,canPass,canCarry});
 }
 export function chooseNativeFootballAction({
- goalDistanceM,nearestOpponentM,shotLaneClearanceM=null,passLaneClearanceM=null,
- recipientOpponentGapM=null,passForwardM=null,canShoot=false,canPass=false,canCarry=false
+ goalDistanceM,nearestOpponentM,shotLaneClearanceM=null,passLaneClearanceM=null,minimumShotLaneClearanceM=2.4,
+ recipientOpponentGapM=null,passForwardM=null,canShoot=false,canPass=false,canCarry=false,allowedFundamentals=null
 }={}){
- const scored=scoreFootballAffordances({goalDistanceM,nearestOpponentM,shotLaneClearanceM,passLaneClearanceM,recipientOpponentGapM,passForwardM,canShoot,canPass,canCarry});
+ const scored=scoreFootballAffordances({goalDistanceM,nearestOpponentM,shotLaneClearanceM,passLaneClearanceM,recipientOpponentGapM,passForwardM,canShoot,canPass,canCarry,allowedFundamentals,minimumShotLaneClearanceM});
  if(!scored)return null;
  const {weights,pressure}=scored;
+ ({canShoot,canPass,canCarry}=scored);
  const selected=['shot','pass','carry'].reduce((best,kind)=>weights[kind]>weights[best]?kind:best);
  const sample=null;
  return freeze({
@@ -78,7 +84,7 @@ export function chooseSmallSidedContextAction({
  situationId,variantIndex,tick,actorId,team,attackingSide,
  goalDistanceM,nearestOpponentM,shotLaneClearanceM=null,
  passLaneClearanceM=null,recipientOpponentGapM=null,passForwardM=null,
- canShoot=false,canPass=false,canCarry=false,collective=false
+ canShoot=false,canPass=false,canCarry=false,collective=false,allowedFundamentals=null
 }={}){
  getSmallSidedScenario(situationId); // only five declared exercises
  if(typeof collective!=='boolean'||(collective&&situationId!=='overload-2v1')||
@@ -95,9 +101,10 @@ export function chooseSmallSidedContextAction({
       !finite(recipientOpponentGapM)||recipientOpponentGapM<1.6||
       !finite(passForwardM)||passForwardM< -3)))
   throw new TypeError('Only live bounded attacking-side geometry and seeded variants allowed');
- const scored=scoreFootballAffordances({goalDistanceM,nearestOpponentM,shotLaneClearanceM,passLaneClearanceM,recipientOpponentGapM,passForwardM,canShoot,canPass,canCarry});
+ const scored=scoreFootballAffordances({goalDistanceM,nearestOpponentM,shotLaneClearanceM,passLaneClearanceM,recipientOpponentGapM,passForwardM,canShoot,canPass,canCarry,allowedFundamentals});
  if(!scored)return null;
  const {weights,total,pressure}=scored;
+ ({canShoot,canPass,canCarry}=scored);
  // Team independent: identical mirrored HOME/AWAY geometry and physical
  // tick produce the same choice for corresponding shirt numbers.
  const number=actorId.slice(actorId.indexOf('-')+1);

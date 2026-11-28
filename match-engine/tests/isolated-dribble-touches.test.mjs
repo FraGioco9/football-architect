@@ -5,7 +5,7 @@ import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {INITIAL_PLAYERS} from '../src/player-movement.mjs';
 import {smallSidedSetup} from '../src/small-sided-lab-scenarios.mjs';
-import {planLooseDuelApproaches,observeDuelBallControl,chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver,planDribbleDefender,chooseDribbleDefensiveTouch,createDribbleTransitionObserver,chooseDribbleRecoveryTouch,planDribbleTransitionTarget,planDribbleContactRelease,dribbleReleaseApproach,chooseSharedDuelTouch,resolveDuelActors,planDefensiveBallRelease,planDuelRecoveryApproach,routeDuelAroundOpponent,planDuelPostContactAlignment,observeEffectiveDuelIntervention,SLIDING_TACKLE_MAX_IMPULSE_NS,SLIDING_TACKLE_TARGET_SPEED_MPS,STANDING_TACKLE_TARGET_SPEED_MPS,isDuelGettingUp,SLIDING_GET_UP_TACKLER_TICKS,SLIDING_GET_UP_RIVAL_TICKS,planDuelShoulderApproach,observeNativeShoulderChallenge,planShoulderBalanceRecovery,isShoulderCollecting,SHOULDER_DISPLACE_TICKS,SHOULDER_COLLECTION_TICKS,planDuelInterception,chooseDuelInterceptionTouch,isSlideCollecting} from '../src/isolated-dribble-touches.mjs';
+import {planLooseDuelApproaches,observeDuelBallControl,chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,planNativeCarryTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver,planDribbleDefender,chooseDribbleDefensiveTouch,createDribbleTransitionObserver,chooseDribbleRecoveryTouch,planDribbleTransitionTarget,planDribbleContactRelease,dribbleReleaseApproach,chooseSharedDuelTouch,resolveDuelActors,planDefensiveBallRelease,planDuelRecoveryApproach,routeDuelAroundOpponent,planDuelPostContactAlignment,observeEffectiveDuelIntervention,SLIDING_TACKLE_MAX_IMPULSE_NS,SLIDING_TACKLE_TARGET_SPEED_MPS,STANDING_TACKLE_TARGET_SPEED_MPS,isDuelGettingUp,SLIDING_GET_UP_TACKLER_TICKS,SLIDING_GET_UP_RIVAL_TICKS,planDuelShoulderApproach,observeNativeShoulderChallenge,planShoulderBalanceRecovery,isShoulderCollecting,SHOULDER_DISPLACE_TICKS,SHOULDER_COLLECTION_TICKS,planDuelInterception,chooseDuelInterceptionTouch,isSlideCollecting} from '../src/isolated-dribble-touches.mjs';
 import {advanceD01LiveShoeGait,soloCarryTwoFootPositions}
  from '../src/rapier-foot-contact-bridge.mjs';
 import {advanceSoloCarryPhase,soloCarryPhaseConfiguration}
@@ -130,7 +130,7 @@ test('#628 genuine lateral variation is smooth in time under stable physical pre
    'No random per-tick zig-zag in real D-01 touch intent');
  }
 });
-test('#628 actual 1v1 native source: only attacker physical carry, 2 colliders, both sides and Bodies A/B',
+test('#628 historical D-01 comparator: only attacker physical carry, 2 colliders, both sides and Bodies A/B',
  {timeout:120000},async()=>{
  const R=await initializeRapier(rapier),magnitudes=new Set();
  for(const side of ['home','away'])for(const variantIndex of [0,1,9,21]){
@@ -138,7 +138,7 @@ test('#628 actual 1v1 native source: only attacker physical carry, 2 colliders, 
   const setup=smallSidedSetup('dribble-1v1',side,INITIAL_PLAYERS,{variantIndex});
   assert.deepEqual([...setup.activeIds].sort(),[side+'-10',enemy+'-2'].sort());
   for(const bodyGuardEnabled of [false,true]){
-   const lab=createControlledActionLab(R,'dribble-1v1',{shotSide:side,variantIndex,bodyGuardEnabled});
+   const lab=createControlledActionLab(R,'dribble-1v1',{shotSide:side,variantIndex,bodyGuardEnabled,historicalCarryPhysics:true});
    try{
     assert.equal(lab.snapshot().genuinePhysicalPlayerCount,2);
     let touched=0;
@@ -208,13 +208,13 @@ test('#628 D01-GAIT diagnosis: speed peaks carry native Rapier source witnesses 
  process.stdout.write('ME_628_D01_SOURCE_SPEED_WITNESSES '+JSON.stringify(out)+'\\n');
 });
 
-test('#628 D-01 all 30 real 60Hz variants HOME/AWAY Bodies ON/OFF source-only measured distribution',
+test('#628 historical D-01 comparator all 30 real 60Hz variants HOME/AWAY Bodies ON/OFF measured distribution',
  {timeout:240000},async()=>{
  const R=await initializeRapier(rapier);
  const samples=[],replays=new Map();
  for(const side of ['home','away'])for(const bodyGuardEnabled of [false,true])
  for(let variantIndex=0;variantIndex<30;variantIndex++){
-  const options={shotSide:side,bodyGuardEnabled,variantIndex};
+  const options={shotSide:side,bodyGuardEnabled,variantIndex,historicalCarryPhysics:true};
   const lab=createControlledActionLab(R,'dribble-1v1',options);
   let result;
   try{
@@ -391,13 +391,13 @@ test('#628 solo physical foot targets oppose stride without creating contacts',(
  assert.throws(()=>soloCarryTwoFootPositions(p,{phaseRad:NaN}),TypeError);
 });
 
-test('#628 solo two real Rapier colliders: exclusive per-foot actions only',
+test('#628 historical solo ground comparator: two real Rapier colliders, exclusive per-foot actions only',
  {timeout:120000},async()=>{
  const R=await initializeRapier(rapier);
  const samples=[];
  for(const side of ['home','away'])for(const variantIndex of [0,3]){
   const lab=createControlledActionLab(R,'carry-solo',{
-   shotSide:side,variantIndex,bodyGuardEnabled:true});
+   shotSide:side,variantIndex,bodyGuardEnabled:true,historicalCarryPhysics:true});
   let nativeFootStarts=0,actions=0;
   const footNames=new Set();
   try{
@@ -600,6 +600,27 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
    assert.ok(Number.isFinite(target.x)&&Number.isFinite(target.y));
   }
  });
+// The current paired engine must apply the measured common Carry proposal,
+// not the historical seed-dependent D-01/D-02 impulse. Keep the old
+// numerical assertions on the explicit archived comparator above.
+function assertCurrentNativeCarry(frame,action){
+ const d=action.decisionContext.nativeCarryTouch;
+ assert.equal(d?.version,'me-628-native-carry-geometry-v1');
+ assert.equal(d.tick,frame.physicsTick);assert.equal(d.actorId,action.playerId);
+ assert.equal(d.genuineRapierShoeStartRequired,true);
+ assert.deepEqual(frame.starts,[action.playerId]);
+ assert.equal(action.appliedByRapier,true);assert.equal(action.actualPhysicsImpulseApplied,true);
+ assert.equal(action.officialMatchAction,false);assert.equal(action.impulseNs.z,0);
+ const magnitude=Math.hypot(action.impulseNs.x,action.impulseNs.y);
+ assert.ok(Math.abs(magnitude-d.magnitudeNs)<1e-8);
+ if(d.phaseProposal){
+  assert.ok(d.phaseProposal.impulseNs);
+  assert.ok(Math.abs(action.impulseNs.x-d.phaseProposal.impulseNs.x)<1e-8);
+  assert.equal(action.impulseNs.y,0);
+ }else assert.ok(magnitude<=(d.shieldingIntent?.18:d.fromLiveOpponent?.30:.42)+1e-8);
+ return d;
+}
+
  test('D-02 active 1v1 uses genuine directed ground touches in mirrored variants',{timeout:120000},async()=>{
   const R=await initializeRapier(rapier);
   for(const side of ['home','away']){
@@ -610,10 +631,7 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
      for(let n=0;n<420;n++){
       const f=scene.step(),a=f.action;
       if(a?.action==='carry'&&a.playerId===side+'-10'){
-       const d=a.decisionContext?.isolatedDribbleTouch;
-       assert.equal(d?.version,'me-628-directed-dribble-v1');
-       assert.ok(a.appliedByRapier&&a.actualPhysicsImpulseApplied&&f.starts.includes(side+'-10'));
-       assert.equal(a.impulseNs.z,0);assert.ok(Math.hypot(a.impulseNs.x,a.impulseNs.y)<=0.30+1e-8);
+       const d=assertCurrentNativeCarry(f,a);
        touches++;if(d.bypassSide!==0)evasive++;
       }
       if(f.refereeEvidence?.lastEvent)break;
@@ -721,9 +739,8 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
        assert.deepEqual(f.starts,[defender]);assert.equal(a.appliedByRapier,true);
        assert.equal(a.actualPhysicsImpulseApplied,true);assert.equal(a.impulseNs.z,0);
        const cap=a.defensiveTarget?.intervention==='sliding-tackle'?SLIDING_TACKLE_MAX_IMPULSE_NS:1.25;
-       assert.ok(Math.hypot(a.impulseNs.x,a.impulseNs.y)<=cap+1e-8);
-       if(a.action==='carry')assert.equal(a.decisionContext.isolatedDribbleTouch.version,'me-628-directed-dribble-v1');
-       else{assert.equal(a.defensiveTarget.officialPossession,false);attempts++;}
+       if(a.action==='carry')assertCurrentNativeCarry(f,a);
+       else{assert.ok(Math.hypot(a.impulseNs.x,a.impulseNs.y)<=cap+1e-8);assert.equal(a.defensiveTarget.officialPossession,false);attempts++;}
       }
       if(f.refereeEvidence?.lastEvent)break;
      }
@@ -770,7 +787,7 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
       const f=scene.step(),w=f.duelTransition;
       assert.equal(w.tick,f.physicsTick);assert.equal(w.officialPossession,false);
       if(w.phase!=='attack')windows++;
-      if(w.recovered){recoveries++;assert.equal(f.action?.decisionContext?.isolatedDribbleTouch?.version,'me-628-directed-dribble-v1');assert.deepEqual(f.starts,[f.action.playerId]);}
+      if(w.recovered){recoveries++;assertCurrentNativeCarry(f,f.action);assert.deepEqual(f.starts,[f.action.playerId]);}
       if(w.regained){regains++;assert.equal(f.action?.playerId,side+'-10');}
       if(f.refereeEvidence?.lastEvent)break;
      }
@@ -1296,3 +1313,71 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
    assert.equal(shots,30);assert.ok(plans>0&&contacts>0&&blocks>0&&unblocked>0,'observe both real blocks and unblocked shots on both sides');
   }
  });
+
+test('ME-01-QA U-01A: locked and autonomous opposed carry have identical live touch intent for every seed',()=>{
+ for(const attackingSide of ['home','away']){
+  const dir=attackingSide==='home'?1:-1,team=attackingSide==='home'?'away':'home';
+  for(const y of [-5,0,5])for(const lateral of [-0.8,0,0.8])for(const vx of [0,1,3.5]){
+   const source={attackingSide,attacker:{id:attackingSide+'-10',team:attackingSide,x:dir*29.6,y,vx:dir*vx,vy:0},
+    defender:{id:team+'-2',team,x:dir*32,y:y+lateral},ballPosition:{x:dir*30,y,z:0.11},ballVelocity:{x:dir*vx,y:0,z:0}};
+   const common=planNativeCarryTouch(source);
+   for(let variantIndex=0;variantIndex<30;variantIndex++){
+    for(const tick of [1,99]){
+     const {version,variantIndex:seed,tick:at,...locked}=chooseDirectedDribbleTouch({...source,variantIndex,tick});
+     const {version:commonVersion,...expected}=common;
+     assert.deepEqual(locked,expected);
+     assert.ok(locked.magnitudeNs<=0.30);
+     assert.equal(locked.genuineRapierShoeStartRequired,true);
+     assert.equal(locked.officialPossession,false);
+    }
+   }
+  }
+ }
+ const source={attackingSide:'home',ballPosition:{x:30,y:0},ballVelocity:{x:0,y:0}};
+ assert.ok(planNativeCarryTouch(source).magnitudeNs<=0.42);
+ assert.throws(()=>planNativeCarryTouch({...source,defender:{team:'home',x:32,y:0}}),/Live native carry geometry/);
+});
+
+test('ME-01-QA U-03d current paired D-01 120 mirrored trials preserve live Carry source and replay',{timeout:240000},async()=>{
+ const R=await initializeRapier(rapier);let trials=0,replays=0;
+ for(const side of ['home','away'])for(const bodyGuardEnabled of [false,true])for(let variantIndex=0;variantIndex<30;variantIndex++){
+  const opts={shotSide:side,variantIndex,bodyGuardEnabled};
+  const run=()=>{
+   const lab=createControlledActionLab(R,'dribble-1v1',opts),actions=[];
+   try{
+    assert.equal(lab.snapshot().physicalShoeColliderCount,4);
+    for(let tick=1;tick<=180;tick++){
+     const frame=lab.step();
+     assert.equal(frame.physicsTick,tick);
+     assert.equal(frame.officialMatchPossession,false);assert.equal(frame.officialMatchResult,null);
+     assert.equal(frame.nativeDribbleAudit.tick,tick);
+     assert.ok(frame.nativeDribbleAudit.minimumCanonicalSeparationM>=.98-1e-5);
+     assert.ok(frame.nativeDribbleAudit.maximumObservedCanonicalPlayerSpeedMps<=7+1e-5);
+     if(frame.action){assert.equal(frame.action.action,'carry');assert.equal(frame.action.playerId,side+'-10');assertCurrentNativeCarry(frame,frame.action);actions.push([tick,frame.action.impulseNs]);}
+     if(frame.refereeEvidence?.lastEvent)break;
+    }
+    assert.ok(actions.length>0,side+'/'+variantIndex+'/'+bodyGuardEnabled+' needs real Carry');
+    assert.equal(lab.snapshot().nativeDribbleAudit.appliedCarryActions,actions.length);
+    return actions;
+   }finally{lab.dispose();}
+  };
+  const first=run();trials++;
+  if(bodyGuardEnabled&&[0,7,17,29].includes(variantIndex)){assert.deepEqual(run(),first);replays++;}
+ }
+ assert.equal(trials,120);assert.equal(replays,8);
+});
+
+test('ME-01-QA U-03d duel diagnostics reject ambiguous same-actor surfaces and nonexclusive shoes',()=>{
+ for(const side of ['home','away']){
+  const other=side==='home'?'away':'home',dir=side==='home'?1:-1;
+  const actor=side+'-10',opponent=other+'-2',players=[{id:actor,team:side,x:dir*28,y:0},{id:opponent,team:other,x:dir*30.4,y:0}];
+  const ball={position:{x:dir*30,y:0,z:.11},velocity:{x:dir,y:0,z:0}};
+  const action={tick:1,playerId:opponent,action:'carry',appliedByRapier:true,actualPhysicsImpulseApplied:true};
+  const sample={tick:1,starts:[opponent],active:[opponent],bodyStarts:[],bodyActive:[],action,ball,players};
+  assert.equal(createDribbleTransitionObserver(side).observe(sample).recovered,true);
+  for(const extra of [{exclusiveShoeStart:false},{bodyStarts:[opponent],bodyActive:[opponent]}]){
+   const result=createDribbleTransitionObserver(side).observe({...sample,...extra});
+   assert.equal(result.recovered,false);assert.equal(result.carrierId,actor);
+  }
+ }
+});

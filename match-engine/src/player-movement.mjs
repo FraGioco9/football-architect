@@ -1,19 +1,19 @@
 import {attackDirection,validateAttackPolarity,nativeHalfFormationReady} from './match-directions.mjs';
-import {directedDribbleApproachTarget,planDribbleDefender,resolveDuelActors,isDuelGettingUp,planDuelShoulderApproach,chooseDribbleDefensiveTouch,planDuelInterception,planNativePassInterception,planShoulderBalanceRecovery,isShoulderCollecting,isSlideCollecting,routeDuelAroundOpponent,planDuelRecoveryApproach,planLooseDuelApproaches,planDuelPostContactAlignment,planDribbleContactRelease,dribbleReleaseApproach,planNativeDefensiveIntervention,isNativeRecoveryLocked} from './isolated-dribble-touches.mjs';
-import {selectDefensiveIntervention} from './defensive-intervention-selection.mjs';
+import {directedDribbleApproachTarget,planDribbleDefender,resolveDuelActors,isDuelGettingUp,chooseDribbleDefensiveTouch,planShoulderBalanceRecovery,isShoulderCollecting,isSlideCollecting,routeDuelAroundOpponent,planDuelRecoveryApproach,planLooseDuelApproaches,planDuelPostContactAlignment,planDribbleContactRelease,dribbleReleaseApproach,planNativeDefensiveIntervention,isNativeRecoveryLocked} from './isolated-dribble-touches.mjs';
+import {createNativeFundamentalMask,nativeLabFundamentalMask,nativeDefensiveInterventionAllowed,nativePermittedAerialSurfaces,NATIVE_AERIAL_APPROACH_HEIGHTS,selectNativeCrossProfile,nativeCrossTargetHeight,nativeLabAerialSequence} from './native-fundamental-mask.mjs';
 import {advanceSlidingTackle,planSlidingTackle,SLIDE_MAX_SPEED_MPS,SLIDE_ACCEL_MPS2,SLIDE_BRAKE_MPS2} from './sliding-tackle.mjs';
 // ME-PLAYER-01/24 — autonomous movement and current handoff-corridor safety.
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
 // Research LAB only. No Rapier bodies, ball contact, official world or club data.
 import {advanceFreePlayerKinematics,advancePlayerOrientation,advanceGoalkeeperBallOrientation} from './individual-kinematics.mjs';
-import {advanceSoloCarryPhase,SOLO_CARRY_PHASES} from './solo-carry-phases.mjs';
+import {advanceSoloCarryPhase,SOLO_CARRY_PHASES,planNativeOpenCarryMotion,nativeCarryPursuitOffset,nearestNativeCarryOpponent,nativeCarryMotionHasPriority,selectNativeOpenCarryPhase,previousNativeCarryPhase} from './solo-carry-phases.mjs';
 import {validateSoloCarryAttributes}
  from './solo-carry-attribute-calibration.mjs';
 import {projectNativeShoeBodyStep,projectNativeShoeBodyFacing}
  from './native-shoe-body-handoff.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
 import {smallSidedSetup,keeperDuelAttackerTarget,keeperDuelReboundTarget,
- keeperDuelGoalkeeperTarget,keeperDuelCloseDownTarget,planNativeKeeperCloseDown,planNativeKeeperHighIntercept,planNativeFootballMovement,planNativeAerialContest,supportsNativeOpenPlay} from './small-sided-lab-scenarios.mjs';
+ keeperDuelGoalkeeperTarget,keeperDuelCloseDownTarget,planNativeKeeperCloseDown,planNativeKeeperHighIntercept,planNativeFootballMovement,planNativePermittedAerialContest,supportsNativeOpenPlay} from './small-sided-lab-scenarios.mjs';
 import {basicSourcePositiveRestartSetup}
  from './basic-restart-source-lineup-b05b.mjs';
 import {initialB06bOpeningLineup} from './basic-opening-kickoff-lineup-b06b.mjs';
@@ -176,6 +176,24 @@ export const INITIAL_PLAYERS=Object.freeze(['home','away'].flatMap(team=>
  }))
 ));
 const finite=v=>typeof v==='number'&&Number.isFinite(v);
+// During a verified throw-in, other actors must not trap its designated
+// taker against the touchline. Return a movement target only; keep the
+// normal speed, body separation, hand contact and restart take gates.
+export function planNativeThrowInClearance(player,taker,target){
+ if(!player||!taker||player.id===taker.id||
+    ![player.x,player.y,taker.x,taker.y,target?.x,target?.y].every(finite))return target;
+ const gap=Math.hypot(player.x-taker.x,player.y-taker.y);
+ if(gap>2.2)return target;
+ if(taker.blockedBy===player.id||player.blockedBy===taker.id){
+  // Yield sideways, away from the actual taker. If near a goal line,
+  // choose the available inward side; no teleport or collision bypass.
+  const delta=player.x-taker.x;
+  let sign=Math.abs(delta)>0.05?Math.sign(delta):Math.sign(target.x-taker.x)||1;
+  if(Math.abs(taker.x+sign*1.8)>PLAYER_KINEMATIC_LIMITS.maxX)sign=-sign;
+  return Object.freeze({x:clamp(taker.x+sign*1.8,-PLAYER_KINEMATIC_LIMITS.maxX,PLAYER_KINEMATIC_LIMITS.maxX),y:player.y});
+ }
+ return routeDuelAroundOpponent(player,taker,target).target;
+}
 function ballXY(input){
  if(!input||!finite(input.x)||!finite(input.y))
    throw new TypeError('Finite ball XY state required');
@@ -1687,8 +1705,8 @@ export function createPlayerMovement(options={}){
      k!=='researchB06bNativeShotSide'&&
      k!=='researchSmallSidedSituation'&&k!=='researchSmallSidedSide'&&
      k!=='researchSmallSidedVariantIndex'&&k!=='researchCollectiveApproaches'&&k!=='researchShoulderStart'&&k!=='researchInterceptionStart'&&k!=='researchBlockStart'&&k!=='researchTapInStart'&&k!=='researchFirstTimeShot'&&
-     k!=='researchCarryRunwayStart'&&
-     k!=='researchNativeFixedCarry'&&
+     k!=='researchNativeFundamentals'&&k!=='researchCarryRunwayStart'&&
+     k!=='researchNativeFixedCarry'&&k!=='researchHistoricalCarryMotion'&&
      k!=='researchSoloSprintPursuitLeadM'&&
      k!=='researchSoloCarryLockedPhase'&&
      k!=='researchSoloCarryPlayerAttributes'&&
@@ -1849,8 +1867,10 @@ export function createPlayerMovement(options={}){
         (options.researchSmallSidedBodyFeedback===true?1:0)+
         (options.researchSoloCarryLockedPhase===undefined?0:1)+
         (options.researchSoloCarryPlayerAttributes===undefined?0:1)+
+        (options.researchNativeFundamentals===undefined?0:1)+
         (options.researchCarryRunwayStart===true?1:0)+
         (options.researchNativeFixedCarry===true?1:0)+
+        (options.researchHistoricalCarryMotion===true?1:0)+
         (options.researchSoloSprintPursuitLeadM===undefined?0:1)))||
     ((options.researchSmallSidedSituation===undefined)!==
      (options.researchSmallSidedSide===undefined))||
@@ -1875,6 +1895,7 @@ export function createPlayerMovement(options={}){
     (options.researchCarryRunwayStart!==undefined&&
      (options.researchCarryRunwayStart!==true||
       options.researchSmallSidedSituation!=='carry-solo'))||
+    (options.researchHistoricalCarryMotion!==undefined&&(options.researchHistoricalCarryMotion!==true||options.researchSmallSidedSituation!=='carry-solo'))||
     (options.researchNativeFixedCarry!==undefined&&
      (options.researchNativeFixedCarry!==true||
       options.researchSoloCarryLockedPhase===undefined||
@@ -1922,6 +1943,8 @@ export function createPlayerMovement(options={}){
    {variantIndex:options.researchSmallSidedVariantIndex??0,
     carryRunwayStart:options.researchCarryRunwayStart===true,tapInStart:options.researchTapInStart===true,firstTimeShot:options.researchFirstTimeShot===true,shoulderStart:options.researchShoulderStart===true,interceptionStart:options.researchInterceptionStart===true,blockStart:options.researchBlockStart===true});
  if(smallSided?.fullField&&options.researchCollectiveApproaches!==true)throw new TypeError('Full field requires native open play movement');
+ if(options.researchNativeFundamentals!==undefined&&(!smallSided||!Array.isArray(options.researchNativeFundamentals)))throw new TypeError('Native movement mask requires bounded participants');
+ const boundNativeFundamentals=options.researchNativeFundamentals===undefined?null:createNativeFundamentalMask(options.researchNativeFundamentals);
  const smallActive=smallSided?new Set(smallSided.activeIds):null;
  const initial=smallSided?smallSided.staged:
   options.researchB06bOpeningKickoffEnabled===true?
@@ -2307,7 +2330,8 @@ export function createPlayerMovement(options={}){
     ballSpeedMps:Math.hypot(realBallVelocity.x,realBallVelocity.y),
     ballGapM:Math.hypot(ball.x-actor.x,ball.y-actor.y),
     lockedPhase:options.researchSoloCarryLockedPhase??null,
-    playerAttributes:researchCarryAttributes
+    playerAttributes:researchCarryAttributes,
+    historicalKinematics:options.researchHistoricalCarryMotion===true
    });
   }
   if(options.researchGoalkeeperSaveSide!==undefined&&(
@@ -2558,39 +2582,27 @@ export function createPlayerMovement(options={}){
    // No direct player displacement, shoe event, ball impulse or ownership.
    const sprintPursuitRunner=smallSided?.id==='carry-solo'?
     players.find(p=>p.id===smallSided.side+'-10'):null;
-   const realBallAheadM=sprintPursuitRunner?
-    (ball.x-sprintPursuitRunner.x)*(smallSided.side==='home'?1:-1):0;
-   const sprintPursuitScale=clamp((realBallAheadM-0.44)/0.16,0,1);
-   const nativeFixedOffset=options.researchNativeFixedCarry===true?
-    currentSoloCarryPhase.phase==='sprint'?
-     (Math.hypot(realBallVelocity.x,realBallVelocity.y)<0.45?-0.18:
-       0.08+(options.researchSoloSprintPursuitLeadM??0)*sprintPursuitScale):
-    currentSoloCarryPhase.phase==='moderate'?-0.06:
-     currentSoloCarryPhase.ballTargetOffsetM:null;
+   const nativeFixedOffset=options.researchHistoricalCarryMotion===true&&options.researchNativeFixedCarry===true?
+    nativeCarryPursuitOffset({phase:currentSoloCarryPhase.phase,configuration:currentSoloCarryPhase,
+     player:sprintPursuitRunner,ball,velocity:realBallVelocity,sprintLeadM:options.researchSoloSprintPursuitLeadM??0}):null;
   const duelActors=directedDribble?resolveDuelActors(players,smallSided.side,duelTransition,ball):null;
-  defensiveDecision=null;
-  duelShoulder=duelTransition?.profile==='shoulder'&&duelActors&&!duelActors.candidateId?
-   planDuelShoulderApproach({...duelActors,ballPosition:ball,ballVelocity:realBallVelocity}):null;
-  duelInterception=duelTransition?.profile==='interception'&&duelActors&&!duelActors.candidateId?
-   planDuelInterception({...duelActors,ballPosition:ball,ballVelocity:realBallVelocity}):null;
-  if(smallSided?.interceptionStart&&interceptionState?.phase==='flight'){
-   const defender=players.find(p=>p.id===smallSided.opponent+'-2'),attacker=players.find(p=>p.id===smallSided.side+'-10');
+  const defensiveMask=boundNativeFundamentals??nativeLabFundamentalMask({id:smallSided?.id,collective:options.researchCollectiveApproaches===true,interceptionStart:smallSided?.interceptionStart,blockStart:smallSided?.blockStart,directedDribble,duelTackleProfile:duelTransition?.profile??'mixed'});
+  const permitsDefense=kind=>nativeDefensiveInterventionAllowed(defensiveMask,kind);
+  const aerialSurfaces=nativePermittedAerialSurfaces(defensiveMask,smallSided?.aerialSurface??'all',options.researchCollectiveApproaches===true);
+  defensiveDecision=null;duelShoulder=null;duelInterception=null;blockApproach=null;
+  // Delivery scenarios provide the witnessed trajectory and participants,
+  // not their own interception or block geometry.
+  if((smallSided?.interceptionStart&&interceptionState?.phase==='flight')||
+     (smallSided?.blockStart&&blockState?.phase==='flight')){
+   const defender=players.find(p=>p.id===smallSided.opponent+'-2');
+   const attacker=players.find(p=>p.id===smallSided.side+'-10');
    const recipient=players.find(p=>p.id===smallSided.side+'-9');
-   duelInterception=planNativePassInterception({passer:attacker,recipient,defender,ballPosition:ball,ballVelocity:realBallVelocity});
+   const planned=planNativeDefensiveIntervention({attacker,recipient,defender,ballPosition,ballVelocity:realBallVelocity,
+    context:smallSided.blockStart?'shot':'pass',attackPolarity,allowedFundamentals:defensiveMask});
+   defensiveDecision=planned?.decision??null;
+   duelInterception=defensiveDecision?.kind==='interception'?planned.interception:null;
+   blockApproach=defensiveDecision?.kind==='block'?planned.block:null;
   }
-  blockApproach=null;
-  if(smallSided?.blockStart&&blockState?.phase==='flight'){
-   const defender=players.find(p=>p.id===smallSided.opponent+'-2'),dir=smallSided.side==='home'?1:-1;
-   if(dir*realBallVelocity.x>2){
-    const eta=(defender.x-ball.x)/realBallVelocity.x;
-    if(eta>=0&&eta<=0.65){
-     const y=clamp(ball.y+realBallVelocity.y*eta,-33.49,33.49);
-     blockApproach=Object.freeze({actorId:defender.id,target:Object.freeze({x:defender.x,y}),etaS:eta,decisionOnly:true});
-    }
-   }
-  }
-  if(smallSided?.interceptionStart&&interceptionState?.phase==='flight')defensiveDecision=selectDefensiveIntervention({actorId:smallSided.opponent+'-2',context:'pass',interception:duelInterception});
-  if(smallSided?.blockStart&&blockState?.phase==='flight')defensiveDecision=selectDefensiveIntervention({actorId:smallSided.opponent+'-2',context:'shot',block:blockApproach});
   const postContact=duelActors&&(duelActors.candidateId!==null||
    duelTransition?.lastIntervention&&tick-duelTransition.lastIntervention.tick<=45||
    duelTransition?.sourceTick!=null&&tick-duelTransition.sourceTick<=30);
@@ -2628,20 +2640,24 @@ export function createPlayerMovement(options={}){
    }
    if(directedContactRelease){duelShoulder=null;duelInterception=null;}
    directedLastBall={...ball};
-   if(duelTransition?.profile==='mixed'){
+   {
+    const mixed=duelTransition?.profile==='mixed';
     const source={attackingSide,attacker,defender,ballPosition:ballPosition,ballVelocity:realBallVelocity};
     const unavailable=gettingUp||!!directedContactRelease||duelSlide?.phase==='recovery'||!!planShoulderBalanceRecovery(defender,duelTransition,tick+1);
-    const loose=duelTransition.ballControl?.kind==='loose';
+    const loose=mixed&&duelTransition?.ballControl?.kind==='loose';
     const available=!unavailable&&!loose&&!duelActors.candidateId;
-    const sliding=available?planSlidingTackle({attackingSide,attacker,defender,ball:ballPosition,velocity:realBallVelocity}):null;
-    const {decision,shoulder,interception}=planNativeDefensiveIntervention({...source,unavailable,recovering:loose||!!duelActors.candidateId,activeSlide:duelSlide?.phase==='slide',available,sliding});
+    const sliding=available&&permitsDefense('sliding-tackle')?planSlidingTackle({attackingSide,attacker,defender,ball:ballPosition,velocity:realBallVelocity}):null;
+    const {decision,shoulder,interception}=planNativeDefensiveIntervention({...source,unavailable,recovering:loose||!!duelActors.candidateId,activeSlide:duelSlide?.phase==='slide',available,sliding,allowedFundamentals:defensiveMask});
     defensiveDecision=decision;
-    duelShoulder=defensiveDecision.kind==='shoulder-challenge'&&!duelSlide?shoulder:null;
-    duelInterception=defensiveDecision.kind==='interception'&&interception?.reachable?interception:null;
+    // With only one defensive capability, keep the feasible approach
+    // candidate even before the strict contact decision becomes eligible.
+    // The mixed exercise uses the same candidates and their live ranking.
+    duelShoulder=!duelSlide&&(defensiveDecision.kind==='shoulder-challenge'||!mixed&&permitsDefense('shoulder-challenge'))?shoulder:null;
+    duelInterception=defensiveDecision.kind==='interception'&&interception?.reachable||!mixed&&permitsDefense('interception')?interception:null;
    }
    duelSlide=advanceSlidingTackle({tick:tick+1,previous:duelSlide,
     source:{attackingSide,attacker,defender,ball:ballPosition,velocity:realBallVelocity},
-    allowLaunch:!['standing','shoulder','interception'].includes(duelTransition?.profile)&&!gettingUp&&!duelActors.candidateId&&!directedContactRelease&&(duelTransition?.profile!=='mixed'||defensiveDecision?.kind==='sliding-tackle'),
+    allowLaunch:permitsDefense('sliding-tackle')&&!['standing','shoulder','interception'].includes(duelTransition?.profile)&&!gettingUp&&!duelActors.candidateId&&!directedContactRelease&&defensiveDecision?.kind==='sliding-tackle',
     cancel:directedContactRelease!==null||duelSlide!==null&&duelSlide.actorId!==defender.id,
     contact:duelTransition?.lastIntervention??null});
   }
@@ -2657,7 +2673,9 @@ export function createPlayerMovement(options={}){
    // Predict the descending crossing point from the live ball, not the
    // fixture. The receiving player runs there using normal acceleration.
    if((delivery.kind==='cross'||delivery.lofted===true)&&recipient&&[ballPosition.z,realBallVelocity.z].every(Number.isFinite)){
-    const h=delivery.lofted===true?0.85:smallSided.aerialSurface==='chest'?1.35:smallSided.aerialSurface==='foot'?0.85:1.95,z=ballPosition.z,vz=realBallVelocity.z;
+    const preferred=delivery.lofted===true&&aerialSurfaces.includes('foot')?'foot':aerialSurfaces[0];
+    const crossProfile=delivery.kind==='cross'?selectNativeCrossProfile(defensiveMask,nativeLabAerialSequence(smallSided)?.surface??null):null;
+    const h=crossProfile&&crossProfile!=='landing'?nativeCrossTargetHeight(crossProfile,ballPosition.z):NATIVE_AERIAL_APPROACH_HEIGHTS[preferred]??(delivery.lofted===true?0.85:1.95),z=ballPosition.z,vz=realBallVelocity.z;
     const discriminant=vz*vz+19.62*(z-h);
     if(discriminant>=0){
      const t=(vz+Math.sqrt(discriminant))/9.81;
@@ -2674,19 +2692,18 @@ export function createPlayerMovement(options={}){
     }
    }
    if(attacker)for(const defender of players.filter(p=>smallActive.has(p.id)&&p.role!=='goalkeeper'&&p.team!==attacker.team)){
-    const plan=planNativeDefensiveIntervention({attacker,recipient,defender,ballPosition,ballVelocity:realBallVelocity,context:delivery.kind,attackPolarity});
+    const plan=planNativeDefensiveIntervention({attacker,recipient,defender,ballPosition,ballVelocity:realBallVelocity,context:delivery.kind,attackPolarity,allowedFundamentals:defensiveMask});
     if(plan?.decision?.plan)nativeDeliveryPlans[defender.id]=plan.decision;
    }
   }
-  if(collectiveApproaches&&collectiveControl?.kind==='loose'&&(smallSided.aerialSurface||options.researchNativeAerialEnabled===true)){
-   const height=smallSided.aerialSurface==='chest'?1.35:smallSided.aerialSurface==='foot'?0.85:1.95;
-   const aerial=planNativeAerialContest(players.filter(p=>smallActive.has(p.id)&&!isNativeRecoveryLocked(collectiveControl,p.id,tick+1)),ballPosition,realBallVelocity,height);
+  if(collectiveApproaches&&collectiveControl?.kind==='loose'&&aerialSurfaces.length){
+   const aerial=planNativePermittedAerialContest(players.filter(p=>smallActive.has(p.id)&&!isNativeRecoveryLocked(collectiveControl,p.id,tick+1)),ballPosition,realBallVelocity,aerialSurfaces);
    for(const [id,plan] of Object.entries(aerial))if(!nativeDeliveryPlans[id]){
     let receivePlan=plan;
     // A slow, descending loose ball is received in front of the body,
     // not by running underneath its centre. The direction comes from
     // the original player-to-ball geometry, not the LAB or team.
-    if(height===0.85&&Math.hypot(realBallVelocity.x,realBallVelocity.y)<2){
+    if(plan.surface==='foot'&&Math.hypot(realBallVelocity.x,realBallVelocity.y)<2){
      const actor=players.find(p=>p.id===id);
      const dx=plan.target.x-actor.x,dy=plan.target.y-actor.y,gap=Math.hypot(dx,dy);
      if(gap>0.05){
@@ -2711,14 +2728,38 @@ export function createPlayerMovement(options={}){
     const source={attackingSide:opponent.team,attacker:opponent,defender,ball:ballPosition,velocity:realBallVelocity,attackPolarity};
     const available=!!owner&&owner.id===opponent.id&&!locked;
     const sliding=available?planSlidingTackle(source):null;
-    const planned=planNativeDefensiveIntervention({attacker:opponent,defender,ballPosition,ballVelocity:realBallVelocity,unavailable:locked,activeSlide:previous?.phase==='slide',available,sliding,attackPolarity});
+    const planned=planNativeDefensiveIntervention({attacker:opponent,defender,ballPosition,ballVelocity:realBallVelocity,unavailable:locked,activeSlide:previous?.phase==='slide',available,sliding,attackPolarity,allowedFundamentals:defensiveMask});
     const contact=collectiveControl?.lastInterventions?.[defender.id]??null;
-    const next=advanceSlidingTackle({tick:tick+1,previous,source,allowLaunch:available&&planned?.decision.kind==='sliding-tackle',cancel:!available||!!previous&&previous.opponentId!==opponent.id,contact});
+    const next=advanceSlidingTackle({tick:tick+1,previous,source,allowLaunch:permitsDefense('sliding-tackle')&&available&&planned?.decision.kind==='sliding-tackle',cancel:!available||!!previous&&previous.opponentId!==opponent.id,contact});
     if(next)nextNativeSlides[defender.id]=Object.freeze({...next,opponentId:previous?.opponentId??opponent.id});
     else if(available&&planned?.decision.kind==='shoulder-challenge')nextNativeShoulders[defender.id]=planned.shoulder;
    }
   }
   nativeSlides=Object.freeze(nextNativeSlides);nativeShoulders=Object.freeze(nextNativeShoulders);
+  // Resolve carry only after higher-priority live movement decisions. Its
+  // target, limits and emitted phase must all describe the same decision.
+  const openCarryMotion={};
+  if(sprintPursuitRunner&&options.researchHistoricalCarryMotion!==true){
+   // Same proposal as an unopposed collective carrier. Explicit research
+   // can lock pace or vary lead; no ordinary LAB-specific movement.
+   const motion=planNativeOpenCarryMotion({player:sprintPursuitRunner,ball,velocity:realBallVelocity,
+    phase:currentSoloCarryPhase.phase,attackPolarity,
+    ...(researchCarryAttributes===null?{}:{playerAttributes:researchCarryAttributes}),
+    ...(options.researchNativeFixedCarry===true?{sprintLeadM:options.researchSoloSprintPursuitLeadM??0}:{})});
+   if(motion)openCarryMotion[sprintPursuitRunner.id]=motion;
+  }
+  if(collectiveApproaches){
+   const activePlayers=players.filter(p=>smallActive.has(p.id));
+   for(const p of activePlayers){
+    if(!nativeCarryMotionHasPriority({movementKind:collectiveApproaches[p.id]?.kind,restartPlacement,
+     recoveryLocked:isNativeRecoveryLocked(collectiveControl,p.id,tick+1),balance:nativeBalance[p.id],
+     slide:nativeSlides[p.id],shoulder:nativeShoulders[p.id],deliveryPlan:nativeDeliveryPlans[p.id]}))continue;
+    const opponent=nearestNativeCarryOpponent(p,ball,activePlayers);
+    const motion=planNativeOpenCarryMotion({player:p,ball,velocity:realBallVelocity,opponent,attackPolarity,
+     previousPhase:previousNativeCarryPhase(lastSmallSidedMovementDecisions,p.id,tick)});
+    if(motion)openCarryMotion[p.id]=motion;
+   }
+  }
   nativeAttackPolarity=attackPolarity;
   const halfPreparation=restartPlacement?.periodRestart==='second-half';
   if(halfPreparation){
@@ -2745,7 +2786,12 @@ export function createPlayerMovement(options={}){
      return Object.freeze({x:nativeHalfFormationPhase==='enter-lanes'?route.startX:route.endX,y:route.laneY});
     }
     const base=INITIAL_PLAYERS.find(q=>q.id===p.id);
-    return Object.freeze({x:attackPolarity*base.x,y:base.y});
+    const baseTarget=Object.freeze({x:attackPolarity*base.x,y:base.y});
+    if(restartPlacement.kind==='throw-in'){
+     const taker=players.find(q=>q.id===restartPlacement.takerId);
+     return planNativeThrowInClearance(p,taker,baseTarget);
+    }
+    return baseTarget;
    }
    if(smallSided){
     // A genuine reduced-player session: only selected physical shoes can
@@ -2819,6 +2865,7 @@ export function createPlayerMovement(options={}){
      if(nativeShoulders[p.id])return nativeShoulders[p.id].target;
     }
     if(nativeDeliveryPlans[p.id]?.plan?.target)return nativeDeliveryPlans[p.id].plan.target;
+    if(openCarryMotion[p.id])return openCarryMotion[p.id].target;
     if(collectiveApproaches?.[p.id])return collectiveApproaches[p.id].target;
     const attack=smallSided.side==='home'?1:-1;
     if(duelActors){
@@ -3020,7 +3067,7 @@ export function createPlayerMovement(options={}){
    const gettingUp=directedDribble&&isDuelGettingUp(duelTransition,p.id,tick+1)||!!collectiveApproaches&&isDuelGettingUp(collectiveControl,p.id,tick+1);
    const balance=nativeBalance[p.id]??shoulderBalance[p.id];
    const shoulderCollection=directedDribble&&(isShoulderCollecting(duelTransition,p.id,tick+1)||isSlideCollecting(duelTransition,p.id,tick+1));
-   const limits=gettingUp?{...D01_KINEMATIC_LIMITS,braking:15}:balance?{...D01_KINEMATIC_LIMITS,maxSpeed:balance.maxSpeed,acceleration:12,braking:32}:shoulderCollection?D09_RECOVERY_KINEMATIC_LIMITS:sliding?D08_SLIDE_KINEMATIC_LIMITS:(recoveringEffective||loosePursuit)?D09_RECOVERY_KINEMATIC_LIMITS:(shoulderPursuit||blockApproach?.actorId===p.id||duelInterception?.actorId===p.id||smallSided?.interceptionStart&&p.id===smallSided.opponent+'-2')?D01_CHASE_KINEMATIC_LIMITS:smallSided?.id==='carry-solo'&&smallActive.has(p.id)?
+   const limits=gettingUp?{...D01_KINEMATIC_LIMITS,braking:15}:balance?{...D01_KINEMATIC_LIMITS,maxSpeed:balance.maxSpeed,acceleration:12,braking:32}:shoulderCollection?D09_RECOVERY_KINEMATIC_LIMITS:sliding?D08_SLIDE_KINEMATIC_LIMITS:(recoveringEffective||loosePursuit)?D09_RECOVERY_KINEMATIC_LIMITS:(shoulderPursuit||blockApproach?.actorId===p.id||duelInterception?.actorId===p.id||smallSided?.interceptionStart&&p.id===smallSided.opponent+'-2')?D01_CHASE_KINEMATIC_LIMITS:openCarryMotion[p.id]?soloKinematicLimits(openCarryMotion[p.id].configuration):smallSided?.id==='carry-solo'&&smallActive.has(p.id)?
      // The old generic 6m/s/9m/s² recovery overrides the fixed phase
      // whenever a strong Sprint push opens a >1.5m gap, making Sprint
      // look like Moderate. Fixed DEV LABs keep their own bounded phase
@@ -3186,7 +3233,9 @@ export function createPlayerMovement(options={}){
      ...(isShoulderCollecting(duelTransition,p.id,tick+1)?{shoulderCollection:true}:{}),
      ...(defensiveDecision?.actorId===p.id?{defensiveIntervention: defensiveDecision.kind}:{}),
      ...(duelAlignment?{postContactAlignment:true,alignmentDetour:duelAlignment[p.id].detour&&!directedContactRelease&&duelSlide?.actorId!==p.id}:{}),
-     ...(smallSided.id==='carry-solo'?{carryPhase:currentSoloCarryPhase.phase}:{}),
+     ...(smallSided.id==='carry-solo'?{carryPhase:currentSoloCarryPhase.phase}:openCarryMotion[p.id]?{carryPhase:openCarryMotion[p.id].phase}:
+      !collectiveApproaches&&smallSided.id==='dribble-1v1'&&realBallVelocity&&nativeCarryMotionHasPriority({movementKind:kind,recoveryLocked:isDuelGettingUp(duelTransition,p.id,tick+1),balance:shoulderBalance[p.id],slide:duelSlide?.actorId===p.id?duelSlide:null,shoulder:duelShoulder?.actorId===p.id?duelShoulder:null,deliveryPlan:duelInterception?.actorId===p.id?duelInterception:null})?
+       {carryPhase:selectNativeOpenCarryPhase({playerSpeedMps:Math.hypot(p.vx,p.vy),ballSpeedMps:Math.hypot(realBallVelocity.x,realBallVelocity.y),ballGapM:Math.hypot(p.x-ball.x,p.y-ball.y)})}:{}),
      target:Object.freeze({x:target.x,y:target.y}),
      speedMps:Math.hypot(p.vx,p.vy),
      blockedBy:p.blockedBy??null,
@@ -3477,7 +3526,8 @@ export function createPlayerMovement(options={}){
   return lastPhysicalReconciliation;
  }
  return Object.freeze({
-  snapshot,step,reset:()=>createPlayerMovement(options),
+  snapshot,step,reset:()=>createPlayerMovement(boundNativeFundamentals===null?options:{...options,researchNativeFundamentals:boundNativeFundamentals}),
+  ...(boundNativeFundamentals!==null?{nativeFundamentalsSnapshot:()=>boundNativeFundamentals}:{}),
   ...(options.researchB06bGoalRestartEnabled===true?{
    queueB06bOriginalGoalKickoff,finishB06bOriginalGoalKickoff
   }:{}),

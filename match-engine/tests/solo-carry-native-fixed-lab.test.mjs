@@ -4,6 +4,9 @@ import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {uniformSoloCarryAttributes} from '../src/solo-carry-attribute-calibration.mjs';
+import {advanceD01LiveShoeGait,selectNativeCarryStridePhase,nativeShoeContactProfile,summarizeNativeFootTransition,hasExclusiveNativeShoeStart} from '../src/rapier-foot-contact-bridge.mjs';
+import {planNativeCarryTouch} from '../src/isolated-dribble-touches.mjs';
+import {planNativeCarryPhaseImpulse,advanceSoloCarryPhase,nativeReferenceCarryKinematics,planNativeOpenCarryMotion,hasNativeOpenCarrySpace,nearestNativeCarryOpponent,nativeCarryMotionHasPriority,selectNativeOpenCarryPhase,previousNativeCarryPhase} from '../src/solo-carry-phases.mjs';
 import {chooseNativeFixedCarryImpulse}
  from '../src/native-fixed-carry-impulse.mjs';
 
@@ -385,6 +388,7 @@ test('#628 accepted native Sprint source recontact guard: 4 ratings x 4 starts x
    };
    rows.push(row);
    if(critical.has(rating+':'+variantIndex+':'+side)){
+    process.stdout.write('ME_628_SPRINT_CRITICAL_CASE '+JSON.stringify(row)+'\n');
     assert.ok(actions>=10,'native baseline must preserve independent Carry touches');
     assert.ok(starts<=17,'no explosion of real two-shoe STARTs');
     assert.ok(row.unconverted<=2,'no conversion collapse from shoe overlap');
@@ -475,6 +479,7 @@ test('#628 native active-shoe release on full 32-seed paired 10s Rapier matrix',
  // All paired simulations must preserve valid native Carry impulses,
  // remove—not merely reclassify—false STARTs, and keep the real ball
  // physically reachable. A green test alone must not hide poor arms.
+ process.stdout.write('ME_628_SPRINT_RELEASE_AB_PRE_GATE '+JSON.stringify(rows)+'\n');
  let removedUnconverted=0,removedHandoffs=0;
  for(const row of rows){
   const old=row.baseline[2],tuned=row.release6cm[2];
@@ -568,6 +573,7 @@ test('#628 adaptive Sprint pursuit A/B 32 seeded physical source episodes',
  // This is an acceptance gate, not just a printed A/B. All actions must
  // remain authenticated original Rapier START impulses and the football
  // cannot be lost. Limit native contacts to avoid a step-by-step tap burst.
+ process.stdout.write('ME_628_SPRINT_PURSUIT_AB_PRE_GATE '+JSON.stringify(rows)+'\n');
  for(const r of rows){
   const a=r.baseline[2],b=r.adaptive[2];
   const context=`${r.rating}/V${r.variantIndex+1}/${r.side}`;
@@ -589,4 +595,187 @@ test('#628 adaptive Sprint pursuit A/B 32 seeded physical source episodes',
  }
  process.stdout.write('ME_628_NATIVE_ADAPTIVE_PURSUIT_FULL32_AB '+
   JSON.stringify(rows)+'\\n');
+});
+
+test('ME-01-QA U-01B: same selected open carry phase has the same physical impulse proposal',()=>{
+ const inputs=[['control',0.6,0.2,0.30],['moderate',2,1.2,0.42],['sprint',4,2.4,0.60]];
+ for(const attackingSide of ['home','away'])for(const [phase,speed,rolling,gap] of inputs){
+  const dir=attackingSide==='home'?1:-1;
+  const actor={id:attackingSide+'-10',team:attackingSide,x:dir*10,y:0,vx:dir*speed,vy:0};
+  const ballPosition={x:actor.x+dir*gap,y:0,z:0.11},ballVelocity={x:dir*rolling,y:0,z:0};
+  const base={phase,player:actor,attackingSide,ballVelocity};
+  const locked=chooseNativeFixedCarryImpulse({...base,playerAttributes:uniformSoloCarryAttributes(50),
+   verifiedNativeExclusiveShoeStart:true,contactActorId:actor.id});
+  const auto=planNativeCarryTouch({attacker:actor,attackingSide,ballPosition,ballVelocity});
+  assert.equal(auto.carryPhase,phase);
+  assert.deepEqual(auto.phaseProposal.impulseNs,locked.impulseNs);
+  assert.equal(auto.magnitudeNs,Math.abs(locked.impulseNs.x));
+  assert.equal(auto.dx,locked.impulseNs.x);
+  assert.equal(auto.genuineRapierShoeStartRequired,true);
+  assert.equal(auto.officialPossession,false);
+  const reversed=planNativeCarryPhaseImpulse({...base,player:{...actor,x:-actor.x,vx:-actor.vx},
+   ballVelocity:{...ballVelocity,x:-ballVelocity.x},attackPolarity:-1});
+  assert.equal(reversed.impulseNs.x,-locked.impulseNs.x);
+  assert.equal(planNativeCarryPhaseImpulse({...base,ballVelocity:{x:dir*10,y:0,z:0}}).impulseNs,null);
+  assert.throws(()=>chooseNativeFixedCarryImpulse({...base,playerAttributes:uniformSoloCarryAttributes(50),
+   verifiedNativeExclusiveShoeStart:false,contactActorId:actor.id}),/exclusive Rapier shoe/);
+ }
+});
+
+test('ME-01-QA U-01C: distant opposition shares reference movement and selected carry impulse',()=>{
+ for(const team of ['home','away'])for(const attackPolarity of [1,-1])for(const [phase,speed,rolling,gap] of [['control',0.6,0.2,0.30],['moderate',2,1.2,0.42],['sprint',4,2.4,0.60]]){
+  const dir=(team==='home'?1:-1)*attackPolarity,player={id:team+'-10',team,x:dir*10,y:0,vx:dir*speed,vy:0};
+  const ball={x:player.x+dir*gap,y:0,z:0.11},velocity={x:dir*rolling,y:0,z:0};
+  const opponent={id:'rival',team:team==='home'?'away':'home',x:ball.x+dir*10,y:0};
+  const motion=planNativeOpenCarryMotion({player,ball,velocity,opponent,attackPolarity});
+  assert.equal(motion.phase,phase);
+  assert.deepEqual(motion.configuration,nativeReferenceCarryKinematics(phase));
+  const locked=advanceSoloCarryPhase({previousPhase:phase,lockedPhase:phase,tick:1,playerSpeedMps:speed,ballSpeedMps:rolling,ballGapM:gap});
+  for(const key of Object.keys(motion.configuration))assert.equal(motion.configuration[key],locked[key]);
+  assert.deepEqual(motion,planNativeOpenCarryMotion({player,ball,velocity,attackPolarity}));
+  const action=planNativeCarryTouch({attacker:player,attackingSide:team,defender:opponent,ballPosition:ball,ballVelocity:velocity,phase:motion.phase,attackPolarity});
+  assert.deepEqual(action.phaseProposal,planNativeCarryPhaseImpulse({phase,player,attackingSide:team,ballVelocity:velocity,attackPolarity}));
+  assert.equal(action.genuineRapierShoeStartRequired,true);
+  const near={...opponent,x:ball.x+dir*3};
+  assert.equal(hasNativeOpenCarrySpace(ball,near),false);
+  assert.equal(planNativeOpenCarryMotion({player,ball,velocity,opponent:near,attackPolarity}),null);
+  assert.equal(planNativeCarryTouch({attacker:player,attackingSide:team,defender:near,ballPosition:ball,ballVelocity:velocity,phase,attackPolarity}).phaseProposal,undefined);
+ }
+});
+
+test('ME-01-QA U-01C-R2: shared active-opponent context and higher-priority motion exclusion',()=>{
+ for(const team of ['home','away'])for(const polarity of [1,-1]){
+  const rival=team==='home'?'away':'home',dir=(team==='home'?1:-1)*polarity;
+  const ball={x:dir*12,y:0},player={id:team+'-10',team,x:ball.x-dir*0.5,y:0};
+  const mate={id:team+'-9',team,x:ball.x,y:0};
+  const a={id:rival+'-2',team:rival,x:ball.x+dir*4,y:0};
+  const b={id:rival+'-3',team:rival,x:ball.x-dir*4,y:0};
+  const keeper={id:rival+'-1',team:rival,x:ball.x+dir*8,y:0,role:'goalkeeper'};
+  const actors=[b,mate,keeper,player,a],snapshot=[...actors];
+  assert.equal(nearestNativeCarryOpponent(player,ball,actors),a);
+  assert.equal(nearestNativeCarryOpponent(player,ball,[...actors].reverse()),a);
+  assert.deepEqual(actors,snapshot);
+  assert.equal(nearestNativeCarryOpponent(player,ball,[player,mate,keeper]),keeper);
+  assert.equal(nearestNativeCarryOpponent(player,ball,[player,mate]),null);
+  const eligible={movementKind:'carry-ball'};
+  assert.equal(nativeCarryMotionHasPriority(eligible),true);
+  for(const kind of ['approach-ball','press-ball','support-run','goalkeeping','aerial-approach','getting-up'])
+   assert.equal(nativeCarryMotionHasPriority({movementKind:kind}),false);
+  for(const blocked of [{restartPlacement:{}},{recoveryLocked:true},{balance:{}},{slide:{phase:'slide'}},{slide:{phase:'recovery'}},{shoulder:{}},{deliveryPlan:{kind:'aerial-approach'}}])
+   assert.equal(nativeCarryMotionHasPriority({...eligible,...blocked}),false);
+ }
+});
+
+test('ME-01-QA U-01D: common carry gait and same-tick native phase eligibility',()=>{
+ for(const team of ['home','away'])for(const polarity of [1,-1])for(const phase of ['control','moderate','sprint']){
+  const dir=(team==='home'?1:-1)*polarity;
+  const player={id:team+'-10',team,role:'forward',x:0,y:0,vx:dir*3,vy:0,facingRad:dir===1?0:Math.PI};
+  const ball={position:{x:dir*.55,y:.05,z:.11},velocity:{x:dir*2,y:0,z:0}};
+  let a=0,b=0;
+  for(let tick=1;tick<=120;tick++){
+   const solo=advanceD01LiveShoeGait({phaseRad:a,player,ball,tick,solo:true,carryPhase:phase});
+   const native=advanceD01LiveShoeGait({phaseRad:b,player,ball,tick,carryPhase:phase});
+   assert.deepEqual(native,solo);
+   assert.equal(native.nativeShoeEventCreated,false);
+   assert.equal(native.ballImpulseCreated,false);
+   a=solo.phaseRad;b=native.phaseRad;
+  }
+  const active=new Set([player.id]),d={id:player.id,tick:4,kind:'carry-ball',carryPhase:phase};
+  assert.equal(selectNativeCarryStridePhase(player,[d],4,active),phase);
+  assert.equal(selectNativeCarryStridePhase(player,[d],5,active),null);
+  assert.equal(selectNativeCarryStridePhase(player,[{...d,kind:'getting-up'}],4,active),null);
+  assert.equal(selectNativeCarryStridePhase(player,[{...d,carryPhase:'invalid'}],4,active),null);
+  assert.equal(selectNativeCarryStridePhase(player,[d],4,new Set()),null);
+  assert.equal(selectNativeCarryStridePhase({...player,role:'goalkeeper'},[d],4,active),null);
+ }
+});
+
+test('ME-01-QA U-01E1: shared native shoe geometry and exclusive contact reduction',()=>{
+ const standard=nativeShoeContactProfile();
+ assert.deepEqual(standard,{halfLengthM:.105,halfWidthM:.052,halfHeightM:.035,roundingM:.020,friction:.65,restitution:.12});
+ for(const widthScale of [.9,1,1.1])for(const lengthScale of [.9,1,1.05,1.075,1.1]){
+  const left=nativeShoeContactProfile({legacyGround:true,widthScale,lengthScale});
+  const right=nativeShoeContactProfile({legacyGround:true,widthScale,lengthScale});
+  assert.deepEqual(left,right);
+  assert.deepEqual(left,{halfLengthM:.105*lengthScale,halfWidthM:.052*widthScale,halfHeightM:.015,roundingM:.01,friction:.65,restitution:0});
+ }
+ assert.throws(()=>nativeShoeContactProfile({widthScale:1.1}),/geometry/);
+ assert.throws(()=>nativeShoeContactProfile({legacyGround:true,lengthScale:2}),/geometry/);
+ const masks=[[],['left'],['right'],['left','right']];
+ for(const prev of masks)for(const next of masks)for(const starts of masks){
+  const p=new Set(prev),n=new Set(next),s=new Set(starts);
+  const observed=summarizeNativeFootTransition(p,n,s);
+  assert.equal(observed.actorStarted,prev.length===0&&next.length>0);
+  assert.equal(observed.actorEnded,prev.length>0&&next.length===0);
+  assert.equal(observed.exclusivePhysicalStart,starts.length===1&&next.length===1&&starts[0]===next[0]);
+  assert.deepEqual([...p],prev);assert.deepEqual([...n],next);assert.deepEqual([...s],starts);
+ }
+ assert.throws(()=>summarizeNativeFootTransition(new Set(['other']),new Set(),new Set()),/foot sets/);
+});
+
+test('ME-01-QA U-01E2: paired physical contact authorization never equates two shoes to one exclusive foot',()=>{
+ for(const team of ['home','away']){
+  const id=team+'-10',other=(team==='home'?'away':'home')+'-2';
+  const masks=[[],['left'],['right'],['left','right']];
+  for(const started of masks)for(const active of masks)for(const exclusivePhysicalStart of [false,true]){
+   const pair={actorId:id,independentColliders:2,started,active,exclusivePhysicalStart};
+   const c={started:[id],active:[id],nativePairedFeet:{[id]:pair}};
+   const expected=exclusivePhysicalStart&&started.length===1&&active.length===1&&started[0]===active[0];
+   assert.equal(hasExclusiveNativeShoeStart(c,id),expected);
+   assert.equal(hasExclusiveNativeShoeStart({...c,active:[id,other]},id),false);
+   assert.equal(hasExclusiveNativeShoeStart({...c,started:[]},id),false);
+   assert.equal(hasExclusiveNativeShoeStart({...c,nativePairedFeet:{}},id),false);
+   assert.equal(hasExclusiveNativeShoeStart({started:[id],active:[id],nativeSoloFeet:{...pair,actorId:id}},id),expected);
+  }
+  assert.equal(hasExclusiveNativeShoeStart({started:[id],active:[id]},id),true);
+  assert.equal(hasExclusiveNativeShoeStart({started:[id],active:[other]},id),false);
+ }
+});
+
+test('ME-01-QA U-04c: shared automatic carry transitions preserve same-tick actor history',()=>{
+ const samples=[[0,0,.2],[1.45,.9,.4],[2.58,2.2,.46],[2.5,1.9,.42],[2.44,1.9,.42],[.99,.54,.30]];
+ for(const previousPhase of ['control','moderate','sprint'])for(const [playerSpeedMps,ballSpeedMps,ballGapM] of samples){
+  const input={previousPhase,playerSpeedMps,ballSpeedMps,ballGapM};
+  assert.equal(advanceSoloCarryPhase({...input,tick:8}).phase,selectNativeOpenCarryPhase(input));
+  for(const team of ['home','away'])for(const attackPolarity of [1,-1]){
+   const dir=(team==='home'?1:-1)*attackPolarity;
+   const player={id:team+'-10',team,x:0,y:0,vx:dir*playerSpeedMps,vy:0};
+   const motion=planNativeOpenCarryMotion({player,ball:{x:dir*ballGapM,y:0},velocity:{x:dir*ballSpeedMps,y:0},attackPolarity,previousPhase});
+   assert.equal(motion.phase,selectNativeOpenCarryPhase(input));
+  }
+ }
+ const decision={id:'home-10',tick:7,kind:'carry-ball',carryPhase:'sprint'};
+ assert.equal(previousNativeCarryPhase([decision],'home-10',7),'sprint');
+ assert.equal(previousNativeCarryPhase([decision],'away-10',7),null);
+ assert.equal(previousNativeCarryPhase([decision],'home-10',8),null);
+ assert.equal(previousNativeCarryPhase([{...decision,kind:'press-ball'}],'home-10',7),null);
+ assert.equal(previousNativeCarryPhase([{...decision,carryPhase:'invalid'}],'home-10',7),null);
+ assert.equal(selectNativeOpenCarryPhase({previousPhase:'sprint',playerSpeedMps:2.5,ballSpeedMps:1.9,ballGapM:.42}),'sprint');
+ assert.equal(selectNativeOpenCarryPhase({previousPhase:null,playerSpeedMps:2.5,ballSpeedMps:1.9,ballGapM:.42}),'moderate');
+});
+
+test('ME-01-QA U-04c2: current automatic Carry uses common pursuit and kinematics, archive stays explicit',()=>{
+ for(const team of ['home','away'])for(const attackPolarity of [1,-1])
+ for(const phase of ['control','moderate','sprint']){
+  const dir=(team==='home'?1:-1)*attackPolarity;
+  for(const [speed,rolling,gap] of [[0,0,.3],[2,1.5,.42],[4,3,.65],[5,4,1.6]]){
+   const player={id:team+'-10',team,x:dir*10,y:0,vx:dir*speed,vy:0};
+   const ball={x:player.x+dir*gap,y:.2,z:.11},velocity={x:dir*rolling,y:0,z:0};
+   const observed={previousPhase:phase,tick:8,playerSpeedMps:speed,ballSpeedMps:rolling,ballGapM:Math.hypot(ball.x-player.x,ball.y-player.y)};
+   const current=advanceSoloCarryPhase(observed);
+   const motion=planNativeOpenCarryMotion({player,ball,velocity,attackPolarity,phase:current.phase});
+   const collective=planNativeOpenCarryMotion({player,ball,velocity,attackPolarity,previousPhase:phase});
+   assert.deepEqual(motion,collective);
+   for(const key of Object.keys(motion.configuration))assert.equal(current[key],motion.configuration[key]);
+   const archive=advanceSoloCarryPhase({...observed,historicalKinematics:true});
+   assert.equal(archive.phase,current.phase);
+   assert.equal(archive.maxSpeedMps,{control:3,moderate:4,sprint:4.5}[archive.phase]);
+   assert.equal(Object.hasOwn(current,'carryPlayerAttributes'),false);
+   const attrs=uniformSoloCarryAttributes(75);
+   const locked=advanceSoloCarryPhase({...observed,lockedPhase:phase,playerAttributes:attrs});
+   const research=planNativeOpenCarryMotion({player,ball,velocity,phase,attackPolarity,playerAttributes:attrs,sprintLeadM:0});
+   for(const key of Object.keys(research.configuration))assert.equal(locked[key],research.configuration[key]);
+  }
+ }
+ assert.throws(()=>advanceSoloCarryPhase({tick:1,playerSpeedMps:0,ballSpeedMps:0,ballGapM:0,historicalKinematics:'true'}),TypeError);
 });

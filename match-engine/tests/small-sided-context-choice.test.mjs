@@ -95,3 +95,26 @@ test('UME-02 native scoring matches the validated collective baseline without LA
   assert.deepEqual(shared,chooseSmallSidedContextAction({...geometry,variantIndex:29,collective:true}));
  }
 });
+
+test('ME-01-QA U-01F2: permission mask precedes native and archived scoring',()=>{
+ const kinds=['shot','pass','carry'];
+ for(let bits=0;bits<8;bits++){
+  const allowedFundamentals=kinds.filter((_,i)=>bits&(1<<i));
+  for(let available=0;available<8;available++){
+   const input={...base,canShoot:!!(available&1),canPass:!!(available&2),canCarry:!!(available&4),allowedFundamentals};
+   const possible=kinds.filter((_,i)=>(bits&(1<<i))&&(available&(1<<i)));
+   const native=chooseNativeFootballAction(input);
+   const seeded=chooseSmallSidedContextAction({...input,variantIndex:3});
+   for(const choice of [native,seeded]){
+    if(!possible.length){assert.equal(choice,null);continue;}
+    assert.ok(possible.includes(choice.selected));
+    for(const k of kinds)assert.equal(choice.weights[k]>0,possible.includes(k));
+    assert.equal(choice.context.canShoot,possible.includes('shot'));
+    assert.equal(choice.context.canPass,possible.includes('pass'));
+    assert.equal(choice.context.canCarry,possible.includes('carry'));
+    assert.equal(choice.officialMatchAction,false);
+   }
+  }
+ }
+ assert.throws(()=>chooseNativeFootballAction({...base,allowedFundamentals:['fake'] }),/Unique/);
+});

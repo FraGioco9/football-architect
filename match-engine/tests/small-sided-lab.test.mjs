@@ -1,3 +1,5 @@
+import {hasExclusiveNativeShoeStart} from '../src/rapier-foot-contact-bridge.mjs';
+import {resolveInlineActionLabOptions} from '../src/action-labs.mjs';
 // #628 LAB-SMALL-01: real 2–7 selected shoe-collider mini situations.
 // Genuine Rapier sample and uniform policy only; no 11v11 match or authority.
 import test from 'node:test';
@@ -5,7 +7,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {createEngine,initializeRapier} from '../src/core.mjs';
-import {createPlayerMovement,INITIAL_PLAYERS,goalkeeperPosition} from '../src/player-movement.mjs';
+import {createPlayerMovement,INITIAL_PLAYERS,goalkeeperPosition,planNativeThrowInClearance} from '../src/player-movement.mjs';
 import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT,
  keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget,planCollectiveApproaches,planCollectiveSupport,planCollectiveDefense,planNativeFootballMovement,supportsNativeOpenPlay,planNativeKeeperCloseDown,planNativeKeeperHighIntercept,NATIVE_HIGH_HAND_MAX_Z,planNativeAerialContest}
  from '../src/small-sided-lab-scenarios.mjs';
@@ -17,7 +19,9 @@ import {planNativeCarryTouch,chooseNativePassInterceptionTouch} from '../src/iso
 import {planNativeKeeperDive,planNativeKeeperHighClaim,planNativeHighHandAction,planNativeKeeperChallenge,eligibleKeeperGrip,planNativeKeeperDistribution,createNativeAerialHead,planNativeAerialJump,aerialHeadHeight,AERIAL_JUMP_TICKS,planNativeAerialControl,planNativeAerialCushion,createNativeAerialControl,exclusiveNativeAerialStart,observeNativeAerialDuel} from '../src/small-sided-native-body-guard.mjs';
 import {planSlidingTackle} from '../src/sliding-tackle.mjs';
 import {detectFirstFullyOutBallB05} from '../src/basic-match-referee-b05.mjs';
+import {createNativeFundamentalMask,nativeObservedActionAllowed,nativeLabFundamentalMask,NATIVE_FUNDAMENTALS} from '../src/native-fundamental-mask.mjs';
 import {SOLO_CARRY_PHASES,advanceSoloCarryPhase} from '../src/solo-carry-phases.mjs';
+import {LAB_SHOT_PROFILES} from '../src/lab-shot-calibration.mjs';
 
 test('COL-01 both teams pursue the real ball without a shirt-number runner or inferred possession',()=>{
  for(const side of ['home','away']){
@@ -270,12 +274,45 @@ test('COL-01 opt-in guarded 2v1 advances with canonical movement',async()=>{
 });
 // UME-06: record observed evidence only; an unobserved outcome remains
 // a coverage gap, never a successful action assigned by the fixture.
+// An action is authenticated against its actual native surface, not
+// a universal assumption that every redirect starts from a ground shoe.
+function assertNativeReplayActionSource({tick,starts,action,body,keepers,contactEvidence,allowedFundamentals}){
+ const {foot,solver}=contactEvidence;
+ assert.equal(foot.tick,tick);assert.equal(solver.tick,tick);
+ assert.deepEqual(starts,foot.started);
+ assert.equal(nativeObservedActionAllowed(allowedFundamentals,action),true);
+ assert.equal(action.appliedByRapier,true);assert.equal(action.actualPhysicsImpulseApplied,true);
+ assert.equal(action.officialMatchAction,false);
+ const competingHand=keepers.some(k=>k.contact||k.catchState?.active||k.distribution?.tick===tick||k.boundedRelease?.tick===tick);
+ assert.equal(competingHand,false);
+ assert.equal(body.lowerLegBallContacts.length,0);
+ if(action.nativeExclusiveHeadStart===true||action.nativeExclusiveAerialControlStart===true){
+  assert.deepEqual(starts,[]);assert.deepEqual(foot.active,[]);
+  const hit=exclusiveNativeAerialStart(body.aerial,foot.started,foot.active,competingHand||body.lowerLegBallContacts.length>0);
+  assert.ok(hit);assert.equal(hit.tick,tick);assert.equal(hit.actorId,action.playerId);assert.equal(hit.team,action.team);
+  assert.equal(action.actualNativeSolverContact,true);assert.equal(action.sameOriginalRapierWorld,true);
+  if(action.nativeExclusiveHeadStart===true){
+   assert.equal(hit.version,'me-628-native-aerial-head-v1');
+   assert.deepEqual(body.headBallStarts,[action.playerId]);assert.deepEqual(body.headBallContacts,[action.playerId]);
+   assert.deepEqual(body.aerialControlContacts??[],[]);
+  }else{
+   assert.equal(hit.version,'me-628-native-aerial-control-v1');assert.equal(hit.surface,action.surface);
+   assert.deepEqual(body.aerialControlStarts,[action.playerId]);assert.deepEqual(body.aerialControlContacts,[action.playerId]);
+   assert.deepEqual(body.headBallContacts??[],[]);
+  }
+ }else{
+  assert.deepEqual(starts,[action.playerId]);assert.equal(hasExclusiveNativeShoeStart(foot,action.playerId),true);
+  assert.deepEqual(body.headBallContacts??[],[]);assert.deepEqual(body.aerialControlContacts??[],[]);
+  assert.ok(solver.pairs.some(p=>p.id===action.playerId&&p.beganThisTick&&p.collisionActive&&p.manifolds.some(m=>m.geometricContacts>0)));
+ }
+}
+
 function nativeReplayAudit(active){
  const activeSet=new Set(active);
  let previous=null,contacts=0,controlled=0,holds=0,distributions=0,receptions=0,keeperReceptions=0,slides=0,shoulders=0,blocks=0,minSeparation=Infinity,peakSpeed=0;
  const actions={},keeperPasses=new Map();
  return {
-  observe({tick,ball,players,starts,action,control,keepers,reception}){
+  observe({tick,ball,players,starts,action,control,keepers,reception,body,contactEvidence,allowedFundamentals}){
    assert.equal(control.tick,tick);
    assert.equal(control.officialPossession,false);
    assert.ok([...Object.values(ball.position),...Object.values(ball.velocity)].every(Number.isFinite));
@@ -295,9 +332,7 @@ function nativeReplayAudit(active){
    assert.ok(starts.every(id=>activeSet.has(id)));contacts+=starts.length;
    if(action?.tick===tick){
     assert.ok(activeSet.has(action.playerId));
-    assert.deepEqual(starts,[action.playerId]);
-    assert.equal(action.appliedByRapier,true);assert.equal(action.actualPhysicsImpulseApplied,true);
-    assert.equal(action.officialMatchAction,false);
+    assertNativeReplayActionSource({tick,starts,action,body,keepers,contactEvidence,allowedFundamentals});
     actions[action.action]=(actions[action.action]??0)+1;
    }
    if(control.kind==='controlled'){
@@ -361,6 +396,10 @@ test('UME-06A/B full field native 22-player deterministic replay from midfield a
    assert.deepEqual(x.snapshot().activeIds,fixture.activeIds);
    assert.deepEqual(x.snapshot().body.selectedColliderIds,fixture.activeIds);
    assert.equal(x.snapshot().playedTicks,0);
+   assert.deepEqual(x.snapshot().allowedFundamentals,['carry','pass','cross','shot','save','tackle','interception','clearance','reception','aerial-control','header','volley','standing-tackle','sliding-tackle','shoulder-challenge','block','header-shot','header-pass','header-clearance']);
+   assert.deepEqual(x.snapshot().permittedAerialSurfaces,['head','chest','foot']);
+   assert.deepEqual(x.snapshot().movementFundamentals,x.snapshot().allowedFundamentals);
+   assert.ok(Object.isFrozen(x.snapshot().movementFundamentals));
    assert.throws(()=>x.placeRestart(),/verified ready boundary ticket/);
    let prior=x.snapshot().ball.position,pathM=0,ticks=0,boundary=null;
    for(let k=1;k<=600;k++){
@@ -371,6 +410,11 @@ test('UME-06A/B full field native 22-player deterministic replay from midfield a
     assert.equal(a.realFull90MinutesVerified,false);
     assert.equal(a.tick,k);assert.deepEqual(a.ball,b.ball);assert.deepEqual(a.players,b.players);
     assert.deepEqual(a.starts,b.starts);assert.deepEqual(a.action,b.action);
+    assert.deepEqual(a.contactEvidence,b.contactEvidence);
+    assert.deepEqual(a.allowedFundamentals,b.allowedFundamentals);
+    assert.deepEqual(a.movementFundamentals,a.allowedFundamentals);
+    assert.deepEqual(b.movementFundamentals,b.allowedFundamentals);
+    assert.deepEqual(a.permittedAerialSurfaces,['head','chest','foot']);
     assert.deepEqual(a.control,b.control);assert.deepEqual(a.keepers,b.keepers);assert.deepEqual(a.reception,b.reception);
     assert.deepEqual(a.body.selectedColliderIds,fixture.activeIds);assert.equal(a.body.bodies.length,22);
     assert.equal(a.body.oneOriginalRapierWorld,true);assert.equal(a.decisions.length,22);
@@ -408,8 +452,10 @@ test('UME-06A/B full field native 22-player deterministic replay from midfield a
       assert.equal(Math.hypot(...Object.values(placed.ball.velocity)),0,'placed ball is exactly stationary (including IEEE signed zero)');
       assert.equal(placed.control.kind,'loose');assert.equal(placed.control.playerId,null);
       assert.equal(placed.control.delivery,null);assert.equal(placed.control.keeperHold,null);
+      assert.deepEqual(placed.allowedFundamentals,a.allowedFundamentals);
+      assert.deepEqual(placed.movementFundamentals,placed.allowedFundamentals);
       assert.ok(placed.keepers.every(p=>!p.catchState?.active));
-      assert.equal(placed.action,null);assert.equal(placed.reception,null);
+      assert.equal(placed.action,null);assert.equal(placed.reception,null);assert.equal(placed.contactEvidence,null);
       assert.throws(()=>x.placeRestart(),/verified ready boundary ticket/);
       assert.throws(()=>x.step(),/paused pending authenticated restart/);
       assert.equal(x.snapshot(),placed);
@@ -421,6 +467,7 @@ test('UME-06A/B full field native 22-player deterministic replay from midfield a
         assert.deepEqual(u,v);
         assert.equal(u.tick,k+n);assert.equal(u.playedTicks,k);
         assert.equal(u.action,null);
+        assert.deepEqual(u.movementFundamentals,u.allowedFundamentals);
         if(u.restartTake?.tick===u.tick){taken=u;break;}
         assert.equal(u.phase,'dead-ball-placed-awaiting-native-take');
         if(throwIn&&u.throwHands?.active)sawGrip=true;
@@ -445,6 +492,9 @@ test('UME-06A/B full field native 22-player deterministic replay from midfield a
        }else{
         assert.deepEqual(taken.starts,[taken.restartTake.actorId]);
         assert.equal(taken.restartTake.currentRapierContactManifold,true);
+        assert.equal(hasExclusiveNativeShoeStart(taken.contactEvidence.foot,taken.restartTake.actorId),true);
+        assert.equal(taken.contactEvidence.solver.tick,taken.tick);
+        assert.ok(taken.contactEvidence.solver.pairs.some(p=>p.id===taken.restartTake.actorId&&p.beganThisTick&&p.collisionActive&&p.manifolds.some(m=>m.geometricContacts>0)));
        }
        assert.equal(taken.restartTake.physicalImpulseApplied,true);
        assert.equal(taken.timeline.lastPhysicalSetPiece.tick,taken.tick);
@@ -561,13 +611,13 @@ test('UME-06A same guarded native replay matrix for 1v1 through 3v3 plus goalkee
     for(let k=1;k<=360;k++){
      const f=lab.step(),g=replay.step();ticks=k;
      assert.equal(f.physicsTick,k);assert.equal(f.genuinePhysicalPlayerCount,n);
-     for(const key of ['ball','observedMovementPlayers','starts','action','collectiveControl','nativeKeeperStates','latestOrientedReception','refereeEvidence'])assert.deepEqual(f[key],g[key],id+' '+side+' '+key+' tick '+k);
+     for(const key of ['ball','observedMovementPlayers','starts','action','collectiveControl','nativeKeeperStates','latestOrientedReception','refereeEvidence','contactEvidence'])assert.deepEqual(f[key],g[key],id+' '+side+' '+key+' tick '+k);
      assert.deepEqual(f.smallSidedNativeBodyGuard.selectedColliderIds,active);
      assert.equal(f.smallSidedNativeBodyGuard.oneOriginalRapierWorld,true);
      assert.deepEqual(f.nativeKeeperStates.map(x=>x.keeperId),keeperIds);
      assert.equal(projectActiveLabDecisions(f,active).length,n);
      assert.equal(f.officialMatchResult,null);assert.equal(f.officialMatchPossession,false);
-     audit.observe({tick:k,ball:f.ball,players:f.observedMovementPlayers,starts:f.starts,action:f.action,control:f.collectiveControl,keepers:f.nativeKeeperStates,reception:f.latestOrientedReception});
+     audit.observe({tick:k,ball:f.ball,players:f.observedMovementPlayers,starts:f.starts,action:f.action,control:f.collectiveControl,keepers:f.nativeKeeperStates,reception:f.latestOrientedReception,body:f.smallSidedNativeBodyGuard,contactEvidence:f.contactEvidence,allowedFundamentals:f.allowedFundamentals});
      if(f.refereeEvidence?.lastEvent){boundary=f.refereeEvidence.lastEvent.kind;break;}
     }
     const report=audit.report();assert.ok(report.contacts>0,'native contact must occur in each selected replay');
@@ -601,7 +651,7 @@ test('UME-05B free duel observes only the shared control and action policy',{tim
     assert.equal(projectActiveLabDecisions(f,lab.focus).length,2);
     contacts+=f.starts.length;
     if(control.kind==='controlled'){controlled++;assert.ok(lab.focus.includes(control.playerId));}
-    if(f.action){actions++;assert.ok(lab.focus.includes(f.action.playerId));assert.equal(f.action.appliedByRapier,true);assert.equal(f.action.actualPhysicsImpulseApplied,true);}
+    if(f.action){actions++;assert.ok(nativeObservedActionAllowed(nativeLabFundamentalMask({id:'dribble-1v1',collective:true}),f.action));assert.ok(lab.focus.includes(f.action.playerId));assert.equal(f.action.appliedByRapier,true);assert.equal(f.action.actualPhysicsImpulseApplied,true);}
     slideStrikes+=Object.values(control.lastInterventions??{}).filter(x=>x.tick===k&&x.intervention==='sliding-tackle').length;
     shoulders+=Object.values(control.shoulderByPlayer??{}).filter(x=>x.tick===k&&x.successful).length;
     path+=Math.hypot(f.ball.position.x-prior.x,f.ball.position.y-prior.y);prior=f.ball.position;
@@ -826,7 +876,9 @@ test('#628 selected situations reuse main field/elevation and original transport
  assert.match(html,/id="step"/);
  assert.match(html,/id="reset"/);
  assert.ok(js.includes('createControlledActionLab(rapier,id,{shotSide:side,')&&
-  js.includes("bodyGuardEnabled:id!=='carry-solo'")&&
+  js.includes('...resolveInlineActionLabOptions(id,{archiveMode,duelTackleProfile:')&&
+  resolveInlineActionLabOptions('carry-solo').bodyGuardEnabled===false&&
+  ['dribble-1v1','keeper-1v1','defender-1v1','overload-2v1','duel-2v2','duel-3v3'].every(id=>resolveInlineActionLabOptions(id).bodyGuardEnabled===true)&&
   js.includes("nativeFixedCarryResearch:id==='carry-solo'")&&
   js.includes("carryRunwayStart:id==='carry-solo'"),
   'Visible LAB must isolate native shoe-authenticated Solo Carry and preserve native bodies in opposed scenes');
@@ -957,7 +1009,7 @@ test('#628 LAB-VAR-01 variants preserve real Rapier native shoes and original-ac
    assert.ok(Math.abs(zero.ball.position.y-setup.ball.y)<1e-5,
     'Rapier float32 Y must preserve the seeded physical ball start');
    assert.deepEqual(zero.smallSidedParticipants,setup.activeIds);
-   let realStarts=0,realAttempts=0;
+   let realStarts=0,realAttempts=0;const contactSamples=[];
    for(let i=1;i<=60;i++){
     const x=a.step(),y=b.step();
     assert.deepEqual(x.ball,y.ball,'deterministic native Rapier seed');
@@ -968,6 +1020,7 @@ test('#628 LAB-VAR-01 variants preserve real Rapier native shoes and original-ac
     assert.equal(x.officialMatchPossession,false);
     assert.ok(x.starts.every(id=>setup.activeIds.includes(id)));
     realStarts+=x.starts.length;
+    if(x.starts.length)contactSamples.push({tick:i,starts:x.starts,ball:x.ball,decision:x.decisionEvidence,action:x.action?.action??null});
     if(x.action){
      realAttempts++;
      assert.equal(x.action.appliedByRapier,true);
@@ -976,6 +1029,7 @@ test('#628 LAB-VAR-01 variants preserve real Rapier native shoes and original-ac
     }
     if(x.refereeEvidence?.lastEvent)break;
    }
+   if(!realStarts||!realAttempts)process.stdout.write('ME_628_VARIANT_NATIVE_FAILURE '+JSON.stringify({id:s.id,side,variantIndex,realStarts,realAttempts,contactSamples})+'\n');
    assert.ok(realStarts>0,'variant must preserve a true physical shoe START');
    assert.ok(realAttempts>0,'variant must preserve an authentic action impulse');
   }finally{a.dispose();b.dispose();}
@@ -995,11 +1049,12 @@ test('#628 LAB-VAR-02 live small-sided choices vary across 29 seeds and still re
    try{
     const zero=scene.snapshot();
     assert.equal(zero.smallSidedVariantIndex,variantIndex);
-    let first=null;
+    let first=null;const contactSamples=[];
     for(let tick=1;tick<=90;tick++){
      const frame=scene.step();
      assert.ok(frame.starts.every(id=>frame.smallSidedParticipants.includes(id)),
       'Only existing small-sided native Rapier shoes can start a contact');
+     if(frame.starts.length)contactSamples.push({tick,starts:frame.starts,ball:frame.ball,decision:frame.decisionEvidence,action:frame.action?.action??null});
      if(frame.action?.team===side){
       first=frame.action;
       assert.deepEqual(frame.starts,[first.playerId]);
@@ -1015,6 +1070,7 @@ test('#628 LAB-VAR-02 live small-sided choices vary across 29 seeds and still re
      }
      if(frame.refereeEvidence?.lastEvent)break;
     }
+    if(!first)process.stdout.write('ME_628_VARIANT_RANKING_FAILURE '+JSON.stringify({id:sId,side,variantIndex,contactSamples})+'\n');
     assert.ok(first,sId+' '+side+' V'+(variantIndex+1)+
      ' must produce an actual attacking Rapier shoe impulse');
     observed.add(first.action);
@@ -1247,8 +1303,10 @@ test('#628 solo Carry has one Rapier actor and repeated genuine shoe actions, HO
      assert.equal(f.action.action,'carry');
      assert.equal(f.action.appliedByRapier,true);
      assert.equal(f.action.actualPhysicsImpulseApplied,true);
-     assert.equal(f.action.decisionContext.isolatedDribbleTouch.soloCarry,true);
-     assert.equal(f.action.decisionContext.isolatedDribbleTouch.fromLiveOpponent,false);
+     const d=f.action.decisionContext.nativeCarryTouch;
+     assert.equal(d?.version,'me-628-native-carry-geometry-v1');assert.equal(d.actorId,side+'-10');assert.equal(d.tick,f.physicsTick);
+     assert.equal(d.fromLiveOpponent,false);assert.ok(d.phaseProposal?.impulseNs);
+     assert.ok(Math.abs(f.action.impulseNs.x-d.phaseProposal.impulseNs.x)<1e-8);
     }
     releaseRecontacts=f.nativeDribbleAudit.independentRecontacts;
     if(f.refereeEvidence?.lastEvent)break;
@@ -1420,7 +1478,7 @@ test('#628 paired real Rapier worlds: combined toe-length and recovery controls'
   for(const arm of arms){
    const lab=createControlledActionLab(R,'carry-solo',{
     shotSide:side,variantIndex,bodyGuardEnabled:true,
-    soloShoeLengthScale:arm.length,
+    historicalCarryPhysics:true,soloShoeLengthScale:arm.length,
     soloRecoveryStepScale:arm.recovery
    });
    try{
@@ -1585,7 +1643,7 @@ test('#628 genuine Sprint cadence/lateral-track 6s counterfactuals preserve defa
   for(const arm of arms){
    const lab=createControlledActionLab(R,'carry-solo',{
     shotSide:side,variantIndex,bodyGuardEnabled:true,
-    soloSprintCadenceScale:arm.cadence,
+    historicalCarryPhysics:true,soloSprintCadenceScale:arm.cadence,
     soloSprintLateralTrackScale:arm.track
    });
    try{
@@ -2029,8 +2087,8 @@ test('AERIAL-01 core integration enables native heads only on guarded collective
    assert.equal(samples.length,20);
    assert.deepEqual(new Set(samples.map(s=>s.actorId)),new Set(head.map(s=>s.actorId)));
   }
-  assert.deepEqual(body.headBallContacts,[]);assert.deepEqual(body.headBallStarts,[]);
-  assert.deepEqual(body.aerialControlContacts,[]);assert.deepEqual(body.aerialControlStarts,[]);
+  assert.deepEqual(body.headBallContacts??[],[]);assert.deepEqual(body.headBallStarts,[]);
+  assert.deepEqual(body.aerialControlContacts??[],[]);assert.deepEqual(body.aerialControlStarts,[]);
   assert.ok(body.aerial.every(s=>s.tick===1&&!s.jumping&&!s.contact&&s.sameOriginalRapierWorld));
   mover.reconcileSmallSidedNativeBodyResponse(body);engine.acknowledgeSmallSidedBodyFeedback(mover.snapshot());
  }finally{engine.dispose();}
@@ -2487,4 +2545,203 @@ test('AERIAL-05B mirrored short loft and switch require genuine same-world launc
  }
  process.stdout.write('ME_628_LOFTED_VARIANTS '+JSON.stringify(rows)+'\\n');
  assert.ok(rows.every(r=>r.profile===(r.id==='lofted-short'?'short':'switch')&&r.receipt&&r.peak>2),JSON.stringify(rows.filter(r=>!r.receipt)));
+});
+
+test('ME-01-QA U-01C-R1: a real throw-in blocker yields without changing the taker or contact authority',()=>{
+ for(const sign of [-1,1])for(const lateral of [-1,1]){
+  const taker={id:'home-8',x:sign*10.606741437789038,y:lateral*32.06366156229924,blockedBy:'away-8'};
+  const blocker={id:'away-8',x:taker.x,y:taker.y+lateral*0.98,blockedBy:taker.id};
+  const base={x:sign*20,y:lateral*16},target=planNativeThrowInClearance(blocker,taker,base);
+  assert.ok(Math.abs(target.x-taker.x)>=1.8-1e-9);
+  assert.equal(target.y,blocker.y);
+  assert.ok(Math.hypot(target.x-taker.x,target.y-taker.y)>0.98);
+  assert.deepEqual(planNativeThrowInClearance({...blocker,x:sign*30},taker,base),base);
+  assert.deepEqual(planNativeThrowInClearance(taker,taker,base),base);
+  const nearEnd={...taker,x:sign*51};
+  const endBlocker={...blocker,x:nearEnd.x};
+  const endTarget=planNativeThrowInClearance(endBlocker,nearEnd,{x:sign*52,y:base.y});
+  assert.ok(Math.abs(endTarget.x)<Math.abs(nearEnd.x));
+ }
+});
+
+// Synthetic observer inputs test rejection logic, not physical contact claims.
+test('ME-01-QA U-02d3: capability gate also protects native control and delivery observers',()=>{
+ for(const side of ['home','away']){
+  const other=side==='home'?'away':'home',dir=side==='home'?1:-1;
+  const a={id:side+'-10',team:side,x:dir*29.6,y:0},b={id:side+'-9',team:side,x:dir*27,y:2},k={id:side+'-1',team:side,role:'goalkeeper',x:0,y:0};
+  const players=[a,b,k],ids=players.map(p=>p.id),ball={position:{x:dir*30,y:0,z:.11},velocity:{x:dir,y:0,z:0}};
+  const observe=(obs,tick,action=null,extra={})=>obs.observe({tick,players,ball,starts:action?[a.id]:[],active:action?[a.id]:[],action:action?{tick,playerId:a.id,team:side,appliedByRapier:true,actualPhysicsImpulseApplied:true,...action}:null,...extra});
+  const make=mask=>createNativeBallControlObserver(ids,[a.id,b.id],mask);
+  const onlyPass=make(['pass']);
+  assert.equal(observe(onlyPass,1,{action:'carry'}).kind,'loose');
+  assert.equal(observe(onlyPass,2,{action:'shot'}).delivery,null);
+  assert.equal(observe(onlyPass,3,{action:'pass',recipientId:b.id}).delivery.recipientId,b.id);
+  assert.equal(observe(onlyPass,4,{action:'carry'}).delivery,null);
+  const onlyCarry=make(['carry']);
+  assert.equal(observe(onlyCarry,1,{action:'carry'}).playerId,a.id);
+  assert.equal(observe(onlyCarry,2,{action:'shot'}).kind,'loose');
+  const head={action:'pass',recipientId:b.id,nativeExclusiveHeadStart:true,actualNativeSolverContact:true};
+  const aerial={starts:[],active:[],bodyStarts:[a.id],bodyActive:[a.id],headStarts:[a.id],headActive:[a.id]};
+  assert.equal(observe(make(['pass']),1,head,aerial).delivery,null);
+  assert.equal(observe(make(['header','header-pass']),1,head,aerial).delivery.recipientId,b.id);
+  const volley={action:'shot',surface:'foot',nativeVolley:true,nativeExclusiveAerialControlStart:true,actualNativeSolverContact:true};
+  const foot={starts:[],active:[],bodyStarts:[a.id],bodyActive:[a.id],aerialControlStarts:[a.id],aerialControlActive:[a.id]};
+  assert.equal(observe(make(['shot']),1,volley,foot).delivery,null);
+  assert.equal(observe(make(['volley']),1,volley,foot).delivery.kind,'shot');
+  const grip={tick:1,keeperId:k.id,catchState:{active:true,confirmedTick:1}};
+  const release={tick:2,keeperId:k.id,catchState:{active:false,released:true},distribution:{tick:2,keeperId:k.id,team:side,kind:'pass',recipientId:b.id,confirmedGripTick:1,nativeGripReleased:true,appliedByRapier:true,actualPhysicsImpulseApplied:true}};
+  for(const [mask,hold,pass] of [[[],false,false],[['pass'],false,false],[['save'],true,false],[['save','pass'],true,true]]){
+   const obs=make(mask);
+   assert.equal(!!observe(obs,1,null,{keeperStates:[grip]}).keeperHold,hold);
+   assert.equal(!!observe(obs,2,null,{keeperStates:[release]}).keeperDistribution,pass);
+  }
+ }
+});
+test('ME-01-QA U-02d3: observed aerial kind is distinct from ground permission',()=>{
+ const head={action:'shot',nativeExclusiveHeadStart:true};
+ const volley={action:'shot',nativeExclusiveAerialControlStart:true,nativeVolley:true,surface:'foot'};
+ const control={action:'aerial-control',nativeExclusiveAerialControlStart:true,surface:'chest'};
+ for(const [action,allowed] of [[head,['header','header-shot']],[volley,['volley']],[control,['aerial-control']],[{action:'shot'},['shot']]]){
+  assert.equal(nativeObservedActionAllowed(createNativeFundamentalMask(allowed),action),true);
+  assert.equal(nativeObservedActionAllowed([],action),false);
+ }
+ assert.equal(nativeObservedActionAllowed(['shot'],head),false);
+ assert.equal(nativeObservedActionAllowed(['header-shot'],head),false);
+ assert.equal(nativeObservedActionAllowed(['shot'],volley),false);
+ assert.equal(nativeObservedActionAllowed(['aerial-control'],{action:'aerial-control'}),false);
+ assert.equal(nativeObservedActionAllowed(['volley'],{...volley,surface:'chest'}),false);
+ assert.equal(nativeObservedActionAllowed(['header','header-shot'],{...head,nativeVolley:true}),false);
+ assert.equal(nativeObservedActionAllowed(['shot'],{}),false);
+});
+
+test('ME-01-QA U-02d5: simultaneous surfaces of one actor cannot authorize control or delivery',()=>{
+ for(const side of ['home','away']){
+  const dir=side==='home'?1:-1,a={id:side+'-10',team:side,x:dir*29.6,y:0},b={id:side+'-9',team:side,x:dir*27,y:2};
+  const ids=[a.id,b.id],players=[a,b],ball={position:{x:dir*30,y:0,z:.11},velocity:{x:dir,y:0,z:0}};
+  const make=()=>createNativeBallControlObserver(ids,ids);
+  const base={tick:1,players,ball,starts:[a.id],active:[a.id],action:{tick:1,playerId:a.id,team:side,action:'carry',appliedByRapier:true,actualPhysicsImpulseApplied:true}};
+  assert.equal(make().observe(base).playerId,a.id);
+  for(const extra of [{bodyStarts:[a.id],bodyActive:[a.id]},{otherSurfaceContact:true},{exclusiveShoeStart:false}])assert.equal(make().observe({...base,...extra}).kind,'loose');
+  const head={...base,starts:[],active:[],bodyStarts:[a.id],bodyActive:[a.id],headStarts:[a.id],headActive:[a.id],action:{...base.action,action:'pass',recipientId:b.id,nativeExclusiveHeadStart:true,actualNativeSolverContact:true}};
+  assert.equal(make().observe(head).delivery.recipientId,b.id);
+  for(const extra of [{aerialControlStarts:[a.id],aerialControlActive:[a.id]},{otherSurfaceContact:true},{starts:[a.id],active:[a.id]}])assert.equal(make().observe({...head,...extra}).delivery,null);
+  const obs=make(),pass={...base,action:{...base.action,action:'pass',recipientId:b.id}};
+  assert.equal(obs.observe(pass).delivery.recipientId,b.id);
+  assert.equal(obs.observe({...base,tick:2,starts:[],active:[a.id],action:null}).delivery.recipientId,b.id);
+  assert.equal(obs.observe({...base,tick:3,action:null}).delivery,null);
+ }
+});
+
+test('ME-01-QA U-03d competing shoe or hand invalidates confirmed goalkeeper release witness',()=>{
+ for(const side of ['home','away']){
+  const other=side==='home'?'away':'home',k={id:side+'-1',team:side,role:'goalkeeper',x:0,y:0},r={id:side+'-9',team:side,role:'forward',x:10,y:0},q={id:other+'-1',team:other,role:'goalkeeper',x:30,y:0};
+  const players=[k,r,q],ids=players.map(p=>p.id),ball={position:{x:0,y:0,z:1},velocity:{x:0,y:0,z:0}};
+  const grip={tick:1,keeperId:k.id,catchState:{active:true,confirmedTick:1}};
+  const release={tick:2,keeperId:k.id,catchState:{active:false,released:true},distribution:{tick:2,keeperId:k.id,team:side,kind:'pass',recipientId:r.id,confirmedGripTick:1,nativeGripReleased:true,appliedByRapier:true,actualPhysicsImpulseApplied:true}};
+  const sample={tick:2,players,ball,starts:[],active:[],keeperStates:[release]};
+  for(const extra of [{},{starts:[r.id],active:[r.id]},{bodyActive:[r.id]},{keeperStates:[release,{tick:2,keeperId:q.id,contact:true}]},{headActive:[r.id]}]){
+   const obs=createNativeBallControlObserver(ids,[r.id],['save','pass']);
+   assert.equal(obs.observe({...sample,tick:1,keeperStates:[grip]}).keeperHold.keeperId,k.id);
+   const result=obs.observe({...sample,...extra});
+   assert.equal(!!result.keeperDistribution,Object.keys(extra).length===0);
+  }
+ }
+});
+
+// Synthetic evidence checks test the observer contract only, not physical liveness.
+test('ME-01-QA U-03e full-field audit distinguishes genuine surface evidence and rejects conflicting sources',()=>{
+ for(const team of ['home','away']){
+  const id=team+'-9',tick=12,foot={tick,started:[id],active:[id],nativePairedFeet:{[id]:{actorId:id,independentColliders:2,exclusivePhysicalStart:true,started:['left'],active:['left']}}};
+  const solver={tick,pairs:[{id,beganThisTick:true,collisionActive:true,manifolds:[{geometricContacts:1}]}]};
+  const emptyBody={lowerLegBallContacts:[],headBallStarts:[],headBallContacts:[],aerialControlStarts:[],aerialControlContacts:[],aerial:[]};
+  const action={tick,playerId:id,team,action:'shot',appliedByRapier:true,actualPhysicsImpulseApplied:true,officialMatchAction:false};
+  const base={tick,starts:[id],action,body:emptyBody,keepers:[],contactEvidence:{foot,solver},allowedFundamentals:createNativeFundamentalMask()};
+  assert.doesNotThrow(()=>assertNativeReplayActionSource(base));
+  assert.throws(()=>assertNativeReplayActionSource({...base,contactEvidence:{foot,solver:{tick,pairs:[]}}}));
+  const noShoes={foot:{tick,started:[],active:[],nativePairedFeet:{}},solver:{tick,pairs:[]}};
+  for(const [surface,kind] of [['head','shot'],['chest','aerial-control'],['foot','shot']]){
+   const isHead=surface==='head',hit={tick,actorId:id,team,version:isHead?'me-628-native-aerial-head-v1':'me-628-native-aerial-control-v1',surface,contact:true,contactStarted:true,actualNativeSolverContact:true,sameOriginalRapierWorld:true};
+   const aerial={...base,starts:[],contactEvidence:noShoes,action:{...action,action:kind,actualNativeSolverContact:true,sameOriginalRapierWorld:true,...(isHead?{nativeExclusiveHeadStart:true}:{nativeExclusiveAerialControlStart:true,surface,...(surface==='foot'?{nativeVolley:true}:{})})},body:{...emptyBody,aerial:[hit],...(isHead?{headBallStarts:[id],headBallContacts:[id]}:{aerialControlStarts:[id],aerialControlContacts:[id]})}};
+   assert.doesNotThrow(()=>assertNativeReplayActionSource(aerial));
+   assert.throws(()=>assertNativeReplayActionSource({...aerial,body:{...aerial.body,aerial:[{...hit,contactStarted:false}]}}));
+   assert.throws(()=>assertNativeReplayActionSource({...aerial,starts:[id],contactEvidence:{foot,solver}}));
+   assert.throws(()=>assertNativeReplayActionSource({...aerial,keepers:[{contact:true}]}));
+   assert.throws(()=>assertNativeReplayActionSource({...aerial,allowedFundamentals:[]}));
+  }
+ }
+});
+
+test('ME-01 structural scope: visible action LAB permissions are bounded independently of the common engine',()=>{
+ const cases=[
+  ['carry-solo','mixed',['carry']],
+  ['pass-pair','mixed',['pass','reception']],
+  ['cross-pair','mixed',['cross','reception']],
+  ['lofted-short','mixed',['pass','reception','aerial-control']],
+  ['lofted-pass','mixed',['pass','reception','aerial-control']],
+  ['lofted-switch','mixed',['pass','reception','aerial-control']],
+  ['chest-control','mixed',['cross','aerial-control']],
+  ['aerial-foot-control','mixed',['aerial-control']],
+  ['shot-solo','mixed',['shot']],
+  ['header-pair','mixed',['cross','header','header-shot','header-pass','header-clearance']],
+  ['volley-solo','mixed',['cross','volley']],
+  ['keeper-1v1','mixed',['carry','shot','save']],
+  ['keeper-high-cross','mixed',['cross','save','pass','clearance']],
+  ['keeper-high-intercept','mixed',['cross','save','pass','clearance']],
+  ['dribble-1v1','mixed',['carry','clearance','tackle','standing-tackle','sliding-tackle','shoulder-challenge','interception']],
+  ['dribble-1v1','standing',['carry','clearance','tackle','standing-tackle']],
+  ['dribble-1v1','sliding',['carry','clearance','tackle','sliding-tackle']],
+  ['dribble-1v1','shoulder',['carry','clearance','shoulder-challenge']],
+  ['aerial-duel','mixed',['header','header-shot','header-pass','header-clearance']],
+  ['pass-pair','interception',['pass','interception','carry','reception']],
+  ['defender-1v1','block',['shot','save','block']],
+  ...['defender-1v1','overload-2v1','duel-2v2','duel-3v3'].map(id=>[id,'mixed',NATIVE_FUNDAMENTALS])
+ ];
+ for(const [id,profile,expected] of cases){
+  const options=resolveInlineActionLabOptions(id,{duelTackleProfile:profile});
+  const actual=nativeLabFundamentalMask({id,collective:options.collectiveApproaches,
+   keeperSingleShot:options.keeperSingleShot,directedDribble:options.directedDribble,
+   duelTackleProfile:profile,interceptionStart:profile==='interception',blockStart:profile==='block'});
+  assert.deepEqual(actual,createNativeFundamentalMask(expected),id+' '+profile);
+  assert.ok(Object.isFrozen(actual));
+ }
+ assert.equal(resolveInlineActionLabOptions('dribble-1v1').collectiveApproaches,true);
+ assert.deepEqual(nativeLabFundamentalMask({id:'full-field-native',collective:true}),NATIVE_FUNDAMENTALS);
+});
+
+test('ME-01 structural gate: every visible fundamental LAB constructs the current paired world and common capability mask',{timeout:120000},async()=>{
+ const R=await initializeRapier(rapier);
+ const entries=[
+  ...SOLO_CARRY_PHASES.map(phase=>({id:'carry-solo',extra:{carryRunwayStart:true,nativeFixedCarryResearch:true,soloCarryLockedPhase:phase,
+   ...(phase==='sprint'?{soloSprintActiveFootReleaseM:.06,soloSprintPursuitLeadM:.25}:{})}})),
+  ...['pass-pair','cross-pair','lofted-short','lofted-pass','lofted-switch','chest-control','aerial-foot-control'].map(id=>({id})),
+  ...LAB_SHOT_PROFILES.flatMap(shotProfile=>[false,true].map(firstTimeShot=>({id:'shot-solo',extra:{shotProfile,firstTimeShot}}))),
+  ...['header-pair','volley-solo','keeper-1v1','keeper-high-cross','keeper-high-intercept','dribble-1v1','aerial-duel','defender-1v1','overload-2v1','duel-2v2','duel-3v3'].map(id=>({id})),
+  ...['standing','sliding','shoulder'].map(profile=>({id:'dribble-1v1',profile})),
+  {id:'pass-pair',profile:'interception'},{id:'defender-1v1',profile:'block'}
+ ];
+ assert.equal(entries.length,38);
+ let sessions=0;
+ for(const side of ['home','away'])for(const {id,profile='mixed',extra={}} of entries){
+  const options=resolveInlineActionLabOptions(id,{duelTackleProfile:profile});
+  const mask=nativeLabFundamentalMask({id,collective:options.collectiveApproaches,keeperSingleShot:options.keeperSingleShot,
+   directedDribble:options.directedDribble,duelTackleProfile:profile,interceptionStart:profile==='interception',blockStart:profile==='block'});
+  const lab=createControlledActionLab(R,id,{shotSide:side,...options,...extra});
+  try{
+   const zero=lab.snapshot();
+   assert.equal(zero.physicsTick,0,id+' '+profile);
+   assert.equal(zero.nativeContactMaterial.historicalCarryPhysics,false,id);
+   assert.equal(zero.physicalShoeColliderCount,2*zero.genuinePhysicalPlayerCount,id);
+   assert.deepEqual(zero.allowedFundamentals,mask,id);
+   assert.deepEqual(zero.movementFundamentals,mask,id);
+   const one=lab.step();
+   assert.equal(one.physicsTick,1,id);
+   assert.deepEqual(one.allowedFundamentals,mask,id);
+   assert.deepEqual(one.movementFundamentals,mask,id);
+   assert.equal(one.physicalShoeColliderCount,zero.physicalShoeColliderCount,id);
+   assert.ok(one.starts.every(actor=>zero.smallSidedParticipants.includes(actor)),id);
+   sessions++;
+  }finally{lab.dispose();}
+ }
+ assert.equal(sessions,76);
+ process.stdout.write('ME_628_VISIBLE_LAB_STRUCTURAL_GATE '+JSON.stringify({entries:entries.length,sessions,paired:true,commonMask:true})+'\n');
 });

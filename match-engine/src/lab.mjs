@@ -12,9 +12,9 @@ import {runSpinDecayDiagnostics} from '/__fa_match_engine__/spin-decay-qa.mjs';
 import {reviewSpinRetentionEvidence} from '/__fa_match_engine__/spin-retention-evidence.mjs';
 import {reviewLiftInputContributions} from '/__fa_match_engine__/lift-input-qa.mjs';
 import {runContactImpactDiagnostics} from '/__fa_match_engine__/contact-impact-qa.mjs';
-import {mountControlledActionLabs,createControlledActionLab,projectActiveLabDecisions} from '/__fa_match_engine__/action-labs.mjs';
+import {mountControlledActionLabs,createControlledActionLab,projectActiveLabDecisions,resolveInlineActionLabOptions} from '/__fa_match_engine__/action-labs.mjs';
 import {mountControlledMovementLabs,createControlledMovementLab} from '/__fa_match_engine__/movement-labs.mjs';
-import {SMALL_SIDED_VARIANT_COUNT,supportsNativeOpenPlay} from '/__fa_match_engine__/small-sided-lab-scenarios.mjs';
+import {SMALL_SIDED_VARIANT_COUNT} from '/__fa_match_engine__/small-sided-lab-scenarios.mjs';
 import {LAB_SHOT_PROFILES,LAB_SHOT_LABELS} from '/__fa_match_engine__/lab-shot-calibration.mjs';
 import {SOLO_CARRY_PHASES} from '/__fa_match_engine__/solo-carry-phases.mjs';
 import {uniformSoloCarryAttributes}
@@ -355,15 +355,10 @@ function restart() {
     const {kind,id}=activeScene,side=byId('me-inline-side').value;
     if(!['home','away'].includes(side))
       throw new TypeError('Original small-sided situation requires HOME/AWAY');
-    const nativeOpenPlay=!archiveMode&&kind==='action'&&supportsNativeOpenPlay(id)&&id!=='keeper-1v1'&&(activeScene.duelTackleProfile??'mixed')==='mixed';
     const next=kind==='action'?
       createControlledActionLab(rapier,id,{shotSide:side,
        variantIndex:activeVariantIndex,shotProfile:activeScene.shotProfile??'power',firstTimeShot:activeScene.firstTimeShot===true,
-       bodyGuardEnabled:id!=='carry-solo'&&id!=='pass-pair'&&id!=='cross-pair'&&id!=='shot-solo',
-       collectiveApproaches:nativeOpenPlay,
-       keeperSingleShot:!archiveMode&&id==='keeper-1v1',
-       directedDribble:!archiveMode&&id==='dribble-1v1'&&!nativeOpenPlay,
-       duelTackleProfile:activeScene.duelTackleProfile??'mixed',
+       ...resolveInlineActionLabOptions(id,{archiveMode,duelTackleProfile:activeScene.duelTackleProfile??'mixed'}),
        // Visible fixed Carry now runs in a long open-space native research
        // runway. Only actual same-world Rapier shoe STARTs authorize a push.
        // Leave the original ordinary 22-player physics unmodified.

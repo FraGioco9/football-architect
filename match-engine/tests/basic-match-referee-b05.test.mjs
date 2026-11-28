@@ -1,3 +1,4 @@
+import {createNativeFundamentalMask,nativeKeeperDistributionAllowed} from '../src/native-fundamental-mask.mjs';
 // #628 ACTIONS-B05 — actual original Rapier 60Hz full-ball goal / line
 // exits; provisional referee and same-world dead-ball kickoff.
 import test from 'node:test';
@@ -11,7 +12,7 @@ import {createControlledActionLab} from '../src/action-labs.mjs';
 import {ACTION_LAB_SCENARIOS,B05_LAB_STARTS}
  from '../src/action-lab-scenarios.mjs';
 import {B05_REFEREE_VERSION,detectFirstFullyOutBallB05,
- createBasicMatchRefereeB05} from '../src/basic-match-referee-b05.mjs';
+ createBasicMatchRefereeB05,nativeRefereeKeeperEvidence,resolveNativeRefereeTouch} from '../src/basic-match-referee-b05.mjs';
 
 test('B05 exact full-ball goal plane, posts, bar, corners and boundary ordering (pure geometry)',()=>{
  assert.deepEqual(ACTION_LAB_SCENARIOS.filter(s=>
@@ -152,4 +153,68 @@ test('B05 HOME/AWAY original physics verified full-ball exits and native same-wo
       officialMatchResult:null})+'\\n');
    }finally{a.dispose();b.dispose();}
   }
+});
+
+test('ME-01-QA U-02d2: common keeper last-touch source does not resolve ambiguous starts',()=>{
+ const home=Object.freeze({keeperId:'home-1',contact:true,contactStarted:true}),away=Object.freeze({keeperId:'away-1',contact:true,contactStarted:true});
+ const idle=Object.freeze({keeperId:'away-1',contact:false,contactStarted:false});
+ assert.deepEqual(nativeRefereeKeeperEvidence([]),{keeperDive:null,keeperContactConflict:false});
+ assert.deepEqual(nativeRefereeKeeperEvidence([idle]),{keeperDive:null,keeperContactConflict:false});
+ for(const s of [home,away]){
+  const evidence=nativeRefereeKeeperEvidence([s]);
+  assert.equal(evidence.keeperDive,s);
+  assert.equal(evidence.keeperContactConflict,false);
+  assert.ok(Object.isFrozen(evidence));
+ }
+ assert.equal(nativeRefereeKeeperEvidence([home,idle]).keeperDive,home);
+ for(const states of [[home,away],[away,home]])assert.deepEqual(nativeRefereeKeeperEvidence(states),{keeperDive:null,keeperContactConflict:true});
+ assert.throws(()=>nativeRefereeKeeperEvidence(null),/Native keeper states/);
+});
+
+test('ME-01-QA U-02d6: referee distinguishes exclusive, ongoing and competing physical surfaces',()=>{
+ for(const side of ['home','away']){
+  const id=side+'-10',other=(side==='home'?'away':'home')+'-2',keeperId=side+'-1',tick=7;
+  const foot={started:[id],active:[id]},empty={started:[],active:[]};
+  const base={tick,foot:empty};
+  const head={actorId:id,team:side,version:'me-628-native-aerial-head-v1',contact:true,contactStarted:true,actualNativeSolverContact:true,sameOriginalRapierWorld:true};
+  const chest={...head,version:'me-628-native-aerial-control-v1',surface:'chest'};
+  const glove={keeperId,contact:true,contactStarted:true};
+  assert.equal(resolveNativeRefereeTouch(base),undefined);
+  assert.equal(resolveNativeRefereeTouch({...base,foot}).nativeExclusiveShoeStart,true);
+  assert.equal(resolveNativeRefereeTouch({...base,foot:{started:[],active:[id]}}),undefined);
+  assert.equal(resolveNativeRefereeTouch({...base,foot:{...foot,active:[id,other]}}),null);
+  assert.equal(resolveNativeRefereeTouch({...base,foot:{...foot,nativePairedFeet:{[id]:{actorId:id,independentColliders:2,exclusivePhysicalStart:false,started:['left','right'],active:['left','right']}}}}),null);
+  assert.equal(resolveNativeRefereeTouch({...base,bodyStarts:[id],bodyActive:[id]}).nativeLowerLegContact,true);
+  assert.equal(resolveNativeRefereeTouch({...base,bodyActive:[id]}),undefined);
+  assert.equal(resolveNativeRefereeTouch({...base,aerialEvidence:[head]}).nativeHeadContact,true);
+  assert.equal(resolveNativeRefereeTouch({...base,aerialEvidence:[chest]}).surface,'chest');
+  assert.equal(resolveNativeRefereeTouch({...base,aerialEvidence:[{...head,contactStarted:false}]}),undefined);
+  assert.equal(resolveNativeRefereeTouch({...base,keeperDive:glove}).nativeGloveContact,true);
+  assert.equal(resolveNativeRefereeTouch({...base,keeperDive:{...glove,contactStarted:false}}),undefined);
+  for(const patch of [{foot,bodyStarts:[id],bodyActive:[id]},{foot,aerialEvidence:[head]},{foot,keeperDive:glove},{aerialEvidence:[head,chest]},{aerialEvidence:[head],bodyActive:[id]},{aerialEvidence:[head],aerialConflict:true},{keeperDive:glove,bodyActive:[keeperId]},{keeperContactConflict:true}])assert.equal(resolveNativeRefereeTouch({...base,...patch}),null);
+  assert.equal(nativeRefereeKeeperEvidence([glove,{keeperId:other,contact:true,contactStarted:false}]).keeperContactConflict,true);
+ }
+});
+
+test('ME-01-QA U-02d7: authorized keeper release has common provenance and is not passive detachment',()=>{
+ for(const team of ['home','away']){
+  const keeperId=team+'-1',recipientId=team+'-9',opponent=(team==='home'?'away':'home')+'-9',tick=30;
+  const players=[{id:keeperId,team,role:'goalkeeper'},{id:recipientId,team,role:'forward'},{id:opponent,team:opponent.split('-')[0],role:'forward'}],activeIds=players.map(p=>p.id);
+  const priorHold={keeperId,confirmedTick:10},ctx={tick,priorHold,players,activeIds},mask=createNativeFundamentalMask(['save','pass','clearance']);
+  const d={tick,keeperId,team,kind:'pass',recipientId,confirmedGripTick:10,appliedByRapier:true,actualPhysicsImpulseApplied:true,nativeGripReleased:true};
+  assert.equal(nativeKeeperDistributionAllowed(mask,d,ctx),true);
+  assert.equal(nativeKeeperDistributionAllowed(mask,{...d,kind:'clearance',recipientId:null},ctx),true);
+  for(const patch of [{tick:29},{kind:'shot'},{recipientId:keeperId},{recipientId:opponent},{recipientId:null},{confirmedGripTick:30},{confirmedGripTick:9},{actualPhysicsImpulseApplied:false},{appliedByRapier:false},{nativeGripReleased:false},{kind:'clearance'}])assert.equal(nativeKeeperDistributionAllowed(mask,{...d,...patch},ctx),false);
+  for(const m of [[],['pass'],['save'],['save','clearance']])assert.equal(nativeKeeperDistributionAllowed(m,d,ctx),false);
+  assert.equal(nativeKeeperDistributionAllowed(mask,d,{...ctx,priorHold:null}),false);
+  assert.equal(nativeKeeperDistributionAllowed(mask,d,{...ctx,activeIds:[keeperId]}),false);
+  const keeperDive={keeperId,distribution:d,catchState:{active:false,released:true}},foot={started:[],active:[]},base={tick,foot,keeperDive};
+  assert.equal(nativeRefereeKeeperEvidence([keeperDive]).keeperDive,keeperDive);
+  assert.equal(resolveNativeRefereeTouch({...base,keeperRelease:d}).nativeKeeperDistribution,true);
+  assert.equal(resolveNativeRefereeTouch(base),undefined);
+  assert.equal(resolveNativeRefereeTouch({...base,keeperRelease:d,foot:{started:[recipientId],active:[recipientId]}}),null);
+  const passive={keeperId,boundedRelease:{tick,actualPhysicsImpulseApplied:false},catchState:{active:false,released:true}};
+  assert.equal(nativeRefereeKeeperEvidence([passive]).keeperDive,passive);
+  assert.equal(resolveNativeRefereeTouch({tick,foot,keeperDive:passive}),undefined);
+ }
 });

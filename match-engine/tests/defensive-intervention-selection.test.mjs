@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {selectDefensiveIntervention} from '../src/defensive-intervention-selection.mjs';
+import {selectDefensiveIntervention,planNativeShotBlock} from '../src/defensive-intervention-selection.mjs';
 
 test('D-14 contextual priorities, independent of team and shirt number',()=>{
  for(const actorId of ['home-10','away-2','home-7','away-11']){
@@ -25,5 +25,29 @@ test('D-14 contextual priorities, independent of team and shirt number',()=>{
   assert.equal(d.actorId,actorId);assert.equal(d.decisionOnly,true);
   assert.equal(d.physicalContactProven,false);assert.equal(d.officialPossession,false);
   assert.equal(Object.isFrozen(d),true);
+ }
+});
+
+import {selectPermittedDefensiveTouch as sharedPermittedTouch} from '../src/defensive-intervention-selection.mjs';
+import {createNativeDuelFundamentalMask,nativeDefensiveInterventionAllowed} from '../src/native-fundamental-mask.mjs';
+test('ME-01-QA U-01F3c: shared defensive geometry and subtype contact filtering',()=>{
+ for(const team of ['home','away'])for(const polarity of [1,-1]){
+  const dir=team==='home'?-polarity:polarity;
+  const player={id:team+'-2',team,role:'defender',x:dir*5,y:0,vx:0,vy:0};
+  const ball={x:0,y:0},velocity={x:dir*10,y:0};
+  const feasible=planNativeShotBlock({player,ball,velocity,attackPolarity:polarity});
+  assert.equal(feasible.actorId,player.id);assert.equal(feasible.etaS,.5);
+  assert.equal(planNativeShotBlock({player:{...player,y:10},ball,velocity,attackPolarity:polarity}),null);
+  assert.equal(planNativeShotBlock({player,ball,velocity:{x:-velocity.x,y:0},attackPolarity:polarity}),null);
+  for(const profile of ['standing','sliding','shoulder','interception','mixed']){
+   const mask=createNativeDuelFundamentalMask(profile);
+   for(const sliding of [false,true]){
+    const touch=Object.freeze({kind:'tackle',actorId:player.id});
+    assert.equal(sharedPermittedTouch(touch,mask,{sliding}),nativeDefensiveInterventionAllowed(mask,sliding?'sliding-tackle':'standing-tackle')?touch:null);
+   }
+   const touch=Object.freeze({kind:'interception',actorId:player.id});
+   assert.equal(sharedPermittedTouch(touch,mask),nativeDefensiveInterventionAllowed(mask,'interception')?touch:null);
+   assert.equal(sharedPermittedTouch(null,mask),null);
+  }
  }
 });

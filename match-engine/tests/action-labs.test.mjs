@@ -4,9 +4,10 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {initializeRapier} from '../src/core.mjs';
+import {nativeObservedActionAllowed} from '../src/native-fundamental-mask.mjs';
 import {ACTION_LAB_SCENARIOS,getActionLabScenario,
  classifyActionLabEvidence} from '../src/action-lab-scenarios.mjs';
-import {createControlledActionLab as createCurrentActionLab} from '../src/action-labs.mjs';
+import {createControlledActionLab as createCurrentActionLab,resolveInlineActionLabOptions} from '../src/action-labs.mjs';
  // Historical M/B evidence comparator only. Current gameplay uses the default.
  const createControlledActionLab=(R,id,options={})=>createCurrentActionLab(R,id,{
   ...options,historicalEvidenceBaseline:!['shot-solo','pass-pair','cross-pair','carry-solo','dribble-1v1','keeper-1v1','defender-1v1','overload-2v1','duel-2v2','duel-3v3'].includes(id)
@@ -656,4 +657,88 @@ test('CONTROL opponent-first options do not spoof a Rapier PASS or expose unsafe
  assert.throws(()=>initialResearchControlLineup(INITIAL_PLAYERS,ball,{
   opponentFirst:'true'
  }),/flag must be boolean/);
+});
+
+test('ME-01-QA U-02d1: visible action menu selects current shared paths and explicit restrictions',()=>{
+ for(const id of ['dribble-1v1','defender-1v1','overload-2v1','duel-2v2','duel-3v3','header-pair','chest-control','aerial-foot-control','aerial-duel','lofted-pass','lofted-short','lofted-switch','volley-solo','keeper-high-cross','keeper-high-intercept']){
+  const o=resolveInlineActionLabOptions(id);
+  assert.equal(o.collectiveApproaches,true,id);
+  assert.equal(o.bodyGuardEnabled,true,id);
+  assert.equal(o.historicalCarryPhysics,false,id);
+  assert.equal(o.historicalEvidenceBaseline,false,id);
+ }
+ for(const [id,profile] of [['dribble-1v1','standing'],['dribble-1v1','sliding'],['dribble-1v1','shoulder'],['defender-1v1','block'],['pass-pair','interception']]){
+  const o=resolveInlineActionLabOptions(id,{duelTackleProfile:profile});
+  assert.equal(o.collectiveApproaches,false);assert.equal(o.duelTackleProfile,profile);
+  assert.equal(o.directedDribble,id==='dribble-1v1');
+ }
+ for(const id of ['carry-solo','pass-pair','cross-pair','shot-solo']){
+  const o=resolveInlineActionLabOptions(id);
+  assert.equal(o.collectiveApproaches,false);assert.equal(o.bodyGuardEnabled,false);assert.equal(o.historicalCarryPhysics,false);
+ }
+ assert.equal(resolveInlineActionLabOptions('keeper-1v1').keeperSingleShot,true);
+ assert.equal(resolveInlineActionLabOptions('keeper-1v1',{archiveMode:true}).keeperSingleShot,false);
+ assert.equal(resolveInlineActionLabOptions('duel-3v3',{archiveMode:true}).collectiveApproaches,false);
+});
+
+
+// The visible modern LAB configuration must reach the actual physical session,
+// not merely return the right flags. These short mirrored smoke runs are
+// negative authorization checks, not positive contact/outcome acceptance.
+test('ME-01-QA U-02d2b: modern LAB sessions expose and respect bounded native capabilities',{timeout:120000},async()=>{
+ const R=await initializeRapier(rapier);
+ const full=['carry','pass','cross','shot','save','tackle','interception','clearance','reception','aerial-control','header','volley','standing-tackle','sliding-tackle','shoulder-challenge','block','header-shot','header-pass','header-clearance'];
+ const head=['header','header-shot','header-pass','header-clearance'];
+ const cases=[
+  ['carry-solo','mixed',['carry'],[]],
+  ['pass-pair','mixed',['pass','reception'],[]],
+  ['cross-pair','mixed',['cross','reception'],[]],
+  ['shot-solo','mixed',['shot'],[]],
+  ['keeper-1v1','mixed',['carry','shot','save'],[]],
+  ['dribble-1v1','standing',['carry','clearance','tackle','standing-tackle'],[]],
+  ['dribble-1v1','sliding',['carry','clearance','tackle','sliding-tackle'],[]],
+  ['dribble-1v1','shoulder',['carry','clearance','shoulder-challenge'],[]],
+  ['defender-1v1','block',['shot','save','block'],[]],
+  ['pass-pair','interception',['pass','interception','carry','reception'],[]],
+  ['header-pair','mixed',['cross',...head],['head']],
+  ['chest-control','mixed',['cross','aerial-control'],['chest']],
+  ['aerial-foot-control','mixed',['aerial-control'],['foot']],
+  ['aerial-duel','mixed',head,['head']],
+  ['volley-solo','mixed',['cross','volley'],['foot']],
+  ...['lofted-pass','lofted-short','lofted-switch'].map(id=>[id,'mixed',['pass','reception','aerial-control'],['foot']]),
+  ...['keeper-high-cross','keeper-high-intercept'].map(id=>[id,'mixed',['cross','save','pass','clearance'],[]]),
+  ['dribble-1v1','mixed',['carry','tackle','interception','clearance','standing-tackle','sliding-tackle','shoulder-challenge'],[]],
+  ...['defender-1v1','overload-2v1','duel-2v2','duel-3v3'].map(id=>[id,'mixed',full,['head','chest','foot']])
+ ];
+ for(const [id,profile,allowed,surfaces] of cases)for(const side of ['home','away']){
+  const label=id+'/'+profile+'/'+side;
+  const session=createCurrentActionLab(R,id,{shotSide:side,...resolveInlineActionLabOptions(id,{duelTackleProfile:profile})});
+  try{
+   const initial=session.snapshot();
+   assert.equal(initial.physicsTick,0,label);
+   assert.deepEqual([...initial.allowedFundamentals].sort(),[...allowed].sort(),label);
+   assert.deepEqual(initial.permittedAerialSurfaces,surfaces,label);
+   assert.deepEqual(initial.movementFundamentals,initial.allowedFundamentals,label);
+   assert.ok(Object.isFrozen(initial.allowedFundamentals),label);
+   assert.ok(Object.isFrozen(initial.permittedAerialSurfaces),label);
+   assert.equal(initial.action,null,label);
+   for(let tick=1;tick<=60;tick++){
+    const f=session.step(),a=f.action;
+    assert.equal(f.physicsTick,tick,label);
+    assert.deepEqual(f.allowedFundamentals,initial.allowedFundamentals,label);
+    assert.deepEqual(f.movementFundamentals,f.allowedFundamentals,label);
+    assert.deepEqual(f.permittedAerialSurfaces,surfaces,label);
+    assert.equal(f.officialMatchResult,null,label);
+    if(a){
+     const kind=a.nativeExclusiveHeadStart?'header-'+a.action:a.nativeVolley?'volley':a.action;
+     assert.ok(nativeObservedActionAllowed(initial.allowedFundamentals,a),label+': unauthorized native evidence '+kind);
+     assert.ok(allowed.includes(kind),label+': unauthorized '+kind);
+     assert.equal(a.actualPhysicsImpulseApplied,true,label);
+     if(a.nativeExclusiveHeadStart)assert.ok(allowed.includes('header'),label);
+     if(a.action==='tackle'&&a.defensiveTarget?.intervention)assert.ok(allowed.includes(a.defensiveTarget.intervention),label);
+    }
+    if(f.latestOrientedReception?.tick===tick)assert.ok(allowed.includes('reception'),label);
+   }
+  }finally{session.dispose();}
+ }
 });

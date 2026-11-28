@@ -1,20 +1,23 @@
 import {attackDirection,nativeHalfFormationReady} from './match-directions.mjs';
+import {createNativeRestartMask,nativeRestartAllowed,planNativeGroundRestartImpulse,nativeGroundRestartContactReady} from './native-restart-policy.mjs';
 // ME-01: isolated, deterministic 3D physics core. No browser, HTTP, D1 or football-world dependencies.
 import {speedDependentDragCd} from './aerodynamics.mjs';
 import {magnusLift,MAGNUS_SPIN_LIMIT_RAD_S} from './magnus.mjs';
 import {LAB_SHOT_PROFILES} from './lab-shot-calibration.mjs';
 import {literatureCandidateForces} from './literature-aero-candidate.mjs';
-import {createPrivateRapierFootContactBridge}
+import {createPrivateRapierFootContactBridge,hasExclusiveNativeShoeStart,usesNativePairedShoeBridge}
  from './rapier-foot-contact-bridge.mjs';
 import {createPrivateRapier22BodyBridge} from './rapier-22-body-bridge.mjs';
 import {createPrivatePhysicalActionExecutor}
  from './private-physical-action-executor.mjs';
+import {nativeLabFundamentalMask,nativeLabAerialSequence,nativeKeeperSequenceInterrupted,nativePermittedAerialSurfaces} from './native-fundamental-mask.mjs';
 import {INITIAL_PLAYERS} from './player-movement.mjs';
-import {createBasicMatchRefereeB05} from './basic-match-referee-b05.mjs';
+import {createBasicMatchRefereeB05,nativeRefereeKeeperEvidence} from './basic-match-referee-b05.mjs';
 import {smallSidedSetup,supportsNativeOpenPlay} from './small-sided-lab-scenarios.mjs';
 import {createNativeBallControlObserver,createDribbleTransitionObserver} from './isolated-dribble-touches.mjs';
 import {createSmallSidedNativeBodyGuard,createNativeKeeperDive,createNativeThrowInHands}
  from './small-sided-native-body-guard.mjs';
+import {nativeKeeperCompetingContact} from './small-sided-native-body-guard.mjs';
 import {initialResearchBodyEncounterLineup}
  from './research-body-encounter-initial-lineup.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
@@ -40,6 +43,11 @@ export const BALL_FRONTAL_AREA_M2 = Math.PI * BALL_RADIUS ** 2;
 export const DRAG_EXPERIMENT_CD = 0.24; // illustrative constant coefficient, not a universal soccer-ball Cd.
 export const GROUND_RESTITUTION = 0.62; // candidate: measure LAB-05 rebound against FIFA turf reference.
 export const BALL_RESTITUTION = 0.62;
+// Only explicitly archived ground-carry research may retain zero bounce.
+export function nativeBallGroundContactProfile(historicalCarryPhysics=false){
+ if(typeof historicalCarryPhysics!=='boolean')throw new TypeError('Boolean historical carry material mode required');
+ return Object.freeze({groundRestitution:historicalCarryPhysics?0:GROUND_RESTITUTION,ballRestitution:historicalCarryPhysics?0:BALL_RESTITUTION,groundFriction:0.65,ballFriction:0.45});
+}
 // Public scenario Z is clearance from grass to the ball's underside; Rapier Z is center height.
 export const toCenterHeight = clearance => clearance + BALL_RADIUS;
 export const toGroundClearance = centerHeight => Math.max(0, centerHeight - BALL_RADIUS);
@@ -134,6 +142,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticSoloSprintLateralTrackScale = 1,
   diagnosticSoloSprintActiveFootReleaseM = 0,
   diagnosticIntentDrivenSoloCarryEnabled = false,
+  diagnosticHistoricalCarryPhysics = false,
   diagnosticNativeFixedCarryResearchEnabled = false,
   diagnosticNativeFixedSprintLongStrideEnabled = false,
   diagnosticSmallSidedBodyGuardEnabled = false,
@@ -517,6 +526,10 @@ export function createEngine(RAPIER, input = {}, {
  // Locked carry exercises keep their experimental physical setup. Open
  // play uses the same ordinary ball and shoe physics for every fixture.
  const isolatedCarry=!diagnosticCollectiveActions&&(smallSided?.id==='dribble-1v1'||smallSided?.id==='carry-solo');
+ if(typeof diagnosticHistoricalCarryPhysics!=='boolean'||diagnosticHistoricalCarryPhysics&&!isolatedCarry)throw new TypeError('Historical carry materials require isolated carry research');
+ const historicalCarryPhysics=isolatedCarry&&(diagnosticHistoricalCarryPhysics||diagnosticIntentDrivenSoloCarryEnabled);
+ const contactMaterial=nativeBallGroundContactProfile(historicalCarryPhysics);
+ const pairedShoeBridge=usesNativePairedShoeBridge({activePlayerIds:smallSided?.activeIds,legacyGroundCarry:historicalCarryPhysics});
  const stagedShoes=smallSided?smallSided.staged:
   diagnosticB06bOpeningKickoffEnabled?
    initialB06bOpeningLineup(INITIAL_PLAYERS):
@@ -646,7 +659,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticSoloShoeLengthScale,diagnosticSoloRecoveryStepScale,
     diagnosticSoloSprintCadenceScale,diagnosticSoloSprintLateralTrackScale,
     diagnosticSoloSprintActiveFootReleaseM,
-    diagnosticIntentDrivenSoloCarryEnabled,
+    diagnosticIntentDrivenSoloCarryEnabled,diagnosticHistoricalCarryPhysics,
     diagnosticNativeFixedCarryResearchEnabled,
     diagnosticSmallSidedBodyGuardEnabled,diagnosticCollectiveActions,diagnosticKeeperSingleShot,diagnosticDirectedDribble,
      diagnosticSmallSidedBodyFeedbackEnabled,
@@ -673,7 +686,7 @@ export function createEngine(RAPIER, input = {}, {
     RAPIER.ColliderDesc.cuboid(53.5, 35, 0.2):
     RAPIER.ColliderDesc.cuboid(52.5, 34, 0.2);
   const ground = groundDesc
-    .setTranslation(0, 0, -0.2).setFriction(0.65).setRestitution(isolatedCarry?0:GROUND_RESTITUTION);
+    .setTranslation(0, 0, -0.2).setFriction(contactMaterial.groundFriction).setRestitution(contactMaterial.groundRestitution);
   const groundCollider=world.createCollider(ground);
   const desc = RAPIER.RigidBodyDesc.dynamic()
     .setTranslation(scenario.x, scenario.y, toCenterHeight(scenario.z))
@@ -688,7 +701,7 @@ export function createEngine(RAPIER, input = {}, {
       {x: 0, y: 0, z: 0},
       {x: BALL_INERTIA_KG_M2, y: BALL_INERTIA_KG_M2, z: BALL_INERTIA_KG_M2},
       {w: 1, x: 0, y: 0, z: 0})
-    .setFriction(0.45).setRestitution(isolatedCarry?0:BALL_RESTITUTION);
+    .setFriction(contactMaterial.ballFriction).setRestitution(contactMaterial.ballRestitution);
   // In M9 only, category 0x1 shoes/ball can interact with each other
   // and ground but NOT player-body category 0x20. Default path untouched.
   if(diagnosticSharedContactEventsEnabled)
@@ -712,11 +725,21 @@ export function createEngine(RAPIER, input = {}, {
   const shoeBridge=diagnosticPlayerFootContactsEnabled?
     createPrivateRapierFootContactBridge(RAPIER,world,ballCollider,stagedShoes,
      {...(sharedContactQueue?{sharedQueue:sharedContactQueue}:{}),
+      ...(pairedShoeBridge?{nativeCarryStride:true}:{}),
+      ...(pairedShoeBridge&&isolatedCarry&&smallSided.id==='carry-solo'?{
+       pairedCarryReadoutId:smallSided.side+'-10',
+       soloShoeWidthScale:diagnosticSoloShoeWidthScale,
+       soloShoeLengthScale:diagnosticSoloShoeLengthScale,
+       soloRecoveryStepScale:diagnosticSoloRecoveryStepScale,
+       soloSprintCadenceScale:diagnosticSoloSprintCadenceScale,
+       soloSprintLateralTrackScale:diagnosticSoloSprintLateralTrackScale,
+       soloSprintActiveFootReleaseM:diagnosticSoloSprintActiveFootReleaseM
+      }:{}),
       ...(smallSided?{activePlayerIds:smallSided.activeIds,fullFieldNative:smallSided.fullField===true}:{}),
       ...(diagnosticFirstTimeShot&&diagnosticIsolatedShotProfile!=='tap-in'?
        {firstTimeShotReleaseId:smallSided.side+'-10'}:{}),
-      ...(isolatedCarry?{
-       isolatedGroundDribbleBallCentreZ:BALL_RADIUS,
+      ...(isolatedCarry&&!pairedShoeBridge?{
+       isolatedGroundDribbleBallCentreZ:BALL_RADIUS,historicalCarryMaterial:historicalCarryPhysics,
        dribbleAttackerId:smallSided.side+'-10',
        ...(diagnosticDirectedDribble?{sharedDuelStride:true}:{}),
        soloCarry:smallSided.id==='carry-solo',
@@ -740,11 +763,16 @@ export function createEngine(RAPIER, input = {}, {
      unstagedFeedback:diagnosticUnstagedBodyFeedbackEnabled,
      ...(sharedContactQueue?{sharedQueue:sharedContactQueue}:{})
     }):null;
+  const nativeFundamentals=nativeLabFundamentalMask({id:smallSided?.id,collective:diagnosticCollectiveActions,interceptionStart:smallSided?.interceptionStart,blockStart:smallSided?.blockStart,keeperSingleShot:diagnosticKeeperSingleShot,directedDribble:diagnosticDirectedDribble,duelTackleProfile:diagnosticDuelTackleProfile});
+  const aerialSequence=nativeLabAerialSequence(smallSided??{});
+  const aerialSurfaces=nativePermittedAerialSurfaces(nativeFundamentals,smallSided?.aerialSurface??'all',diagnosticCollectiveActions);
+  const nativeAerialEnabled=aerialSurfaces.length>0;
+  const keeperSequence=aerialSequence?.surface==='glove'?aerialSequence:null;
   const smallBodyGuard=diagnosticSmallSidedBodyGuardEnabled?
    createSmallSidedNativeBodyGuard(RAPIER,world,ballCollider,
      stagedShoes,smallSided.activeIds,{
-      feedbackEnabled:diagnosticSmallSidedBodyFeedbackEnabled,fullFieldNative:smallSided.fullField===true,aerialEnabled:diagnosticNativeAerialEnabled,aerialSurface:smallSided.aerialSurface??'all',
-      ...(isolatedCarry?{
+      feedbackEnabled:diagnosticSmallSidedBodyFeedbackEnabled,fullFieldNative:smallSided.fullField===true,aerialEnabled:nativeAerialEnabled,aerialSurface:smallSided.aerialSurface??'all',allowedFundamentals:nativeFundamentals,
+      ...(historicalCarryPhysics?{
        dribbleGroundBallCentreZ:BALL_RADIUS
       }:{})
      }):null;
@@ -757,15 +785,15 @@ export function createEngine(RAPIER, input = {}, {
    (smallSided?.id==='keeper-1v1'||smallSided?.blockStart)?
     stagedShoes.filter(p=>p.id===smallSided.opponent+'-1'):[]):[];
   const keeperDives=nativeKeeperActors.map(p=>createNativeKeeperDive(RAPIER,world,ballCollider,p,body,
-    {closeChallengeEnabled:diagnosticKeeperSingleShot,nativeOpenPlayIds:diagnosticCollectiveActions?smallSided.activeIds:null}));
+    {closeChallengeEnabled:diagnosticKeeperSingleShot,nativeOpenPlayIds:diagnosticCollectiveActions?smallSided.activeIds:null,allowedFundamentals:nativeFundamentals,keeperSequence}));
   const keeperDive=!diagnosticCollectiveActions?(keeperDives[0]??null):null;
   const keeperSnapshots=()=>Object.freeze(keeperDives.map(controller=>controller.snapshot()));
-  const collectiveObserver=diagnosticCollectiveActions?createNativeBallControlObserver(smallSided.activeIds,stagedShoes.filter(p=>smallSided.activeIds.includes(p.id)&&p.role!=='goalkeeper').map(p=>p.id)):null;
+  const collectiveObserver=diagnosticCollectiveActions?createNativeBallControlObserver(smallSided.activeIds,stagedShoes.filter(p=>smallSided.activeIds.includes(p.id)&&p.role!=='goalkeeper').map(p=>p.id),nativeFundamentals):null;
   const duelTransition=diagnosticDirectedDribble?createDribbleTransitionObserver(smallSided.side,diagnosticDuelTackleProfile):null;
   let sharedCollisionEventsLastTick=0,sharedForceEventsLastTick=0;
   const actionExecutor=diagnosticAutonomousFixtureActionEnabled?
     createPrivatePhysicalActionExecutor({
-      ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,latestLabDynamics:diagnosticLatestLabDynamics,
+      ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,latestLabDynamics:diagnosticLatestLabDynamics,allowedFundamentals:nativeFundamentals,aerialSequence,
       physicalBodyGuardEnabled:diagnosticSmallSidedBodyGuardEnabled,
       keeperSingleShotSide:diagnosticKeeperSingleShot?smallSided.side:null,
       blockShotSide:smallSided?.blockStart?smallSided.side:null,
@@ -773,7 +801,7 @@ export function createEngine(RAPIER, input = {}, {
       nativeFixedCarryResearch:diagnosticNativeFixedCarryResearchEnabled,
       nativeFixedSprintLongStride:diagnosticNativeFixedSprintLongStrideEnabled,
       allowPhysicalCarry:diagnosticAutonomousCarryEnabled||
-       isolatedCarry||diagnosticCollectiveActions||(smallSided?.variantIndex>0&&!['pass-pair','cross-pair','shot-solo'].includes(smallSided.id)),
+       isolatedCarry||diagnosticCollectiveActions||diagnosticKeeperSingleShot||(smallSided?.variantIndex>0&&!['pass-pair','cross-pair','shot-solo'].includes(smallSided.id)),
       ...(smallSided?.id==='pass-pair'?(smallSided.interceptionStart?{interceptionPassSide:smallSided.side}:{isolatedPassSide:smallSided.side}):{}),
        ...(smallSided?.id==='cross-pair'?{isolatedCrossSide:smallSided.side}:{}),
       ...(smallSided?.id==='shot-solo'?{isolatedShotSide:smallSided.side,isolatedShotProfile:diagnosticIsolatedShotProfile,firstTimeShot:diagnosticFirstTimeShot}:{}),
@@ -816,7 +844,8 @@ export function createEngine(RAPIER, input = {}, {
   let basicRestartTick = -1;
   // Only the private full-field native session exposes its own original
   // referee ticket; an externally assembled boundary object is not authority.
-  const nativeMatchReferee=smallSided?.fullField&&diagnosticCollectiveActions?createBasicMatchRefereeB05():null;
+  const nativeMatchReferee=smallSided?.fullField&&diagnosticCollectiveActions?createBasicMatchRefereeB05({allowedFundamentals:nativeFundamentals}):null;
+  const restartMask=createNativeRestartMask({fullField:!!nativeMatchReferee,boundaryEnabled:diagnosticBasicRestartEnabled,boundaryType:diagnosticBasicRestartSource,kickoffEnabled:diagnosticB06bHalftimeTick!==null});
   let nativeRestartPending=null,nativeRestartTake=null,nativeMatchFrame=null,nativeThrowHands=null;
   let nativePlayedTicks=0,nativeHalfPlacement=null,nativeHalfTake=null,nativeAttackPolarity=1;
   let b06bOpeningKickoff=null,b06bHalftimePlacement=null,b06bKickoff=null;
@@ -988,7 +1017,13 @@ export function createEngine(RAPIER, input = {}, {
     if(smallBodyGuard)smallBodyGuard.observe(tick+1);
     const physicalBallConflict=!!(shoeBridge?.snapshot().active.length||smallBodyGuard?.snapshot().lowerLegBallContacts.length||
      smallBodyGuard?.snapshot().headBallContacts?.length||smallBodyGuard?.snapshot().aerialControlContacts?.length);
-    for(const controller of keeperDives)controller.observe(tick+1,body.linvel(),{otherBallContact:physicalBallConflict});
+    const sequenceInterrupted=keeperSequence!==null&&nativeKeeperSequenceInterrupted(keeperSequence,shoeBridge.snapshot().started,shoeBridge.snapshot().active,[...smallBodyGuard.snapshot().lowerLegBallContacts,...(smallBodyGuard.snapshot().headBallContacts??[]),...(smallBodyGuard.snapshot().aerialControlContacts??[])]);
+    // Snapshot every glove and held joint before any keeper can apply an
+    // intentional impulse or release; iteration order cannot confer authority.
+    const handEvidence=keeperDives.map(controller=>controller.contactEvidence(tick+1));
+    const postSolverVelocity=Object.freeze({...body.linvel()});
+    for(let i=0;i<keeperDives.length;i++)keeperDives[i].observe(tick+1,postSolverVelocity,{
+     otherBallContact:nativeKeeperCompetingContact(physicalBallConflict,handEvidence,i),sequenceInterrupted});
     // Exponential airborne-only decay after integration; zero rate preserves
     // the original physics-v4 path without any angular-velocity setter.
     if(diagnosticSpinDecayRatePerS>0 &&
@@ -1007,8 +1042,9 @@ export function createEngine(RAPIER, input = {}, {
     if(actionExecutor)actionExecutor.apply(tick,playerFrame,{
       duelTransition:duelTransition?.snapshot()??null,
       collectiveControl:collectiveObserver?.snapshot()??null,keeperDistribution:distribution,attackPolarity:nativeAttackPolarity,
-      ...(diagnosticNativeAerialEnabled?{aerialEvidence:smallBodyGuard.snapshot().aerial,
-       aerialConflict:smallBodyGuard.snapshot().lowerLegBallContacts.length>0||hands.some(k=>k.contact||k.catchState?.active||k.distribution?.tick===tick)}:{}),
+      ...(nativeAerialEnabled?{aerialEvidence:smallBodyGuard.snapshot().aerial,
+       aerialConflict:smallBodyGuard.snapshot().lowerLegBallContacts.length>0||hands.some(k=>k.contact||k.catchState?.active||k.distribution?.tick===tick||k.boundedRelease?.tick===tick)}:{}),
+      priorNativeBall:preStepBall,
       ...(diagnosticFirstTimeShot?{priorNativeBallVelocity:preStepBall.velocity}:{}),
       suppressOriginalAction:restarting||(diagnosticB06bNativeShotSide!==null&&(
        b06bGoalPending!==null||
@@ -1016,7 +1052,7 @@ export function createEngine(RAPIER, input = {}, {
        (diagnosticKeeperSingleShot&&keeperSingleShotTick!==null&&
         shoeBridge.snapshot().started.includes(smallSided.side+'-10')),
       suppressPhysicalBodyContact:smallBodyGuard?.snapshot()
-       .lowerLegBallContacts.length>0||(smallBodyGuard?.snapshot().headBallContacts?.length??0)>0||(smallBodyGuard?.snapshot().aerialControlContacts?.length??0)>0||keeperDives.some(controller=>controller.snapshot().contact===true||controller.snapshot().catchState?.active===true||controller.snapshot().distribution?.tick===tick)
+       .lowerLegBallContacts.length>0||(smallBodyGuard?.snapshot().headBallContacts?.length??0)>0||(smallBodyGuard?.snapshot().aerialControlContacts?.length??0)>0||keeperDives.some(controller=>controller.snapshot().contact===true||controller.snapshot().catchState?.active===true||controller.snapshot().distribution?.tick===tick||controller.snapshot().boundedRelease?.tick===tick)
     });
     if(collectiveObserver){
      const shoe=shoeBridge.snapshot(),physical=smallBodyGuard.snapshot();
@@ -1024,13 +1060,14 @@ export function createEngine(RAPIER, input = {}, {
      const handContacts=hands.filter(x=>x.contact||x.catchState?.active).map(x=>x.keeperId);
      collectiveObserver.observe({tick,players:playerFrame.players,ball:{position:body.translation(),velocity:body.linvel()},starts:shoe.started,active:shoe.active,
       bodyStarts:[...physical.lowerLegBallStarts,...(physical.headBallStarts??[]),...(physical.aerialControlStarts??[]),...handStarts],bodyActive:[...physical.lowerLegBallContacts,...(physical.headBallContacts??[]),...(physical.aerialControlContacts??[]),...handContacts],
-      ...(diagnosticNativeAerialEnabled?{headStarts:physical.headBallStarts,headActive:physical.headBallContacts,aerialControlStarts:physical.aerialControlStarts,aerialControlActive:physical.aerialControlContacts}:{}),
+      ...(nativeAerialEnabled?{headStarts:physical.headBallStarts,headActive:physical.headBallContacts,aerialControlStarts:physical.aerialControlStarts,aerialControlActive:physical.aerialControlContacts}:{}),
+      otherSurfaceContact:physical.lowerLegBallContacts.length>0||handContacts.length>0||hands.some(k=>k.distribution?.tick===tick||k.boundedRelease?.tick===tick),exclusiveShoeStart:hasExclusiveNativeShoeStart(shoe,shoe.started[0]),
       action:actionExecutor?.actionSnapshot()??null,shoulderPlans:Object.values(playerFrame.nativeShoulders??{}),torsoPairs:physical.nativeOpposingTorsoPairs,bodies:physical.bodies,beforeBallVelocity:preStepBall.velocity,afterSolverVelocity:collectiveSolverVelocity,keeperStates:hands,attackPolarity:nativeAttackPolarity});
     }
     if(duelTransition){
      const shoe=shoeBridge.snapshot(),physical=smallBodyGuard.snapshot();
      duelTransition.observe({tick,starts:shoe.started,active:shoe.active,bodyStarts:physical.lowerLegBallStarts,
-      bodyActive:physical.lowerLegBallContacts,action:actionExecutor?.actionSnapshot()??null,
+      bodyActive:physical.lowerLegBallContacts,exclusiveShoeStart:hasExclusiveNativeShoeStart(shoe,shoe.started[0]),action:actionExecutor?.actionSnapshot()??null,
       ball:{position:body.translation(),velocity:body.linvel()},players:playerFrame.players,
       shoulderPlan:playerFrame.duelShoulder??null,torsoPairs:physical.nativeOpposingTorsoPairs,bodies:physical.bodies});
     }
@@ -1047,11 +1084,16 @@ export function createEngine(RAPIER, input = {}, {
     if(restarting){
      const placement=nativeRestartPending,at=placement.spot,id=placement.takerId;
      const foot=shoeBridge.snapshot(),solver=shoeBridge.solver(),p=body.translation();
-     const exclusive=foot.tick===tick&&solver?.tick===tick&&foot.started.length===1&&foot.active.length===1&&
-      foot.started[0]===id&&foot.active[0]===id&&solver.pairs.some(pair=>pair.id===id&&pair.beganThisTick&&pair.collisionActive&&pair.manifolds.some(m=>m.geometricContacts>0));
-     const otherBody=smallBodyGuard.snapshot().lowerLegBallContacts.some(actor=>actor!==id);
+     const restartBody=smallBodyGuard.snapshot();
+     const otherBody=restartBody.lowerLegBallContacts.length>0||(restartBody.headBallContacts?.length??0)>0||(restartBody.aerialControlContacts?.length??0)>0||keeperSnapshots().some(k=>k.contact||k.catchState?.active||k.distribution?.tick===tick||k.boundedRelease?.tick===tick);
+     const exclusive=nativeGroundRestartContactReady({mask:restartMask,kind:placement.kind,tick,takerId:id,foot,solver,exclusive:hasExclusiveNativeShoeStart(foot,id),otherBody});
+     if(!nativeRestartAllowed(restartMask,placement.kind))throw new TypeError('Native restart not permitted');
      if(placement.kind==='throw-in'){
-      const take=nativeThrowHands.observe(tick,foot,smallBodyGuard.snapshot().lowerLegBallContacts);
+      // The hands are the exclusive source of a throw. Include every
+      // other active native surface, not just the lower-leg subset.
+      const competing=[...restartBody.lowerLegBallContacts,...(restartBody.headBallContacts??[]),...(restartBody.aerialControlContacts??[]),
+       ...keeperSnapshots().filter(k=>k.contact||k.catchState?.active||k.distribution?.tick===tick||k.boundedRelease?.tick===tick).map(k=>k.keeperId)];
+      const take=nativeThrowHands.observe(tick,foot,competing);
       if(take){
        nativeRestartTake=Object.freeze({...take,ball:snapshot().ball});
        nativeRestartPending=null;
@@ -1062,9 +1104,8 @@ export function createEngine(RAPIER, input = {}, {
       }
      }else if(exclusive&&!otherBody&&Math.hypot(p.x-at.x,p.y-at.y)<=0.65&&Math.abs(p.z-BALL_RADIUS)<=0.35&&
        (placement.periodRestart!=='second-half'||playerFrame.nativeHalfFormationPhase==='ready'&&nativeHalfFormationReady(playerFrame.players))){
-      const dir=attackDirection(placement.assignedTeam,nativeAttackPolarity);
-      const impulse=Object.freeze(placement.kind==='kickoff'?{x:dir*0.65,y:0,z:0.04}:
-       placement.kind==='corner'?{x:-dir*1.85,y:-Math.sign(at.y)*1.15,z:0.42}:{x:dir*2.5,y:0,z:0.30});
+      const impulse=planNativeGroundRestartImpulse({mask:restartMask,kind:placement.kind,team:placement.assignedTeam,spot:at,attackPolarity:nativeAttackPolarity});
+      if(!impulse)throw new TypeError('Native restart impulse not permitted');
       body.applyImpulse(impulse,true);
       nativeRestartTake=Object.freeze({tick,type:placement.kind,team:placement.assignedTeam,actorId:id,
        sourceEventTick:placement.sourceEventTick,impulseNs:impulse,singleOriginalRapierBall:true,
@@ -1084,12 +1125,12 @@ export function createEngine(RAPIER, input = {}, {
     const result=snapshot();
     if(nativeMatchReferee){
      nativeMatchFrame=playerFrame;
-     const raw=actionExecutor.actionSnapshot(),hands=keeperSnapshots().filter(k=>k.contactStarted===true);
+     const raw=actionExecutor.actionSnapshot(),hands=keeperSnapshots();
      nativeMatchReferee.observe({physics:result,playerFrame,foot:shoeBridge.snapshot(),
       solver:shoeBridge.solver(),action:raw?.tick===tick?raw:null,
-      keeperDive:hands.length===1?hands[0]:null,
-      ...(diagnosticNativeAerialEnabled?{aerialEvidence:smallBodyGuard.snapshot().aerial,
-       aerialConflict:smallBodyGuard.snapshot().lowerLegBallContacts.length>0||keeperSnapshots().some(k=>k.contact||k.catchState?.active||k.distribution?.tick===tick)}:{})});
+      ...nativeRefereeKeeperEvidence(hands),bodyEvidence:smallBodyGuard.snapshot(),
+      ...(nativeAerialEnabled?{aerialEvidence:smallBodyGuard.snapshot().aerial,
+       aerialConflict:smallBodyGuard.snapshot().lowerLegBallContacts.length>0||keeperSnapshots().some(k=>k.contact||k.catchState?.active||k.distribution?.tick===tick||k.boundedRelease?.tick===tick)}:{})});
      if(nativeRestartTake?.tick===tick&&nativeRestartTake.type==='throw-in')
       nativeMatchReferee.recordNativeThrowIn(nativeRestartTake);
     }
@@ -1154,7 +1195,7 @@ export function createEngine(RAPIER, input = {}, {
        !['home','away'].includes(event.restart.team)||
        !['goal','goal-line','touchline'].includes(event.kind)||
        event.crossing.edge!==event.kind||
-       !['kickoff','throw-in','corner','goal-kick'].includes(event.restart.type))
+       !nativeRestartAllowed(restartMask,event.restart.type))
       throw new TypeError('B05 needs an original exact-tick verified full-ball exit and ready restart');
     const p=body.translation(),at=event.restart.spot;
     if(!at||![at.x,at.y,at.z].every(Number.isFinite)||
@@ -1219,7 +1260,7 @@ export function createEngine(RAPIER, input = {}, {
   // Reuse the identical native kickoff approach/take path; switch the
   // orientation once at the cleared dead-ball period boundary.
   function placeNativeSecondHalf(){
-   if(disposed||diagnosticNativeHalfTicks===null||nativePlayedTicks!==diagnosticNativeHalfTicks||
+   if(disposed||!nativeRestartAllowed(restartMask,'kickoff')||diagnosticNativeHalfTicks===null||nativePlayedTicks!==diagnosticNativeHalfTicks||
       nativeRestartPending||nativeHalfPlacement||!nativeMatchFrame||
       nativeMatchReferee.snapshot().lastEvent&&!nativeMatchReferee.snapshot().restartApplied)
     throw new TypeError('Native second-half placement requires exact completed first half and no outstanding restart');
@@ -1243,7 +1284,7 @@ export function createEngine(RAPIER, input = {}, {
   function attemptB05bOriginalSetPiece(frame,ticket){
     if(disposed||!b05bSource||!b05bOutboundAction||
        b05bRestartTicket===null||ticket!==b05bRestartTicket||
-       ticket.type!==b05bSource.kind||
+       ticket.type!==b05bSource.kind||!nativeRestartAllowed(restartMask,ticket.type)||
        frame?.tick!==tick||tick<=basicRestartTick||
        !Array.isArray(frame.players)||frame.players.length!==22)
       throw new TypeError('B05b set piece requires original prepared restart ticket');
@@ -1263,12 +1304,8 @@ export function createEngine(RAPIER, input = {}, {
     if(contact.tick!==tick||solver?.tick!==tick)
       throw new TypeError('B05b set-piece requires original latest Rapier shoe step');
     const throwIn=ticket.type==='throw-in';
-    const native=contact.started.length===1&&contact.active.length===1&&
-      contact.started[0]===b05bSource.takerId&&
-      contact.active[0]===b05bSource.takerId&&
-      solver.pairs.some(pair=>pair.id===b05bSource.takerId&&
-       pair.beganThisTick&&pair.collisionActive&&
-       pair.manifolds.some(m=>m.geometricContacts>0));
+    const native=throwIn?hasExclusiveNativeShoeStart(contact,b05bSource.takerId)&&solver.pairs.some(pair=>pair.id===b05bSource.takerId&&pair.beganThisTick&&pair.collisionActive&&pair.manifolds.some(m=>m.geometricContacts>0)):
+     nativeGroundRestartContactReady({mask:restartMask,kind:ticket.type,tick,takerId:b05bSource.takerId,foot:contact,solver,exclusive:hasExclusiveNativeShoeStart(contact,b05bSource.takerId)});
     if(!throwIn&&!native)return null;
     if(throwIn&&(
       contact.started.length!==0||
@@ -1277,9 +1314,8 @@ export function createEngine(RAPIER, input = {}, {
     const d=diagnosticBasicRestartAttackSide==='home'?1:-1;
     const impulse=throwIn?
      {x:d*0.2,y:-d*1.8,z:0.55}:
-     ticket.type==='corner'?
-     {x:-d*1.85,y:-d*1.15,z:0.42}:
-     {x:-d*2.5,y:0,z:0.3};
+     planNativeGroundRestartImpulse({mask:restartMask,kind:ticket.type,team:ticket.team,spot:at});
+    if(!impulse)return null;
     if(throwIn){
      // Original ball is positioned at the approximate release height
      // only once. The human arm/hand itself is NOT simulated.
@@ -1320,7 +1356,8 @@ export function createEngine(RAPIER, input = {}, {
     const pos=body.translation();
     if(Math.hypot(pos.x,pos.y)>0.65||Math.abs(pos.z-BALL_RADIUS)>0.3)
       throw new TypeError('B06b original opening ball must be at centre');
-    const impulse=Object.freeze({x:0.65,y:0,z:0.04});
+    const impulse=planNativeGroundRestartImpulse({mask:restartMask,kind:'kickoff',team:'home',spot:{x:0,y:0,z:BALL_RADIUS}});
+    if(!impulse)return null;
     body.applyImpulse(impulse,true);
     b06bOpeningKickoff=Object.freeze({
       tick,team:'home',actorId:'home-10',
@@ -1397,7 +1434,8 @@ export function createEngine(RAPIER, input = {}, {
     const pos=body.translation();
     if(Math.hypot(pos.x,pos.y)>0.65||Math.abs(pos.z-BALL_RADIUS)>0.3)
       throw new TypeError('B06b goal kick must act on original midfield ball');
-    const impulse=Object.freeze({x:team==='home'?0.65:-0.65,y:0,z:0.04});
+    const impulse=planNativeGroundRestartImpulse({mask:restartMask,kind:'kickoff',team,spot:{x:0,y:0,z:BALL_RADIUS}});
+    if(!impulse)return null;
     body.applyImpulse(impulse,true);
     b06bGoalPausedTicks+=tick-b06bGoalPending.placement.tick;
     const take=Object.freeze({
@@ -1466,7 +1504,8 @@ export function createEngine(RAPIER, input = {}, {
     const pos=body.translation();
     if(Math.hypot(pos.x,pos.y)>0.65||Math.abs(pos.z-BALL_RADIUS)>0.3)
      throw new TypeError('B06b second-half kick requires the original centre-circle ball');
-    const impulse=Object.freeze({x:-0.65,y:0,z:0.04});
+    const impulse=planNativeGroundRestartImpulse({mask:restartMask,kind:'kickoff',team:'away',spot:{x:0,y:0,z:BALL_RADIUS}});
+    if(!impulse)return null;
     body.applyImpulse(impulse,true);
     b06bKickoff=Object.freeze({
      tick,firstHalfEndPhysicalTick:b06bHalftimePlacement.physicsTick,
@@ -1543,6 +1582,11 @@ export function createEngine(RAPIER, input = {}, {
     ...(collectiveObserver?{collectiveControlSnapshot:()=>collectiveObserver.snapshot()}:{}),
     ...(smallSided?{
       originalSmallSidedPhysicalShoeIds:()=>shoeBridge.physicalColliderIds,
+      originalSmallSidedPhysicalShoeColliderCount:()=>shoeBridge.physicalShoeColliderCount,
+      nativeContactMaterialSnapshot:()=>Object.freeze({historicalCarryPhysics,...contactMaterial,shoe:shoeBridge.contactMaterialProfile}),
+      nativeFundamentalsSnapshot:()=>nativeFundamentals,
+      nativeAerialSurfacesSnapshot:()=>aerialSurfaces,
+      nativeRestartMaskSnapshot:()=>restartMask,
       ...(smallBodyGuard?{
         smallSidedBodyGuardSnapshot:()=>smallBodyGuard.snapshot(),
         ...(diagnosticSmallSidedBodyFeedbackEnabled?{

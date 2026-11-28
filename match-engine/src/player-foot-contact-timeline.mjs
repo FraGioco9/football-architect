@@ -43,10 +43,9 @@ function validateFeet(feet){
    throw new TypeError('Finite real 22-foot positions/facing required');
  }
 }
-function projectedMotion(ball,previous,current,id){
- const index=names.indexOf(id);
- const start=footProxyTransform(previous[index]);
- const end=footProxyTransform(current[index]);
+export function nativeTimelineOnsetMotion(ball,start,end,id){
+ if(!start||!end)return Object.freeze({id,relativeSpeedMps:null,closingSpeedMps:null,separatingSpeedMps:null,tangentialSpeedMps:null,geometry:'ambiguous-native-feet'});
+ if(![start.x,start.y,end.x,end.y].every(finite))throw new TypeError('Finite native shoe trajectory required');
  const footVx=(end.x-start.x)/PLAYER_DT;
  const footVy=(end.y-start.y)/PLAYER_DT;
  const dx=ball.position.x-start.x,dy=ball.position.y-start.y;
@@ -79,7 +78,7 @@ export function createFootContactTimeline(initialFeet=initialFootPositions()){
   version:FOOT_CONTACT_TIMELINE_VERSION,tick:0,
   onsets:empty,completed:empty,ongoing:empty,simultaneous:false
  });
- function observe(events,preStepBall,feet){
+ function observe(events,preStepBall,feet,pairedTrajectories=null){
   if(!events||events.version!==FOOT_CONTACT_VERSION||
     !Number.isInteger(events.tick)||events.tick!==tick+1)
    throw new RangeError('Consecutive real 60Hz Rapier collision events required');
@@ -99,9 +98,15 @@ export function createFootContactTimeline(initialFeet=initialFootPositions()){
   }
   if(next.size!==active.size||[...next.keys()].some(id=>!active.has(id)))
    throw new RangeError('Rapier active IDs do not reconcile with start/end transitions');
-  const onsets=frozenArray(names.filter(id=>starts.has(id)).map(id=>
-   Object.freeze({id,tick:events.tick,
-    ...projectedMotion(preStepBall,previousFeet,feet,id)})));
+  const onsets=frozenArray(names.filter(id=>starts.has(id)).map(id=>{
+   const pair=events.nativePairedFeet?.[id],trajectory=pairedTrajectories?.[id];
+   const index=names.indexOf(id);
+   const foot=pair?.exclusivePhysicalStart===true&&pair.started.length===1&&pair.active.length===1&&pair.started[0]===pair.active[0]?pair.started[0]:null;
+   const motion=events.nativePairedFeet!==undefined?
+    nativeTimelineOnsetMotion(preStepBall,trajectory?.[foot]?.before,trajectory?.[foot]?.after,id):
+    nativeTimelineOnsetMotion(preStepBall,footProxyTransform(previousFeet[index]),footProxyTransform(feet[index]),id);
+   return Object.freeze({id,tick:events.tick,...motion,...(events.nativePairedFeet!==undefined?{contactFoot:foot}: {})});
+  }));
   const completed=frozenArray(names.filter(id=>ends.has(id)).map(id=>
    duration(id,(open.get(id)??{startTick:events.tick}).startTick,
     events.tick-1,events.tick)));

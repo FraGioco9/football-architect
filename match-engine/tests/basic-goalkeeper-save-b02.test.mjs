@@ -13,8 +13,9 @@ import {eligibleLiveKeeperSave,selectUniformAutonomousContactAction,chooseKeeper
 import {initializeRapier,FIXED_DT} from '../src/core.mjs';
 import {advanceGoalkeeperBallOrientation} from '../src/individual-kinematics.mjs';
 import {keeperDuelReboundTarget,keeperDuelCloseDownTarget} from '../src/small-sided-lab-scenarios.mjs';
-import {planNativeKeeperDive,planNativeKeeperChallenge,createNativeKeeperDive,eligibleKeeperGrip,createNativeKeeperGrip,planNativeHighHandAction,planNativeKeeperDistribution,NATIVE_KEEPER_DISTRIBUTION_DELAY_TICKS} from '../src/small-sided-native-body-guard.mjs';
+import {planNativeKeeperDive,planNativeKeeperChallenge,createNativeKeeperDive,eligibleKeeperGrip,createNativeKeeperGrip,planNativeHighHandAction,planNativeKeeperDistribution,NATIVE_KEEPER_DISTRIBUTION_DELAY_TICKS,NATIVE_KEEPER_MAX_HOLD_TICKS,nativeKeeperHoldReleaseDue} from '../src/small-sided-native-body-guard.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
+import {nativeKeeperCompetingContact,nativeKeeperExclusiveGripStart} from '../src/small-sided-native-body-guard.mjs';
 
 function candidate(side,players,ball,active=[side+'-1'],started=active){
  return selectUniformAutonomousContactAction({
@@ -391,13 +392,13 @@ test('ACTIONS-B02 real HOME/AWAY original Rapier keeper shoe START, parry, dive 
 
  test('UME-05G confirmed native grip releases one real distribution, mirrored',{timeout:120000},async()=>{
   const R=await initializeRapier(rapier);
-  for(const team of ['home','away']){
+  for(const team of ['home','away'])for(const kind of ['pass','clearance']){
    const dir=team==='home'?1:-1,world=new R.World({x:0,y:0,z:0});world.timestep=FIXED_DT;
    const hand=world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(-dir*48,0,1));
    const glove=world.createCollider(R.ColliderDesc.ball(0.21).setRestitution(0),hand);
    const ball=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(-dir*47.5,0,1).setLinvel(-dir*3,0,0).setCcdEnabled(true));
    const collider=world.createCollider(R.ColliderDesc.ball(0.11).setMass(0.43).setRestitution(0),ball);
-   const grip=createNativeKeeperGrip(R,world,hand,ball,team);
+   const grip=createNativeKeeperGrip(R,world,hand,ball,team,['save',kind]);
    const keeper={id:team+'-1',team,role:'goalkeeper',x:-dir*48,y:0};
    const mate={id:team+'-4',team,role:'defender',x:-dir*35,y:3};
    const actors=[keeper,mate];
@@ -414,7 +415,9 @@ test('ACTIONS-B02 real HOME/AWAY original Rapier keeper shoe START, parry, dive 
      released=grip.distribute(tick,keeper,actors);
      if(!released){if(confirmed!==null)assert.ok(tick-confirmed<NATIVE_KEEPER_DISTRIBUTION_DELAY_TICKS);continue;}
      assert.equal(tick,confirmed+NATIVE_KEEPER_DISTRIBUTION_DELAY_TICKS);
-     assert.equal(released.recipientId,mate.id);assert.equal(released.kind,'pass');
+     assert.equal(released.recipientId,kind==='pass'?mate.id:null);assert.equal(released.kind,kind);
+     assert.equal(released.nativeGripReleased,true);assert.equal(released.actualPhysicsImpulseApplied,true);
+     assert.equal(released.confirmedGripTick,confirmed);assert.equal(released.appliedByRapier,true);
      assert.deepEqual({...ball.translation()},origin);assert.ok(dir*ball.linvel().x>4);
      assert.ok(Math.hypot(...Object.values(released.impulseNs))<=6+1e-9);
      assert.equal(released.officialPossession,false);assert.equal(grip.active(),false);
@@ -577,5 +580,34 @@ test('ACTIONS-B02 real HOME/AWAY original Rapier keeper shoe START, parry, dive 
    assert.equal(carry.action,'carry');assert.ok(dir*carry.dx>0);assert.ok(carry.dy<0);assert.ok(carry.magnitude<=0.42);
    const near=chooseKeeperDuelAttackIntent({x:dir*48,y:0},{x:0,y:0},side,{...keeper,x:dir*49});
    assert.equal(near.action,'shot');
+  }
+ });
+
+test('ME-01-QA U-01F5: native grip hold has a finite fallback without unauthorized distribution',()=>{
+ for(const mask of [[],['save'],['save','pass'],['save','clearance'],null])for(const enabled of [true,false]){
+  const canDistribute=enabled&&(mask===null||mask.includes('pass')||mask.includes('clearance'));
+  const limit=canDistribute?NATIVE_KEEPER_MAX_HOLD_TICKS:NATIVE_KEEPER_DISTRIBUTION_DELAY_TICKS;
+  for(const confirmedTick of [1,7,120]){
+   const input={confirmedTick,distributionEnabled:enabled,allowedFundamentals:mask};
+   assert.equal(nativeKeeperHoldReleaseDue({...input,tick:confirmedTick-1}),false);
+   assert.equal(nativeKeeperHoldReleaseDue({...input,tick:confirmedTick+limit-1}),false);
+   assert.equal(nativeKeeperHoldReleaseDue({...input,tick:confirmedTick+limit}),true);
+   assert.equal(nativeKeeperHoldReleaseDue({...input,tick:confirmedTick+limit+1}),true);
+  }
+ }
+ assert.equal(nativeKeeperHoldReleaseDue({tick:300,confirmedTick:null,distributionEnabled:true}),false);
+ assert.equal(nativeKeeperHoldReleaseDue({tick:300,confirmedTick:1,distributionEnabled:'true'}),false);
+});
+
+ test('ME-01-QA U-02d4: competing keeper contacts and holds never confer an exclusive grip START',()=>{
+  for(const outfield of [false,true])for(const aHit of [false,true])for(const bHit of [false,true])for(const aHold of [false,true])for(const bHold of [false,true]){
+   const samples=[{hit:aHit,holding:aHold},{hit:bHit,holding:bHold}];
+   assert.equal(nativeKeeperCompetingContact(outfield,samples,0),outfield||bHit||bHold);
+   assert.equal(nativeKeeperCompetingContact(outfield,samples,1),outfield||aHit||aHold);
+   assert.equal(nativeKeeperCompetingContact(outfield,[samples[1],samples[0]],1),outfield||bHit||bHold);
+   for(const prior of [false,true]){
+    assert.equal(nativeKeeperExclusiveGripStart(aHit,prior,nativeKeeperCompetingContact(outfield,samples,0)),aHit&&!prior&&!outfield&&!bHit&&!bHold);
+    assert.equal(nativeKeeperExclusiveGripStart(bHit,prior,nativeKeeperCompetingContact(outfield,samples,1)),bHit&&!prior&&!outfield&&!aHit&&!aHold);
+   }
   }
  });

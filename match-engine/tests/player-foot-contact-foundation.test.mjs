@@ -5,15 +5,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {initializeRapier,createEngine,canonicalSnapshot,
- BALL_RADIUS,BALL_MASS_KG,BALL_INERTIA_KG_M2,GRAVITY}
+ BALL_RADIUS,BALL_MASS_KG,BALL_INERTIA_KG_M2,GRAVITY,nativeBallGroundContactProfile}
  from '../src/core.mjs';
-import {INITIAL_PLAYERS,PLAYER_DT,createPlayerMovement}
+import {INITIAL_PLAYERS,PLAYER_DT,PLAYER_VERSION,createPlayerMovement}
  from '../src/player-movement.mjs';
 import {FOOT_CONTACT_VERSION,FOOT_CONTACT_HALF_LENGTH_M,
  FOOT_CONTACT_HALF_WIDTH_M,FOOT_CONTACT_HALF_HEIGHT_M,
  FOOT_CONTACT_ROUNDING_M,FOOT_CONTACT_FRICTION,
  FOOT_CONTACT_RESTITUTION,initialFootPositions,footProxyTransform,
  validateFootContactFrame} from '../src/player-foot-contact.mjs';
+import {createControlledActionLab} from '../src/action-labs.mjs';
+import {createPrivateRapierFootContactBridge,usesNativePairedShoeBridge,hasExclusiveNativeShoeStart,soloCarryTwoFootPositions,nativeSprintSupportTargets,nativeNeutralShoePositions,nativeLowDeliveryShoeTarget,planNativeFirstTimeFootRecovery,nativeFirstTimeRecoveryTarget,nativeShoeContactProfile,nativePairedCarryReadout} from '../src/rapier-foot-contact-bridge.mjs';
 import {createFootContactTimeline,FOOT_CONTACT_TIMELINE_VERSION}
  from '../src/player-foot-contact-timeline.mjs';
 import {summarizeFootSolverEvidence,FOOT_SOLVER_EVIDENCE_VERSION}
@@ -222,5 +224,231 @@ test('opt-in production core reuses ONE genuine Rapier world for shoe events, de
    withShoes.dispose();
    replay.dispose();
   }
+ }
+});
+
+test('ME-01-QA U-01E3: paired bridge eligibility and physical foot authorization',()=>{
+ for(const team of ['home','away']){
+  const id=team+'-10',ids=[id],pair={actorId:id,independentColliders:2,exclusivePhysicalStart:true,started:['right'],active:['right']};
+  assert.equal(usesNativePairedShoeBridge({activePlayerIds:ids}),true);
+  assert.equal(usesNativePairedShoeBridge({activePlayerIds:ids,legacyGroundCarry:true}),false);
+  assert.equal(usesNativePairedShoeBridge({activePlayerIds:ids,soloCarryAdapter:true}),true);
+  assert.equal(usesNativePairedShoeBridge({activePlayerIds:ids,firstTimeShot:true}),true);
+  assert.equal(usesNativePairedShoeBridge({activePlayerIds:[]}),false);
+  assert.equal(usesNativePairedShoeBridge({}),false);
+  const c={started:ids,active:ids,nativePairedFeet:{[id]:pair}};
+  assert.equal(hasExclusiveNativeShoeStart(c,id),true);
+  for(const invalid of [{actorId:'other'},{independentColliders:1},{started:['other'],active:['other']},{started:null},{active:[]},{exclusivePhysicalStart:false}]){
+   assert.equal(hasExclusiveNativeShoeStart({...c,nativePairedFeet:{[id]:{...pair,...invalid}}},id),false);
+  }
+  assert.equal(hasExclusiveNativeShoeStart({...c,nativePairedFeet:null},id),false);
+ }
+});
+
+test('ME-01-QA U-01E3: selected native actors have exactly two physical shoe colliders each', {timeout:30000},async()=>{
+ const R=await initializeRapier(rapier);
+ for(const team of ['home','away']){
+  for(const count of [1,2,7,22]){
+   const active= count===22?INITIAL_PLAYERS.map(p=>p.id):INITIAL_PLAYERS.filter(p=>p.team===team).slice(0,count).map(p=>p.id);
+   const world=new R.World(GRAVITY);
+   let bridge;
+   try{
+    const body=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(0,0,4));
+    const ball=world.createCollider(R.ColliderDesc.ball(BALL_RADIUS),body);
+    bridge=createPrivateRapierFootContactBridge(R,world,ball,INITIAL_PLAYERS,{activePlayerIds:active,nativeCarryStride:true,isolatedPhysicalBodies:count===22,fullFieldNative:count===22});
+    assert.deepEqual(bridge.physicalColliderIds,INITIAL_PLAYERS.filter(p=>active.includes(p.id)).map(p=>p.id));
+    assert.equal(bridge.physicalShoeColliderCount,2*count);
+    assert.equal(world.colliders.len(),2*count+1);
+   }finally{bridge?.dispose();world.free();}
+  }
+ }
+});
+
+test('ME-01-QA U-01E4: first-time recovery follows only the authenticated physical striking foot',()=>{
+ for(const team of ['home','away'])for(const foot of ['left','right'])for(const direction of [-1,1]){
+  const actorId=team+'-10',pose={x:team==='home'?30:-30,y:direction*.1,z:.09},ballPosition={x:pose.x,y:0,z:.11};
+  const pair={actorId,independentColliders:2,exclusivePhysicalStart:true,started:[foot],active:[foot],exclusiveFootPosition:pose};
+  const contact={started:[actorId],active:[actorId],nativePairedFeet:{[actorId]:pair}};
+  const plan=planNativeFirstTimeFootRecovery({contact,actorId,ballPosition});
+  assert.deepEqual(plan,{foot,direction});
+  assert.equal(planNativeFirstTimeFootRecovery({contact:{...contact,nativePairedFeet:{[actorId]:{...pair,active:['left','right']}}},actorId,ballPosition}),null);
+  assert.equal(planNativeFirstTimeFootRecovery({contact:{...contact,nativePairedFeet:{[actorId]:{...pair,exclusiveFootPosition:null}}},actorId,ballPosition}),null);
+  let prev=pose;
+  for(let age=1;age<=6;age++){
+   const target=nativeFirstTimeRecoveryTarget(pose,foot,plan,age);
+   assert.equal(target.x,pose.x);assert.equal(target.z,pose.z);
+   assert.ok(Math.abs(target.y-prev.y)<=.100000001);
+   assert.equal(nativeFirstTimeRecoveryTarget(pose,foot==='left'?'right':'left',plan,age),pose);
+   prev=target;
+  }
+  assert.deepEqual(prev,pose);
+  assert.equal(nativeFirstTimeRecoveryTarget(pose,foot,plan,7),pose);
+ }
+});
+
+test('ME-01-QA U-01E5a: common native material with explicit archived carry exception',()=>{
+ const normal=nativeBallGroundContactProfile(),archived=nativeBallGroundContactProfile(true);
+ assert.deepEqual(normal,{groundRestitution:.62,ballRestitution:.62,groundFriction:.65,ballFriction:.45});
+ assert.deepEqual(archived,{...normal,groundRestitution:0,ballRestitution:0});
+ assert.throws(()=>nativeBallGroundContactProfile('carry-solo'),/Boolean/);
+ const standard=nativeShoeContactProfile();
+ assert.deepEqual(nativeShoeContactProfile({researchScale:true}),standard);
+ const old=nativeShoeContactProfile({legacyGround:true});
+ assert.equal(old.restitution,0);assert.equal(old.halfHeightM,.015);
+ for(const widthScale of [.9,1,1.1])for(const lengthScale of [.9,1,1.05,1.075,1.1]){
+  const scaled=nativeShoeContactProfile({researchScale:true,widthScale,lengthScale});
+  assert.deepEqual(scaled,{...standard,halfWidthM:standard.halfWidthM*widthScale,halfLengthM:standard.halfLengthM*lengthScale});
+ }
+ assert.throws(()=>nativeShoeContactProfile({widthScale:1.1}),/geometry/);
+});
+
+test('ME-01-QA U-01E5b: current isolated duels use paired shoes; archive is explicit', {timeout:30000},async()=>{
+ const R=await initializeRapier(rapier);
+ for(const shotSide of ['home','away'])for(const directedDribble of [false,true])for(const historicalCarryPhysics of [false,true]){
+  const lab=createControlledActionLab(R,'dribble-1v1',{shotSide,directedDribble,bodyGuardEnabled:directedDribble,historicalCarryPhysics});
+  try{
+   const first=lab.snapshot(),next=lab.step();
+   for(const frame of [first,next]){
+    assert.equal(frame.physicalShoeColliderCount,historicalCarryPhysics?2:4);
+    assert.equal(frame.nativeContactMaterial.historicalCarryPhysics,historicalCarryPhysics);
+    assert.equal(frame.nativeContactMaterial.ballRestitution,historicalCarryPhysics?0:.62);
+    assert.equal(frame.nativeContactMaterial.shoe.restitution,historicalCarryPhysics?0:.12);
+    assert.equal(frame.smallSidedParticipants.length,2);
+   }
+  }finally{lab.dispose();}
+ }
+});
+
+test('ME-01-QA U-01F7: paired carry diagnostic is a read-only projection of actual foot evidence',()=>{
+ for(const team of ['home','away'])for(const foot of ['left','right']){
+  const id=team+'-10',ids=[id];
+  const pair=Object.freeze({actorId:id,independentColliders:2,started:[foot],active:[foot],ended:[],exclusivePhysicalStart:true});
+  const readout=nativePairedCarryReadout(pair,{actorId:id,independentColliders:2,nativeObservedGaitFrequencyHz:2,exclusivePhysicalStart:false});
+  assert.equal(readout.started,pair.started);assert.equal(readout.active,pair.active);
+  assert.equal(readout.exclusivePhysicalStart,true);
+  assert.equal(readout.source,'rapier-physical-collider-events');assert.ok(Object.isFrozen(readout));
+  assert.equal(hasExclusiveNativeShoeStart({started:ids,active:ids,nativePairedFeet:{[id]:pair},nativeSoloFeet:readout},id),true);
+  assert.equal(hasExclusiveNativeShoeStart({started:ids,active:ids,nativePairedFeet:{[id]:{...pair,active:['left','right']}},nativeSoloFeet:readout},id),false);
+  assert.throws(()=>nativePairedCarryReadout(null,{actorId:id}),/Actual paired/);
+ }
+});
+
+import {nativeActionCooldownTicks} from '../src/player-ball-uniform-autonomous-action.mjs';
+import {nativeTimelineOnsetMotion} from '../src/player-foot-contact-timeline.mjs';
+
+test('ME-01-QA U-01F7b: common paired cooldown and actual foot trajectory evidence',()=>{
+ for(const situationId of ['carry-solo','dribble-1v1',null]){
+  const isolatedDribbleContext=situationId?{situationId}:null;
+  assert.equal(nativeActionCooldownTicks({pairedPhysicalSource:true,isolatedDribbleContext}),12);
+  assert.equal(nativeActionCooldownTicks({pairedPhysicalSource:false,isolatedDribbleContext}),situationId?4:12);
+ }
+ for(const team of ['home','away']){
+  const dir=team==='home'?1:-1,id=team+'-10';
+  const ball={position:{x:dir,y:0},velocity:{x:0,y:0}};
+  const before={x:0,y:0},after={x:dir*.1,y:0};
+  const approaching=nativeTimelineOnsetMotion(ball,before,after,id);
+  const separating=nativeTimelineOnsetMotion(ball,before,{x:-dir*.1,y:0},id);
+  assert.ok(Math.abs(approaching.closingSpeedMps-6)<1e-9);
+  assert.equal(approaching.separatingSpeedMps,0);
+  assert.ok(Math.abs(separating.separatingSpeedMps-6)<1e-9);
+  assert.equal(separating.closingSpeedMps,0);
+  assert.equal(nativeTimelineOnsetMotion(ball,null,after,id).relativeSpeedMps,null);
+  assert.equal(nativeTimelineOnsetMotion(ball,before,null,id).geometry,'ambiguous-native-feet');
+ }
+});
+
+// Real paired contact liveness at the original elementary exercise start
+// gaps. Reflection changes the leading anatomical foot, never the gate.
+test('ME-01-QA U-03b: shared neutral stance produces exclusive real mirrored shoe START',{timeout:30000},async()=>{
+ const R=await initializeRapier(rapier);
+ for(const team of ['home','away'])for(const gap of [.28,.30,.35]){
+  const dir=team==='home'?1:-1,id=team+'-10';
+  const actor=INITIAL_PLAYERS.find(p=>p.id===id);
+  const neutral=nativeNeutralShoePositions(actor);
+  assert.equal(neutral.leadFoot,dir===1?'right':'left');
+  assert.deepEqual(footProxyTransform(neutral[neutral.leadFoot]),footProxyTransform(actor));
+  const support=footProxyTransform(neutral[neutral.leadFoot==='left'?'right':'left']);
+  const origin={x:actor.x+dir*gap,y:actor.y,z:BALL_RADIUS};
+  assert.ok(Math.hypot(origin.x-support.x,origin.y-support.y)>BALL_RADIUS+Math.hypot(FOOT_CONTACT_HALF_LENGTH_M,FOOT_CONTACT_HALF_WIDTH_M)+FOOT_CONTACT_ROUNDING_M);
+  const world=new R.World({x:0,y:0,z:0});world.timestep=PLAYER_DT;
+  let bridge;
+  try{
+   const body=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(origin.x,origin.y,origin.z).setCcdEnabled(true));
+   const collider=world.createCollider(R.ColliderDesc.ball(BALL_RADIUS).setMass(BALL_MASS_KG),body);
+   bridge=createPrivateRapierFootContactBridge(R,world,collider,INITIAL_PLAYERS,{activePlayerIds:[id],nativeCarryStride:true,isolatedPhysicalBodies:true});
+   const sample=()=>({position:{...body.translation()},velocity:{...body.linvel()}});
+   const prior=sample();
+   bridge.prepare({version:PLAYER_VERSION,tick:1,timeS:PLAYER_DT,players:INITIAL_PLAYERS},1,prior);
+   world.step(bridge.eventQueue);
+   const {collision,timeline,solver}=bridge.observe(1,prior,sample());
+   assert.equal(bridge.physicalShoeColliderCount,2);
+   assert.deepEqual(collision.started,[id]);assert.deepEqual(collision.active,[id]);
+   assert.equal(hasExclusiveNativeShoeStart(collision,id),true);
+   assert.deepEqual(collision.nativePairedFeet[id].started,[neutral.leadFoot]);
+   assert.deepEqual(collision.nativePairedFeet[id].active,[neutral.leadFoot]);
+   assert.equal(timeline.onsets[0].contactFoot,neutral.leadFoot);
+   assert.ok(solver.pairs.some(p=>p.id===id&&p.beganThisTick&&p.manifolds.some(m=>m.solverContacts>0)));
+  }finally{bridge?.dispose();world.free();}
+ }
+});
+
+test('ME-01-QA U-03c: first-time paired recovery chooses side of actual outgoing trajectory',()=>{
+ for(const dir of [1,-1])for(const lateral of [1,-1]){
+  const id=dir===1?'home-10':'away-10',foot=dir===1?'right':'left';
+  const contact={started:[id],active:[id],nativePairedFeet:{[id]:{actorId:id,independentColliders:2,exclusivePhysicalStart:true,started:[foot],active:[foot],exclusiveFootPosition:{x:dir*.20,y:lateral*.02,z:.09}}}};
+  const ballPosition={x:0,y:0,z:.11},ballVelocity={x:dir*20,y:lateral*8,z:0};
+  const legacy=planNativeFirstTimeFootRecovery({contact,actorId:id,ballPosition});
+  const plan=planNativeFirstTimeFootRecovery({contact,actorId:id,ballPosition,ballVelocity});
+  assert.equal(legacy.direction,lateral);assert.equal(plan.direction,-lateral);assert.equal(plan.foot,foot);
+  let prev={x:0,y:0};
+  for(let age=1;age<=6;age++){
+   const next=nativeFirstTimeRecoveryTarget({x:0,y:0},foot,plan,age);
+   assert.ok(Math.hypot(next.x-prev.x,next.y-prev.y)<=.100000001);
+   assert.equal(nativeFirstTimeRecoveryTarget({x:0,y:0},foot==='left'?'right':'left',plan,age).y,0);
+   prev=next;
+  }
+  assert.deepEqual(prev,{x:0,y:0});
+  assert.equal(planNativeFirstTimeFootRecovery({contact,actorId:id,ballPosition,ballVelocity:{x:NaN,y:0}}),null);
+ }
+});
+
+test('ME-01-QA U-04b: neutral receiving shoe follows bounded actual low descending delivery',()=>{
+ for(const dir of [1,-1])for(const lateral of [1,-1]){
+  const actor={x:dir*40,y:4,facingRad:dir===1?0:Math.PI};
+  const stance=nativeNeutralShoePositions(actor),pose=stance[stance.leadFoot];
+  const velocity={x:dir*8,y:lateral*14,z:-5};
+  const ball={position:{x:actor.x-dir*.3,y:actor.y-lateral*.5,z:.5},velocity};
+  const target=nativeLowDeliveryShoeTarget(pose,actor,ball);
+  assert.ok(Math.abs(Math.hypot(target.x-pose.x,target.y-pose.y)-.06)<1e-10);
+  assert.ok((target.x-pose.x)*velocity.x+(target.y-pose.y)*velocity.y>0);
+  assert.equal(target.facingRad,pose.facingRad);
+  for(const patch of [{position:{...ball.position,z:.11}},{position:{...ball.position,z:1.35}},{velocity:{...velocity,z:2}},{velocity:{x:.1,y:.1,z:-1}},{position:{...ball.position,y:actor.y+3}}])
+   assert.equal(nativeLowDeliveryShoeTarget(pose,actor,{...ball,...patch}),pose);
+ }
+});
+
+test('ME-01-QA U-04c3: shared Sprint support proposal preserves active shoe and mirrored geometry',()=>{
+ const profile=nativeShoeContactProfile();
+ for(const facingRad of [0,Math.PI,Math.PI/2,-Math.PI/2,.4,-2.4])for(const track of [.075,.08,.10]){
+  const c=Math.cos(facingRad),s=Math.sin(facingRad),p={x:1,y:2,facingRad};
+  const at=(forward,lateral)=>({...p,x:p.x+forward*c-lateral*s,y:p.y+forward*s+lateral*c});
+  const stance={left:at(0,track),right:at(0,-track)};
+  const ball={...at(.30,0),z:BALL_RADIUS};
+  const result=nativeSprintSupportTargets(stance,p,ball,[],profile,BALL_RADIUS);
+  const moved=['left','right'].filter(f=>result[f]!==stance[f]);
+  assert.equal(moved.length,1);
+  assert.ok(Math.abs((result[moved[0]].x-stance[moved[0]].x)*c+(result[moved[0]].y-stance[moved[0]].y)*s+.20)<1e-9);
+  for(const active of ['left','right']){
+   const support=active==='left'?'right':'left';
+   const single=nativeSprintSupportTargets(stance,p,ball,[active],profile,BALL_RADIUS);
+   assert.equal(single[active],stance[active]);
+   assert.notEqual(single[support],stance[support]);
+  }
+  const both=nativeSprintSupportTargets(stance,p,ball,['left','right'],profile,BALL_RADIUS);
+  assert.notEqual(both.left,stance.left);assert.notEqual(both.right,stance.right);
+  for(const far of [{...at(1,0),z:BALL_RADIUS},{...at(.30,0),z:1},{...at(-.10,0),z:BALL_RADIUS}]){
+   assert.equal(nativeSprintSupportTargets(stance,p,far,[],profile,BALL_RADIUS),stance);
+  }
+  assert.throws(()=>nativeSprintSupportTargets(stance,p,ball,['left','left'],profile,BALL_RADIUS),TypeError);
  }
 });
