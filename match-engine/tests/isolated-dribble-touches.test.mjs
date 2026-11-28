@@ -5,7 +5,7 @@ import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {INITIAL_PLAYERS} from '../src/player-movement.mjs';
 import {smallSidedSetup} from '../src/small-sided-lab-scenarios.mjs';
-import {chooseIsolatedDribbleTouch} from '../src/isolated-dribble-touches.mjs';
+import {planLooseDuelApproaches,observeDuelBallControl,chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver,planDribbleDefender,chooseDribbleDefensiveTouch,createDribbleTransitionObserver,chooseDribbleRecoveryTouch,planDribbleTransitionTarget,planDribbleContactRelease,dribbleReleaseApproach,chooseSharedDuelTouch,resolveDuelActors,planDefensiveBallRelease,planDuelRecoveryApproach,routeDuelAroundOpponent,planDuelPostContactAlignment,observeEffectiveDuelIntervention,SLIDING_TACKLE_MAX_IMPULSE_NS,SLIDING_TACKLE_TARGET_SPEED_MPS,STANDING_TACKLE_TARGET_SPEED_MPS,isDuelGettingUp,SLIDING_GET_UP_TACKLER_TICKS,SLIDING_GET_UP_RIVAL_TICKS,planDuelShoulderApproach,observeNativeShoulderChallenge,planShoulderBalanceRecovery,isShoulderCollecting,SHOULDER_DISPLACE_TICKS,SHOULDER_COLLECTION_TICKS,planDuelInterception,chooseDuelInterceptionTouch,isSlideCollecting} from '../src/isolated-dribble-touches.mjs';
 import {advanceD01LiveShoeGait,soloCarryTwoFootPositions}
  from '../src/rapier-foot-contact-bridge.mjs';
 import {advanceSoloCarryPhase,soloCarryPhaseConfiguration}
@@ -583,3 +583,716 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
  assert.equal(open.realContactsOnly,true);
  assert.equal(open.physicsImposed,false);
 });
+
+ test('D-02 directed evasion uses opposite free side and stable mirrored intent',()=>{
+  for(const attackingSide of ['home','away']){
+   const dir=attackingSide==='home'?1:-1,team=attackingSide==='home'?'away':'home';
+   const source={attackingSide,variantIndex:2,tick:1,ballPosition:{x:dir*30,y:0},
+    ballVelocity:{x:dir*1,y:0},defender:{team,x:dir*32,y:0.5}};
+   const a=chooseDirectedDribbleTouch(source);
+   assert.ok(a.desiredVelocity.y<0&&a.desiredVelocity.x*dir>0);
+   assert.ok(a.magnitudeNs<=0.30);
+   assert.deepEqual(a.desiredVelocity,chooseDirectedDribbleTouch({...source,tick:99}).desiredVelocity);
+   assert.ok(chooseDirectedDribbleTouch({...source,defender:{...source.defender,y:-0.5}}).desiredVelocity.y>0);
+   const passed=chooseDirectedDribbleTouch({...source,defender:{...source.defender,x:dir*28}});
+   assert.equal(passed.bypassSide,0);assert.equal(passed.desiredVelocity.y,0);
+   const target=directedDribbleApproachTarget({x:dir*29.3,y:0},source.ballPosition,{x:dir*2,y:1},attackingSide);
+   assert.ok(Number.isFinite(target.x)&&Number.isFinite(target.y));
+  }
+ });
+ test('D-02 active 1v1 uses genuine directed ground touches in mirrored variants',{timeout:120000},async()=>{
+  const R=await initializeRapier(rapier);
+  for(const side of ['home','away']){
+   let touches=0,evasive=0;
+   for(const variantIndex of [0,2,5,11,19,26]){
+    const scene=createControlledActionLab(R,'dribble-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,directedDribble:true});
+    try{
+     for(let n=0;n<420;n++){
+      const f=scene.step(),a=f.action;
+      if(a?.action==='carry'&&a.playerId===side+'-10'){
+       const d=a.decisionContext?.isolatedDribbleTouch;
+       assert.equal(d?.version,'me-628-directed-dribble-v1');
+       assert.ok(a.appliedByRapier&&a.actualPhysicsImpulseApplied&&f.starts.includes(side+'-10'));
+       assert.equal(a.impulseNs.z,0);assert.ok(Math.hypot(a.impulseNs.x,a.impulseNs.y)<=0.30+1e-8);
+       touches++;if(d.bypassSide!==0)evasive++;
+      }
+      if(f.refereeEvidence?.lastEvent)break;
+     }
+    }finally{scene.dispose();}
+   }
+   process.stdout.write('ME_628_D02_DIRECTED '+JSON.stringify({side,touches,evasive})+'\n');
+   assert.ok(touches>0&&evasive>0,'active 1v1 must exercise physical evasion on both sides');
+  }
+ });
+
+ test('D-03 mirrored close pressure shields the ball without claiming possession',()=>{
+  for(const side of ['home','away']){
+   const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+   const b={x:dir*30,y:0},v={x:dir*0.4,y:0};
+   const attacker={id:side+'-10',team:side,x:dir*29.6,y:0};
+   const defender={id:other+'-2',team:other,x:dir*28.7,y:0.1};
+   const shield=planDribbleShield(attacker,defender,b,v,side);
+   assert.ok(shield);assert.ok(dir*shield.target.x<dir*b.x);
+   assert.ok(observeDribbleShield(attacker,defender,b));
+   assert.equal(planDribbleShield(attacker,{...defender,x:dir*33},b,v,side),null);
+   assert.equal(planDribbleShield({...attacker,x:dir*27},defender,b,v,side),null);
+   const touch=chooseDirectedDribbleTouch({attackingSide:side,variantIndex:0,tick:1,attacker,defender,ballPosition:b,ballVelocity:v});
+   assert.equal(touch.shieldingIntent,true);assert.ok(touch.magnitudeNs<=0.18);
+   const w=createDribbleShieldObserver(side);
+   const sample=(tick,starts=[],bodyStarts=[],action=null)=>w.observe({tick,players:[attacker,defender],ball:{position:b},starts,bodyStarts,action});
+   assert.equal(sample(1).shielding,true);
+   assert.equal(sample(2,[attacker.id],[],{tick:2,playerId:attacker.id,action:'carry',appliedByRapier:true,actualPhysicsImpulseApplied:true}).retained,true);
+   sample(3);sample(4,[],[defender.id]);
+   assert.equal(sample(5,[attacker.id],[],{tick:5,playerId:attacker.id,action:'carry',appliedByRapier:true,actualPhysicsImpulseApplied:true}).retained,false);
+   assert.equal(sample(6).officialPossession,false);
+  }
+ });
+
+ test('D-04 defender contains from goal side, presses loose ball and recovers when bypassed',()=>{
+  for(const side of ['home','away']){
+   const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+   const ballPosition={x:dir*30,y:2},ballVelocity={x:dir*1,y:0.4};
+   const attacker={id:side+'-10',x:dir*29.6,y:2};
+   const defender={id:other+'-2',x:dir*32,y:2.2};
+   const source={attackingSide:side,attacker,defender,ballPosition,ballVelocity};
+   const contain=planDribbleDefender(source);
+   assert.equal(contain.mode,'contain');assert.ok(dir*(contain.target.x-ballPosition.x)>0);
+   const press=planDribbleDefender({...source,attacker:{...attacker,x:dir*27}});
+   assert.equal(press.mode,'press');assert.ok(dir*press.target.x<dir*contain.target.x);
+   const recover=planDribbleDefender({...source,defender:{...defender,x:dir*28}});
+   assert.equal(recover.mode,'recover');assert.ok(dir*recover.target.x>dir*ballPosition.x);
+   assert.equal(recover.officialPossession,false);
+  }
+ });
+ test('D-04 live guarded defender pursues physical ball while canonical separation stays valid',{timeout:120000},async()=>{
+  const R=await initializeRapier(rapier);
+  for(const side of ['home','away']){
+   let moved=0;const modes=new Set();let pressure=0;
+   for(const variantIndex of [0,2,5,11,19,26]){
+    const scene=createControlledActionLab(R,'dribble-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,directedDribble:true});
+    const id=(side==='home'?'away':'home')+'-2';
+    try{
+     let prior=scene.snapshot().observedMovementPlayers.find(p=>p.id===id);
+     for(let n=0;n<420;n++){
+      const f=scene.step(),p=f.observedMovementPlayers.find(p=>p.id===id),audit=f.defensivePositioning;
+      assert.ok(audit&&['contain','press','recover'].includes(audit.mode));
+      assert.equal(audit.officialPossession,false);
+      assert.ok(f.nativeDribbleAudit.minimumCanonicalSeparationM>=0.98-1e-5);
+      modes.add(audit.mode);if(audit.defenderGapM<2)pressure++;
+      moved+=Math.hypot(p.x-prior.x,p.y-prior.y);prior=p;
+      if(f.refereeEvidence?.lastEvent)break;
+     }
+    }finally{scene.dispose();}
+   }
+   process.stdout.write('ME_628_D04_DEFENDING '+JSON.stringify({side,moved,modes:[...modes],pressure})+'\n');
+   assert.ok(moved>0&&pressure>0,'defender must approach the live ball');
+  }
+ });
+
+ test('D-05 mirrored exposed ball allows a bounded tackle or interception, never a guaranteed win',()=>{
+  for(const side of ['home','away']){
+   const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+   const attacker={id:side+'-10',team:side,x:dir*29.6,y:0};
+   const defender={id:other+'-2',team:other,x:dir*30.5,y:0};
+   const source={attackingSide:side,attacker,defender,ballPosition:{x:dir*30,y:0,z:0.11},ballVelocity:{x:dir*1,y:0,z:0}};
+   const tackle=chooseDribbleDefensiveTouch(source);
+   assert.equal(tackle.kind,'tackle');assert.ok(Math.abs(tackle.desiredVelocity.y)>2&&tackle.magnitudeNs<=1.25);
+   assert.ok(tackle.release.projectedTacklerGapM<tackle.release.projectedOpponentGapM);
+   assert.equal(tackle.officialPossession,false);assert.equal(tackle.tackleWon,false);
+   assert.equal(chooseDribbleDefensiveTouch({...source,attacker:{...attacker,x:dir*27}}).kind,'interception');
+   assert.equal(chooseDribbleDefensiveTouch({...source,defender:{...defender,x:dir*34}}),null);
+   assert.equal(chooseDribbleDefensiveTouch({...source,ballPosition:{...source.ballPosition,z:0.5}}),null);
+   assert.equal(chooseDribbleDefensiveTouch({...source,defender:{...defender,x:dir*29.25}}),null);
+  }
+ });
+ test('D-05 active mirrored 1v1 defensive actions require native exclusive shoe contact',{timeout:120000},async()=>{
+  const R=await initializeRapier(rapier);
+  for(const side of ['home','away']){
+   let attempts=0,contacts=0;
+   const defender=(side==='home'?'away':'home')+'-2';
+   for(let variantIndex=0;variantIndex<30;variantIndex++){
+    const scene=createControlledActionLab(R,'dribble-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,directedDribble:true});
+    try{
+     for(let tick=0;tick<420;tick++){
+      const f=scene.step(),a=f.action;
+      if(f.starts.includes(defender))contacts++;
+      if(a?.playerId===defender){
+       assert.ok(['tackle','interception','carry'].includes(a.action));
+       assert.deepEqual(f.starts,[defender]);assert.equal(a.appliedByRapier,true);
+       assert.equal(a.actualPhysicsImpulseApplied,true);assert.equal(a.impulseNs.z,0);
+       const cap=a.defensiveTarget?.intervention==='sliding-tackle'?SLIDING_TACKLE_MAX_IMPULSE_NS:1.25;
+       assert.ok(Math.hypot(a.impulseNs.x,a.impulseNs.y)<=cap+1e-8);
+       if(a.action==='carry')assert.equal(a.decisionContext.isolatedDribbleTouch.version,'me-628-directed-dribble-v1');
+       else{assert.equal(a.defensiveTarget.officialPossession,false);attempts++;}
+      }
+      if(f.refereeEvidence?.lastEvent)break;
+     }
+    }finally{scene.dispose();}
+   }
+   process.stdout.write('ME_628_D05_DEFENSE '+JSON.stringify({side,contacts,attempts})+'\n');
+   assert.ok(attempts>0,'each side needs a genuine executed defensive attempt');
+  }
+ });
+
+ test('D-06 recovery needs subsequent authentic touch and is invalidated by opponent contact',()=>{
+  for(const side of ['home','away']){
+   const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+   const attacker={id:side+'-10',team:side,x:dir*28,y:0};
+   const defender={id:other+'-2',team:other,x:dir*30.4,y:0};
+   const b={x:dir*30,y:0,z:0.11},v={x:-dir*0.8,y:0,z:0};
+   const w=createDribbleTransitionObserver(side);
+   const sample=(tick,starts=[],active=starts,action=null,bodyStarts=[])=>w.observe({tick,starts,active,bodyStarts,bodyActive:bodyStarts,action,ball:{position:b}});
+   const real=(tick,id,kind)=>({tick,playerId:id,action:kind,appliedByRapier:true,actualPhysicsImpulseApplied:true,defensiveTarget:{version:'me-628-duel-recovery-touch-v1'}});
+   assert.equal(sample(1,[defender.id]).phase,'recover');
+   assert.equal(sample(2,[],[defender.id]).recovered,false);
+   assert.equal(sample(3).phase,'recover');
+   assert.equal(sample(4,[defender.id],[defender.id],real(4,defender.id,'carry')).recovered,true);
+   assert.equal(w.snapshot().phase,'counter');
+   assert.equal(sample(5,[attacker.id],[attacker.id],real(5,attacker.id,'carry')).regained,true);
+   assert.equal(w.snapshot().officialPossession,false);
+   assert.equal(sample(6,[attacker.id,defender.id]).phase,'attack');
+   assert.equal(sample(7,[],[],null,[defender.id]).phase,'recover');
+   assert.equal(sample(8,[attacker.id]).phase,'attack');
+   const touch=chooseDribbleRecoveryTouch({attackingSide:side,attacker,defender,ballPosition:b,ballVelocity:v});
+   assert.ok(touch&&touch.dx*dir<0&&touch.magnitudeNs<=0.30);
+   const target=planDribbleTransitionTarget(defender,attacker,b,v,side,'counter');
+   assert.ok(Number.isFinite(target.x)&&Number.isFinite(target.y));
+  }
+ });
+ test('D-06 live transitions preserve native action authority and actor identities',{timeout:120000},async()=>{
+  const R=await initializeRapier(rapier);
+  for(const side of ['home','away']){
+   let windows=0,recoveries=0,regains=0;
+   for(const variantIndex of [0,2,5,11,19,26]){
+    const scene=createControlledActionLab(R,'dribble-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,directedDribble:true});
+    try{
+     for(let k=0;k<480;k++){
+      const f=scene.step(),w=f.duelTransition;
+      assert.equal(w.tick,f.physicsTick);assert.equal(w.officialPossession,false);
+      if(w.phase!=='attack')windows++;
+      if(w.recovered){recoveries++;assert.equal(f.action?.decisionContext?.isolatedDribbleTouch?.version,'me-628-directed-dribble-v1');assert.deepEqual(f.starts,[f.action.playerId]);}
+      if(w.regained){regains++;assert.equal(f.action?.playerId,side+'-10');}
+      if(f.refereeEvidence?.lastEvent)break;
+     }
+    }finally{scene.dispose();}
+   }
+   process.stdout.write('ME_628_D06_TRANSITION '+JSON.stringify({side,windows,recoveries,regains})+'\n');
+  }
+ });
+
+ test('D-07 contact release assigns different bounded outward movement targets without changing ball',()=>{
+  for(const side of ['home','away']){
+   const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+   const attacker={id:side+'-10',x:dir*29.5,y:0},defender={id:other+'-2',x:dir*30.5,y:0};
+   const ball={x:dir*30,y:0};
+   const release=planDribbleContactRelease({attackingSide:side,attacker,defender,ball});
+   assert.equal(release.primaryId,attacker.id);assert.equal(release.movementOnly,true);
+   assert.ok(dir*(release.targets[defender.id].x-defender.x)>0.7);
+   assert.ok(dir*(release.targets[attacker.id].x-attacker.x)<-0.6);
+   const approach=dribbleReleaseApproach(attacker,ball,release);
+   assert.ok(Math.hypot(approach.x-ball.x,approach.y-ball.y)<=0.21);
+   assert.equal(planDribbleContactRelease({attackingSide:side,attacker,defender,ball,phase:'counter'}).primaryId,defender.id);
+  }
+ });
+ test('D-07 all 60 active duels measure stationary contact rather than counting touches alone',{timeout:180000},async()=>{
+  const R=await initializeRapier(rapier);
+  const results=[];
+  for(const side of ['home','away'])for(let variantIndex=0;variantIndex<30;variantIndex++){
+   const scene=createControlledActionLab(R,'dribble-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,directedDribble:true});
+   let stagnant=0,maxStagnant=0,blocked=0,blockedRun=0,maxBlockedRun=0,ballPath=0,prior=scene.snapshot().ball.position;
+   let anchor=prior,anchorTick=0,maxCloseBallStall=0,slideStarts=0,slideContacts=0,recoveryTicks=0,peakSlideSpeed=0;
+   let previousControl=scene.snapshot().duelTransition.ballControl;
+   let pending=null,defensiveTouches=0,available=0,recoveredCarry=0,rivalCarry=0,expired=0,censored=0,alignmentTicks=0,detourTicks=0;
+   const strikeSamples=[],releaseSamples=[];let strike=null,effectiveContacts=0;
+   const finish=(reason)=>{if(!pending)return;if(pending.available)available++;if(reason==='carry')recoveredCarry++;else if(reason==='rival')rivalCarry++;else if(reason==='expired')expired++;else censored++;pending=null;};
+   try{
+    for(let k=0;k<600;k++){
+     const f=scene.step(),b=f.ball.position,v=f.ball.velocity;
+     if(f.defensiveSlide?.started){slideStarts++;assert.equal(f.defensiveDecision.kind,'sliding-tackle');}
+     if(f.defensiveDecision){assert.equal(f.defensiveDecision.decisionOnly,true);assert.equal(f.defensiveDecision.officialPossession,false);assert.ok(['standing-tackle','sliding-tackle','shoulder-challenge','interception','recover','none'].includes(f.defensiveDecision.kind));}
+     if(scene.focus.some(id=>isDuelGettingUp(f.duelTransition,id,f.physicsTick))&&f.duelTransition.lastIntervention?.tick!==f.physicsTick){
+      for(const id of scene.focus)if(isDuelGettingUp(f.duelTransition,id,f.physicsTick))assert.notEqual(f.action?.playerId,id,'mixed slide bilateral lock');
+     }
+     if(f.defensiveSlide?.phase==='recovery'){
+      recoveryTicks++;
+      assert.notEqual(f.action?.playerId,f.defensiveSlide.actorId,'recovering defender cannot execute a ball action');
+     }
+     if(f.action?.defensiveTarget?.intervention==='sliding-tackle'){
+      slideContacts++;assert.equal(f.defensiveSlide?.phase,'slide');
+      assert.deepEqual(f.starts,[f.defensiveSlide.actorId]);
+      assert.equal(f.action.appliedByRapier,true);assert.equal(f.action.actualPhysicsImpulseApplied,true);
+     }
+     const a=f.observedMovementPlayers.find(p=>p.id===side+'-10'),d=f.observedMovementPlayers.find(p=>p.id===(side==='home'?'away':'home')+'-2');
+     if(f.defensiveSlide?.phase==='slide'){
+      const slider=f.defensiveSlide.actorId===a.id?a:d;
+      peakSlideSpeed=Math.max(peakSlideSpeed,Math.hypot(slider.vx,slider.vy));
+     }
+     assert.ok(Math.hypot(d.vx,d.vy)<=7+1e-5);
+     const action=f.action,control=f.duelTransition.ballControl;
+     assert.equal(control.officialPossession,false);
+     if(control.kind==='controlled'){
+      const actor=[a,d].find(p=>p.id===control.playerId);
+      assert.ok(actor,'control belongs to an actual participant');
+      assert.ok(Math.hypot(actor.x-b.x,actor.y-b.y)<=1.15+1e-5);
+      if(previousControl.playerId!==control.playerId||previousControl.sourceTick!==control.sourceTick){
+       assert.equal(action?.action,'carry');assert.equal(action.playerId,control.playerId);
+       assert.equal(action.actualPhysicsImpulseApplied,true);assert.deepEqual(f.starts,[control.playerId]);
+       assert.equal(control.sourceTick,f.physicsTick);
+      }
+     }else{assert.equal(control.kind,'loose');assert.equal(control.playerId,null);assert.equal(control.sourceTick,null);}
+     previousControl=control;
+     if(strike&&f.physicsTick===strike.tick+12){releaseSamples.push({kind:strike.kind,travelM:Math.hypot(b.x-strike.x,b.y-strike.y)});strike=null;}
+     if(action&&['tackle','interception'].includes(action.action)){
+      const kind=action.defensiveTarget?.intervention??action.action;
+      strikeSamples.push({kind,speedMps:Math.hypot(v.x,v.y),impulseNs:Math.hypot(action.impulseNs.x,action.impulseNs.y)});
+      if(f.duelTransition.lastIntervention?.effective)effectiveContacts++;
+      strike={kind,tick:f.physicsTick,x:b.x,y:b.y};
+     }else if(action)strike=null;
+     if(f.smallSidedMovementDecisions?.some(p=>p.postContactAlignment))alignmentTicks++;
+     if(f.smallSidedMovementDecisions?.some(p=>p.alignmentDetour))detourTicks++;
+     if(pending&&f.physicsTick>pending.tick){
+      const tackler=pending.id===a.id?a:d, rival=tackler===a?d:a;
+      const dg=Math.hypot(tackler.x-b.x,tackler.y-b.y),ag=Math.hypot(rival.x-b.x,rival.y-b.y);
+      if(Math.hypot(b.x-pending.x,b.y-pending.y)>=0.35&&dg<=1.25&&ag-dg>=0.20)pending.available=true;
+      if(action?.action==='carry')finish(action.playerId===pending.id?'carry':'rival');
+      else if(f.physicsTick-pending.tick>=90)finish('expired');
+     }
+     if(action&&['tackle','interception'].includes(action.action)){
+      if(pending)finish('interrupted');
+      defensiveTouches++;pending={id:action.playerId,tick:f.physicsTick,x:b.x,y:b.y,available:false};
+     }
+     const near=Math.hypot(a.x-d.x,a.y-d.y)<1.6&&Math.max(Math.hypot(a.x-b.x,a.y-b.y),Math.hypot(d.x-b.x,d.y-b.y))<1.8;
+     const slow=Math.max(Math.hypot(a.vx,a.vy),Math.hypot(d.vx,d.vy))<0.30&&Math.hypot(v.x,v.y)<0.40;
+     if(near&&slow)stagnant++;else stagnant=0;
+     if(a.blockedBy===d.id&&d.blockedBy===a.id){blocked++;blockedRun++;}else blockedRun=0;
+     maxBlockedRun=Math.max(maxBlockedRun,blockedRun);
+     if(!near||Math.hypot(b.x-anchor.x,b.y-anchor.y)>0.30){anchor=b;anchorTick=k;}
+     else maxCloseBallStall=Math.max(maxCloseBallStall,k-anchorTick);
+     maxStagnant=Math.max(maxStagnant,stagnant);
+     ballPath+=Math.hypot(b.x-prior.x,b.y-prior.y);prior=b;
+     assert.ok(f.nativeDribbleAudit.minimumCanonicalSeparationM>=0.98-1e-5);
+     if(f.refereeEvidence?.lastEvent)break;
+    }
+    finish('end');
+    const f=scene.snapshot();
+    results.push({side,variant:variantIndex+1,maxStagnant,blocked,maxBlockedRun,maxCloseBallStall,ballPath,slideStarts,slideContacts,recoveryTicks,peakSlideSpeed,defensiveTouches,available,recoveredCarry,rivalCarry,expired,censored,alignmentTicks,detourTicks,effectiveContacts,strikeSamples,releaseSamples,attackerTouches:f.nativeDribbleAudit.appliedCarryActions,
+     defenderAttempts:f.nativeDribbleAudit.defensiveTackleAttempts+f.nativeDribbleAudit.defensiveInterceptionAttempts,
+     recoveryTouches:f.nativeDribbleAudit.defensiveRecoveryTouches,actionsByPlayer:f.nativeDribbleAudit.actionsByPlayer,roleChanges:f.duelTransition.changes});
+   }finally{scene.dispose();}
+  }
+  process.stdout.write('ME_628_D07_LIVENESS '+JSON.stringify(results)+'\n');
+  const totals=Object.fromEntries(['defensiveTouches','available','recoveredCarry','rivalCarry','expired','censored'].map(key=>[key,results.reduce((sum,x)=>sum+x[key],0)]));
+  process.stdout.write('ME_628_D09_RELEASE '+JSON.stringify(totals)+'\n');
+  const strikes=results.flatMap(x=>x.strikeSamples),releases=results.flatMap(x=>x.releaseSamples);
+  const report=['standing-tackle','sliding-tackle'].map(kind=>{
+   const s=strikes.filter(x=>x.kind===kind),r=releases.filter(x=>x.kind===kind);
+   return {kind,count:s.length,meanSpeedMps:s.length?s.reduce((sum,x)=>sum+x.speedMps,0)/s.length:null,
+    meanImpulseNs:s.length?s.reduce((sum,x)=>sum+x.impulseNs,0)/s.length:null,
+    observed12TickSamples:r.length,meanTravelM:r.length?r.reduce((sum,x)=>sum+x.travelM,0)/r.length:null};
+  });
+  process.stdout.write('ME_628_D09_REACTION '+JSON.stringify({effectiveContacts:results.reduce((s,x)=>s+x.effectiveContacts,0),report})+'\n');
+  assert.ok(report[1].count>0,'must exercise actual sliding strike');
+  assert.ok(totals.defensiveTouches>0&&totals.available>0,'must observe actual post-contact recovery opportunities');
+  assert.ok(totals.recoveredCarry>0,'must observe real post-contact carry by the tackler');
+  assert.ok(results.some(x=>x.alignmentTicks>0),'observe live post-contact alignment');
+  for(const side of ['home','away']){
+   const cases=results.filter(x=>x.side===side),original=side+'-10',other=(side==='home'?'away':'home')+'-2';
+   assert.ok(cases.some(x=>x.slideStarts>0),'each side must attempt a real sliding movement');
+   // Outcome frequency is diagnostic, not a required role swap.
+   assert.ok(cases.some(x=>x.actionsByPlayer[original].carry+x.actionsByPlayer[other].carry>0),'each side must exercise real carry');
+  }
+  assert.ok(results.every(x=>x.maxStagnant<150),'no continuous stationary close duel lasting 2.5 seconds');
+  assert.ok(results.every(x=>x.maxBlockedRun<120),'no mutual movement rejection lasting two seconds');
+  assert.ok(results.every(x=>x.maxCloseBallStall<180),'no close contest with net ball displacement under 0.30m lasting three seconds');
+ });
+
+ test('D-08 shared duel selection does not depend on shirt number or original tactical role',()=>{
+  for(const side of ['home','away'])for(const swapped of [false,true]){
+   const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+   const player={id:side+(swapped?'-2':'-10'),team:side,x:dir*29.6,y:0};
+   const opponent={id:other+(swapped?'-10':'-2'),team:other,x:dir*30.6,y:0};
+   const b={x:dir*30,y:0,z:0.11},v={x:dir,y:0,z:0};
+   const source={player,opponent,ballPosition:b,ballVelocity:v,variantIndex:0,tick:1};
+   const carry=chooseSharedDuelTouch({...source,transition:{carrierId:player.id}});
+   assert.equal(carry.carry.version,'me-628-directed-dribble-v1');
+   const defense=chooseSharedDuelTouch({...source,player:opponent,opponent:player,transition:{carrierId:player.id}});
+   assert.equal(defense.defensive.kind,'tackle');
+   const recover=chooseSharedDuelTouch({...source,player:opponent,opponent:player,transition:{carrierId:player.id,candidateId:opponent.id}});
+   assert.equal(recover.carry.version,carry.carry.version);
+   assert.equal(chooseSharedDuelTouch({...source,transition:{carrierId:player.id},slide:{phase:'recovery'}}),null);
+   const original=side+'-10',otherId=other+'-2';
+   const actors=[{...player,id:original},{...opponent,id:otherId}];
+   assert.equal(resolveDuelActors(actors,side,{carrierId:otherId}).attacker.id,otherId);
+  }
+ });
+
+ test('D-15 control is native-evidence based and independent of initial identity',()=>{
+  for(const side of ['home','away']){
+   const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+   const first={id:side+'-10',team:side,x:dir*29.6,y:0};
+   const second={id:other+'-2',team:other,x:dir*30.6,y:0};
+   for(const player of [first,second]){
+    const opponent=player===first?second:first,sign=player.team==='home'?1:-1;
+    const b={x:player.x+sign*0.4,y:0,z:0.11},v={x:sign,y:0,z:0};
+    const args={players:[first,second],ball:{position:b,velocity:v},tick:5};
+    assert.equal(observeDuelBallControl(args).kind,'loose');
+    const carryWitness={playerId:player.id,tick:4};
+    const controlled=observeDuelBallControl({...args,carryWitness});
+    assert.equal(controlled.playerId,player.id);assert.equal(controlled.sourceTick,4);
+    const loose=observeDuelBallControl({...args,carryWitness,ball:{position:{...b,x:b.x+sign*3},velocity:v}});
+    assert.equal(loose.playerId,null);
+    assert.equal(observeDuelBallControl({...args,carryWitness,ball:{position:b,velocity:{x:6,y:0,z:0}}}).kind,'loose');
+    const state={profile:'mixed',carrierId:opponent.id,candidateId:null,ballControl:controlled};
+    assert.equal(resolveDuelActors([first,second],side,state,b).attacker.id,player.id);
+    const touch=chooseSharedDuelTouch({player,opponent,ballPosition:b,ballVelocity:v,transition:state,variantIndex:0,tick:5});
+    assert.ok(touch?.carry);assert.equal(touch.defensive,null);
+    const collection=chooseSharedDuelTouch({player,opponent,ballPosition:b,ballVelocity:v,transition:{...state,ballControl:loose},variantIndex:0,tick:5});
+    assert.ok(collection?.carry);assert.equal(collection.defensive,null);
+   }
+  }
+ });
+
+ test('D-16 mixed contact eligibility follows ball control rather than fixture role or stale candidate',()=>{
+  for(const side of ['home','away'])for(const swapped of [false,true]){
+   const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+   const owner={id:side+(swapped?'-2':'-10'),team:side,x:dir*29.6,y:0};
+   const challenger={id:other+(swapped?'-10':'-2'),team:other,x:dir*30.6,y:0};
+   const b={x:dir*30,y:0,z:0.11},v={x:dir,y:0,z:0};
+   const state={profile:'mixed',carrierId:challenger.id,candidateId:challenger.id,ballControl:{kind:'controlled',playerId:owner.id,sourceTick:1}};
+   const source={player:owner,opponent:challenger,ballPosition:b,ballVelocity:v,transition:state,variantIndex:0,tick:2};
+   assert.ok(chooseSharedDuelTouch(source)?.carry);
+   assert.equal(chooseSharedDuelTouch({...source,ballVelocity:{x:dir*6,y:0,z:0}}),null,'failed carry cannot become tackle');
+   assert.equal(chooseSharedDuelTouch({...source,slide:{phase:'slide'}}),null,'controller cannot execute defensive slide');
+   const defense=chooseSharedDuelTouch({...source,player:challenger,opponent:owner});
+   assert.equal(defense?.defensive?.kind,'tackle');assert.equal(defense.carry,null);
+   assert.equal(chooseSharedDuelTouch({...source,player:challenger,opponent:owner,slide:{phase:'recovery'}}),null);
+   const loose={...state,ballControl:{kind:'loose',playerId:null,sourceTick:null}};
+   assert.ok(chooseSharedDuelTouch({...source,transition:loose})?.carry);
+   const stationary=chooseSharedDuelTouch({...source,player:challenger,opponent:owner,transition:loose,ballVelocity:{x:0,y:0,z:0}});
+   assert.ok(stationary?.carry);assert.equal(stationary.defensive,null);
+  }
+ });
+
+ test('D-17 loose-ball pursuit ignores prior actor identity and input order',()=>{
+  for(const side of ['home','away']){
+   const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+   const first={id:side+'-10',team:side,x:dir*27,y:0.5};
+   const second={id:other+'-2',team:other,x:dir*30.8,y:-0.4};
+   const ball={x:dir*30,y:0,z:0.11},velocity={x:dir*1.5,y:0,z:0};
+   const plan=planLooseDuelApproaches([first,second],ball,velocity);
+   assert.deepEqual(plan,planLooseDuelApproaches([second,first],ball,velocity));
+   for(const p of [first,second]){
+    const target=plan[p.id].target;
+    assert.ok(Number.isFinite(target.x)&&Number.isFinite(target.y));
+    assert.ok(Math.hypot(target.x-ball.x,target.y-ball.y)<Math.hypot(p.x-ball.x,p.y-ball.y));
+   }
+   for(const candidateId of [first.id,second.id,null]){
+    const state={profile:'mixed',carrierId:first.id,candidateId,ballControl:{kind:'loose',playerId:null}};
+    assert.equal(resolveDuelActors([first,second],side,state,ball).attacker.id,second.id);
+    assert.equal(resolveDuelActors([first,second],side,state,ball).carrierId,null);
+   }
+  }
+ });
+
+ test('D-09 release chooses free side and recovery approach from either team',()=>{
+  for(const side of ['home','away']){
+   const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+   const attacker={id:side+'-10',team:side,x:dir*29.6,y:0};
+   const defender={id:other+'-2',team:other,x:dir*30.5,y:0};
+   const b={x:dir*30,y:0,z:0.11};
+   const release=planDefensiveBallRelease(attacker,defender,b,side);
+   assert.ok(Math.abs(release.target.y)>0.8);
+   assert.ok(release.projectedTacklerGapM<release.projectedOpponentGapM);
+   assert.ok(release.pathClearanceGainM>=-0.03);
+   const edge=planDefensiveBallRelease({...attacker,y:33.1},{...defender,y:33.1},{...b,y:33.1},side);
+   assert.ok(edge.target.y<33.1);
+   const approach=planDuelRecoveryApproach(defender,b,{x:0,y:2.8});
+   assert.ok(approach.y>0&&Number.isFinite(approach.x));
+  }
+ });
+
+ test('D-09b post-contact targets avoid crossing the opponent and separate mirrored approaches',()=>{
+  for(const side of ['home','away']){
+   const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+   const player={id:side+'-10',team:side,x:dir*29,y:0};
+   const rival={id:other+'-2',team:other,x:dir*30,y:0};
+   const route=routeDuelAroundOpponent(player,rival,{x:dir*31,y:0});
+   assert.equal(route.detour,true);assert.ok(route.clearanceM>=0.98);
+   assert.ok(Math.abs(route.target.y)>0.5);
+   const clear=routeDuelAroundOpponent(player,rival,{x:dir*28,y:0});
+   assert.equal(clear.detour,false);
+   const targets=planDuelPostContactAlignment({attacker:rival,defender:player,attackingSide:other,candidateId:rival.id,
+    ballPosition:{x:dir*29.6,y:0.7},ballVelocity:{x:0,y:2}});
+   for(const id of [player.id,rival.id])assert.ok(Number.isFinite(targets[id].target.x)&&Number.isFinite(targets[id].target.y));
+   assert.ok(Math.hypot(targets[player.id].target.x-targets[rival.id].target.x,targets[player.id].target.y-targets[rival.id].target.y)>0.5);
+  }
+ });
+
+ test('D-09c effective deflection and stronger slide are symmetric and geometry-based',()=>{
+  for(const side of ['home','away']){
+   const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+   const attacker={id:side+'-10',team:side,x:dir*29.6,y:0};
+   const defender={id:other+'-2',team:other,x:dir*30.5,y:0};
+   const b={x:dir*30,y:0,z:0.11},v={x:dir,y:0,z:0};
+   const source={attackingSide:side,attacker,defender,ballPosition:b,ballVelocity:v};
+   const standing=chooseDribbleDefensiveTouch(source),sliding=chooseDribbleDefensiveTouch({...source,sliding:true});
+   assert.ok(standing&&sliding);
+   assert.equal(Math.hypot(standing.desiredVelocity.x,standing.desiredVelocity.y).toFixed(3),STANDING_TACKLE_TARGET_SPEED_MPS.toFixed(3));
+   assert.equal(Math.hypot(sliding.desiredVelocity.x,sliding.desiredVelocity.y).toFixed(3),SLIDING_TACKLE_TARGET_SPEED_MPS.toFixed(3));
+   assert.ok(sliding.magnitudeNs>standing.magnitudeNs*1.5);
+   assert.ok(sliding.magnitudeNs<=SLIDING_TACKLE_MAX_IMPULSE_NS);
+   assert.ok(observeEffectiveDuelIntervention(defender,attacker,b,{x:dir*0.8,y:2.8}));
+   assert.equal(observeEffectiveDuelIntervention(defender,attacker,b,{x:-dir*3,y:0}),false);
+   const observer=createDribbleTransitionObserver(side);
+   const action={tick:1,playerId:defender.id,action:'tackle',appliedByRapier:true,actualPhysicsImpulseApplied:true,defensiveTarget:{intervention:'sliding-tackle'}};
+   const w=observer.observe({tick:1,starts:[defender.id],active:[defender.id],bodyStarts:[],bodyActive:[],action,
+    ball:{position:b,velocity:{x:dir*0.8,y:2.8}},players:[attacker,defender]});
+   assert.equal(w.lastIntervention.effective,true);assert.equal(w.candidateId,defender.id);assert.equal(w.carrierId,attacker.id);
+   const next=observer.observe({tick:2,starts:[attacker.id],active:[attacker.id],bodyStarts:[],bodyActive:[],action:null,
+    ball:{position:b,velocity:{x:dir*0.8,y:2.8}},players:[attacker,defender]});
+   assert.equal(next.candidateId,defender.id,'incidental rival touch does not cancel effective recovery');
+   assert.equal(next.officialPossession,false);
+  }
+ });
+
+ test('D-10 isolated standing and sliding tackle profiles preserve actual contact and both-player get-up lock',{timeout:120000},async()=>{
+  const R=await initializeRapier(rapier);
+  for(const profile of ['standing','sliding'])for(const side of ['home','away']){
+   let strikes=0,pairedRecovery=0,fullyRecovered=0;
+   for(const variantIndex of [0,1,2,4,6,7,8,11]){
+    const scene=createControlledActionLab(R,'dribble-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,directedDribble:true,duelTackleProfile:profile});
+    let pending=null;
+    try{
+     for(let i=0;i<600;i++){
+      const f=scene.step(),action=f.action,w=f.duelTransition;
+      assert.equal(w.profile,profile);
+      if(profile==='standing'){assert.equal(f.defensiveSlide,null);assert.deepEqual(w.getUpUntil,{});}
+      if(action?.action==='tackle'){
+       strikes++;
+       assert.equal(action.defensiveTarget.intervention,profile+'-tackle');
+       assert.deepEqual(f.starts,[action.playerId]);
+       assert.equal(action.actualPhysicsImpulseApplied,true);
+       if(profile==='sliding'){
+        const rival=scene.focus.find(id=>id!==action.playerId);
+        assert.equal(w.getUpUntil[action.playerId],f.physicsTick+SLIDING_GET_UP_TACKLER_TICKS);
+        assert.equal(w.getUpUntil[rival],f.physicsTick+SLIDING_GET_UP_RIVAL_TICKS);
+        pending={tick:f.physicsTick,actor:action.playerId,rival};pairedRecovery++;
+       }
+      }
+      if(pending&&f.physicsTick>pending.tick){
+       for(const id of scene.focus){
+        const down=isDuelGettingUp(w,id,f.physicsTick);
+        const decision=f.smallSidedMovementDecisions.find(d=>d.id===id);
+        if(down){assert.equal(decision.kind,'getting-up');assert.notEqual(action?.playerId,id);}
+       }
+       if(f.physicsTick>pending.tick+SLIDING_GET_UP_RIVAL_TICKS){fullyRecovered++;pending=null;}
+      }
+      assert.ok(f.nativeDribbleAudit.minimumCanonicalSeparationM>=0.98-1e-5);
+      if(f.refereeEvidence?.lastEvent)break;
+     }
+    }finally{scene.dispose();}
+   }
+   process.stdout.write('ME_628_D10_TACKLE_LABS '+JSON.stringify({profile,side,strikes,pairedRecovery,fullyRecovered})+'\n');
+   assert.ok(strikes>0,'isolated profile must actually execute its named tackle');
+   if(profile==='sliding')assert.ok(pairedRecovery>0&&fullyRecovered>0,'both players must complete the real slide recovery');
+  }
+ });
+
+ test('D-11 shoulder approach is side-on, mirrored, and requires an actual solver contact',()=>{
+ for(const side of ['home','away']){
+  const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+  const attacker={id:side+'-10',team:side,x:30*dir,y:0,vx:2*dir,vy:0};
+  const defender={id:other+'-2',team:other,x:30*dir,y:1.02,vx:2*dir,vy:0};
+  const b={x:30.5*dir,y:0},v={x:2*dir,y:0};
+  const plan=planDuelShoulderApproach({attacker,defender,attackingSide:side,ballPosition:b,ballVelocity:v});
+  assert.ok(plan.sideOn);assert.ok(plan.target.y>0.9);
+  for(const distant of [{...defender,x:32*dir,y:0},{...defender,x:29*dir,y:1.02},{...defender,y:3}])
+   assert.equal(planDuelShoulderApproach({attacker,defender:distant,attackingSide:side,ballPosition:b,ballVelocity:v}),null,'no deliberate move into an absent lateral lane');
+  const source={tick:1,plan,players:[attacker,defender],ball:b,torsoPairs:[]};
+  assert.equal(observeNativeShoulderChallenge(source),null);
+  const evidence=observeNativeShoulderChallenge({...source,torsoPairs:[[attacker.id,defender.id].sort().join('|')]});
+  assert.equal(evidence.actorId,defender.id);assert.equal(evidence.ballImpulseCreated,false);
+  assert.equal(evidence.officialPossession,false);assert.equal(evidence.successful,false);
+  const pair=[[attacker.id,defender.id].sort().join('|')];
+  const impact=observeNativeShoulderChallenge({...source,torsoPairs:pair,bodies:[{id:attacker.id,velocity:{x:1.4*dir,y:-0.3}}]});
+  assert.equal(impact.successful,true);assert.ok(impact.forwardLossMps>0.5&&impact.lateralResponseMps>0.2);
+  const recovery=planShoulderBalanceRecovery(attacker,{lastShoulder:impact},2);
+  assert.ok(recovery.target.y<attacker.y&&recovery.maxSpeed<2);
+  assert.equal(planShoulderBalanceRecovery(defender,{lastShoulder:impact},2),null);
+  assert.equal(planShoulderBalanceRecovery(attacker,{lastShoulder:evidence},2),null);
+  assert.equal(planShoulderBalanceRecovery(attacker,{lastShoulder:impact},impact.balance.until+1),null);
+  const pause=planShoulderBalanceRecovery(attacker,{lastShoulder:impact},1+SHOULDER_DISPLACE_TICKS+1);
+  assert.equal(pause.phase,'pause');assert.deepEqual(pause.target,{x:attacker.x,y:attacker.y});
+  assert.ok(pause.maxSpeed<0.05);
+  const transition=createDribbleTransitionObserver(side,'shoulder');
+  const w=transition.observe({tick:1,starts:[],active:[],bodyStarts:[],bodyActive:[],action:null,ball:{position:b},players:[attacker,defender],shoulderPlan:plan,torsoPairs:pair,bodies:[{id:attacker.id,velocity:{x:1.4*dir,y:-0.3}}]});
+  assert.equal(w.carrierId,attacker.id);assert.equal(w.candidateId,defender.id);assert.ok(isShoulderCollecting(w,defender.id,2));
+  assert.equal(chooseSharedDuelTouch({player:attacker,opponent:defender,ballPosition:{...b,z:0.11},ballVelocity:{...v,z:0},transition:w,variantIndex:0,tick:2}),null);
+  const next=transition.observe({tick:2,starts:[defender.id],active:[defender.id],bodyStarts:[],bodyActive:[],action:{tick:2,playerId:defender.id,action:'carry',appliedByRapier:true,actualPhysicsImpulseApplied:true},ball:{position:b},players:[attacker,defender]});
+  assert.equal(next.carrierId,defender.id);assert.equal(next.candidateId,null);assert.equal(isShoulderCollecting(next,defender.id,3),false);
+  assert.equal(planDuelShoulderApproach({attacker,defender:{...defender,vx:-2*dir},attackingSide:side,ballPosition:b,ballVelocity:v}).sideOn,false);
+  assert.equal(observeNativeShoulderChallenge({...source,plan:{...plan,sideOn:false},torsoPairs:[[attacker.id,defender.id].sort().join('|')]}),null);
+ }
+ });
+ test('D-11 dedicated shoulder LAB observes genuine opposing torso contacts in both mirrored directions',{timeout:180000},async()=>{
+  const R=await initializeRapier(rapier);
+  for(const side of ['home','away']){
+   let attempts=0,sideOn=0,contacts=0,realPairs=0,successful=0,balanceTicks=0,slowed=0,displaced=0,paused=0,collected=0;
+   for(let variantIndex=0;variantIndex<30;variantIndex++){
+    const scene=createControlledActionLab(R,'dribble-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,directedDribble:true,duelTackleProfile:'shoulder'});
+    let impact=null;
+    try{
+     const initial=scene.snapshot(),attacker=initial.observedMovementPlayers.find(p=>p.id===side+'-10'),defender=initial.observedMovementPlayers.find(p=>p.id===(side==='home'?'away':'home')+'-2');
+     const dir=side==='home'?1:-1;
+     assert.ok(Math.abs(attacker.x-defender.x)<=0.15+1e-7);
+     assert.ok(Math.abs(attacker.y-defender.y)>=1.15-1e-7&&Math.abs(attacker.y-defender.y)<=1.25+1e-7);
+     assert.ok(Math.cos(attacker.facingRad)*dir>0.99&&Math.cos(defender.facingRad)*dir>0.99);
+     assert.ok(dir*(initial.ball.position.x-attacker.x)>=0.49);
+     assert.equal(Math.sign(defender.y-attacker.y),variantIndex%2===0?1:-1);
+     for(let i=0;i<600;i++){
+      const f=scene.step(),w=f.duelTransition;
+      assert.equal(w.profile,'shoulder');assert.equal(f.defensiveSlide,null);
+      assert.equal(f.action?.action==='tackle'||f.action?.action==='interception',false);
+      assert.deepEqual(w.getUpUntil,{});
+      if(f.shoulderApproach){attempts++;if(f.shoulderApproach.sideOn)sideOn++;}
+      if(f.smallSidedNativeBodyGuard.nativeOpposingTorsoPairs.length)realPairs++;
+      if(w.lastShoulder?.tick===f.physicsTick){
+       contacts++;const e=w.lastShoulder;
+       assert.ok(f.smallSidedNativeBodyGuard.nativeOpposingTorsoPairs.includes([e.actorId,e.opponentId].sort().join('|')));
+       assert.equal(e.ballImpulseCreated,false);assert.equal(e.officialPossession,false);
+       if(e.successful){
+        successful++;assert.ok(e.lateralResponseMps>=0.045);
+        const p=f.observedMovementPlayers.find(p=>p.id===e.opponentId);
+        impact={e,x:p.x,y:p.y,forward:p.vx*e.balance.forward.x+p.vy*e.balance.forward.y,slowed:false,displaced:false,paused:false,collected:false};
+        assert.equal(w.candidateId,e.actorId);
+       }
+      }
+      if(impact&&f.physicsTick>impact.e.tick&&f.physicsTick<=impact.e.balance.until){
+       const e=impact.e,p=f.observedMovementPlayers.find(p=>p.id===e.opponentId);
+       assert.ok(f.smallSidedMovementDecisions.find(d=>d.id===p.id).shoulderBalanceRecovery);
+       balanceTicks++;assert.notEqual(f.action?.playerId,e.opponentId);
+       if(!impact.paused&&f.physicsTick>e.tick+SHOULDER_DISPLACE_TICKS&&Math.hypot(p.vx,p.vy)<0.15){paused++;impact.paused=true;}
+       if(!impact.slowed&&p.vx*e.balance.forward.x+p.vy*e.balance.forward.y<impact.forward-0.15){slowed++;impact.slowed=true;}
+       if(!impact.displaced&&(p.x-impact.x)*e.balance.away.x+(p.y-impact.y)*e.balance.away.y>0.035){displaced++;impact.displaced=true;}
+      }
+      if(impact&&!impact.collected&&f.physicsTick>impact.e.tick&&f.physicsTick<=impact.e.tick+SHOULDER_COLLECTION_TICKS&&f.action?.playerId===impact.e.actorId&&f.action.action==='carry'){
+       assert.equal(w.carrierId,impact.e.actorId);assert.deepEqual(f.starts,[impact.e.actorId]);assert.equal(f.action.actualPhysicsImpulseApplied,true);
+       collected++;impact.collected=true;
+      }
+      assert.ok(f.nativeDribbleAudit.minimumCanonicalSeparationM>=0.98-1e-5);
+      if(f.refereeEvidence?.lastEvent)break;
+     }
+    }finally{scene.dispose();}
+   }
+   process.stdout.write('ME_628_D11_SHOULDER '+JSON.stringify({side,attempts,sideOn,realPairs,contacts,successful,balanceTicks,slowed,displaced,paused,collected})+'\n');
+   assert.ok(attempts>0&&sideOn>0&&contacts>0,'shoulder LAB must demonstrate actual native side-on contact on both sides');
+   assert.ok(successful>0&&balanceTicks>0&&slowed>0&&displaced>0&&paused>0&&collected>0,'must measure successful shoulder displacement, brief stop and real subsequent carry');
+  }
+ });
+
+ test('D-12 interception predicts a live rolling path, not a player challenge',()=>{
+ for(const side of ['home','away']){
+  const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+  const attacker={id:side+'-10',team:side,x:28*dir,y:0,vx:2*dir,vy:0};
+  const defender={id:other+'-2',team:other,x:31.6*dir,y:1.2,vx:0,vy:0};
+  const b={x:30*dir,y:0,z:0.11},v={x:3.2*dir,y:0,z:0};
+  const source={attackingSide:side,attacker,defender,ballPosition:b,ballVelocity:v};
+  const plan=planDuelInterception(source);
+  assert.ok(plan&&plan.etaS>0&&dir*(plan.point.x-b.x)>0);
+  assert.equal(plan.point.y,b.y);
+  assert.equal(planDuelInterception({...source,ballVelocity:{...v,x:-v.x}}),null);
+  assert.equal(planDuelInterception({...source,attacker:{...attacker,x:29.5*dir}}),null);
+  const close={...source,defender:{...defender,x:30.25*dir,y:0.48}};
+  const touch=chooseDuelInterceptionTouch(close);
+  assert.ok(touch&&touch.kind==='interception'&&Math.hypot(touch.desiredVelocity.x,touch.desiredVelocity.y)<Math.hypot(v.x,v.y));
+  assert.equal(touch.nativeExclusiveShoeRequired,true);assert.equal(touch.officialPossession,false);
+  assert.equal(chooseDuelInterceptionTouch({...close,attacker:{...attacker,x:29.5*dir}}),null);
+  const w={profile:'mixed',candidateId:defender.id,lastIntervention:{tick:10,actorId:defender.id,effective:true,intervention:'sliding-tackle'}};
+  assert.ok(isSlideCollecting(w,defender.id,47));assert.equal(isSlideCollecting(w,defender.id,107),false);
+ }
+ });
+ test('D-12 three-player interception LAB uses native ground passes at 6, 12 and 20 metres',{timeout:180000},async()=>{
+  const R=await initializeRapier(rapier);
+  for(const side of ['home','away']){
+   let plans=0,passes=0,contacts=0,collections=0,slowed=0,received=0;
+   const byDistance={6:{passes:0,contacts:0},12:{passes:0,contacts:0},20:{passes:0,contacts:0}};
+   const defender=(side==='home'?'away':'home')+'-2';
+   for(let variantIndex=0;variantIndex<30;variantIndex++){
+    const scene=createControlledActionLab(R,'pass-pair',{shotSide:side,variantIndex,duelTackleProfile:'interception'});
+    const expected=[6,12,20][variantIndex%3];let prior=scene.snapshot().ball.velocity;
+    try{
+     const start=scene.snapshot(),p=start.ball.position,recipient=start.observedMovementPlayers.find(p=>p.id===side+'-9');
+     assert.deepEqual(new Set(scene.focus),new Set([side+'-10',side+'-9',defender]));
+     assert.ok(Math.abs(Math.hypot(recipient.x-p.x,recipient.y-p.y)-expected)<1e-6);
+     assert.ok(Math.hypot(prior.x,prior.y)<1e-6);
+     let passTick=null;
+     for(let i=0;i<420;i++){
+      const f=scene.step(),w=f.interceptionAudit,a=f.action;
+      assert.ok(w);assert.equal(a?.action==='tackle',false);
+      if(f.interceptionApproach){plans++;assert.equal(f.defensiveDecision.kind,'interception');assert.equal(f.defensiveDecision.actorId,defender);assert.equal(f.defensiveDecision.physicalContactProven,false);}
+      if(a?.action==='pass'){
+       assert.equal(passTick,null);passTick=f.physicsTick;passes++;byDistance[expected].passes++;
+       assert.equal(a.playerId,side+'-10');assert.equal(a.passTarget.recipientId,side+'-9');
+       assert.deepEqual(f.starts,[a.playerId]);assert.equal(a.actualPhysicsImpulseApplied,true);assert.equal(a.impulseNs.z,0);
+       assert.equal(w.passTick,passTick);
+      }
+      if(a?.action==='interception'){
+       assert.ok(passTick!==null&&f.physicsTick>passTick);contacts++;byDistance[expected].contacts++;
+       assert.equal(a.playerId,defender);assert.deepEqual(f.starts,[defender]);assert.equal(a.actualPhysicsImpulseApplied,true);
+       assert.equal(a.defensiveTarget.version,'me-628-interception-pass-cushion-v1');
+       if(Math.hypot(f.ball.velocity.x,f.ball.velocity.y)<Math.hypot(prior.x,prior.y))slowed++;
+       assert.equal(w.phase,'intercepted');
+      }
+      if(w.carryTick===f.physicsTick){
+       collections++;assert.equal(a.playerId,defender);assert.equal(a.action,'carry');assert.deepEqual(f.starts,[defender]);assert.equal(a.actualPhysicsImpulseApplied,true);
+      }
+      const actors=f.observedMovementPlayers.filter(p=>scene.focus.includes(p.id));
+      for(let j=0;j<actors.length;j++)for(let k=j+1;k<actors.length;k++)assert.ok(Math.hypot(actors[j].x-actors[k].x,actors[j].y-actors[k].y)>=0.98-1e-5);
+      prior=f.ball.velocity;
+      if(w.phase==='received'){received++;break;}
+      if(w.phase==='collected'||f.refereeEvidence?.lastEvent)break;
+     }
+     assert.ok(passTick!==null,'must begin with a genuine pass rather than a pre-rolled ball');
+    }finally{scene.dispose();}
+   }
+   process.stdout.write('ME_628_D12_INTERCEPTION_PASS '+JSON.stringify({side,plans,passes,contacts,slowed,collections,received,byDistance})+'\n');
+   assert.equal(passes,30);assert.ok(plans>0&&contacts>0&&slowed>0&&collections>0,'must observe actual interception and carry after a real pass on both sides');
+  }
+ });
+
+ test('D-13 Block LAB observes one actual shot, real defender deflection or unblocked flight',{timeout:180000},async()=>{
+  const R=await initializeRapier(rapier);
+  for(const side of ['home','away']){
+   const other=side==='home'?'away':'home',defender=other+'-2';
+   let shots=0,plans=0,contacts=0,blocks=0,unblocked=0;
+   for(let variantIndex=0;variantIndex<30;variantIndex++){
+    const scene=createControlledActionLab(R,'defender-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,duelTackleProfile:'block'});
+    let shotTick=null;
+    try{
+     assert.deepEqual(new Set(scene.focus),new Set([side+'-10',defender,other+'-1']));
+     for(let i=0;i<300;i++){
+      const f=scene.step(),a=f.action,w=f.blockAudit;
+      assert.ok(w);
+      if(f.blockApproach){plans++;assert.equal(f.defensiveDecision.kind,'block');assert.equal(f.defensiveDecision.actorId,defender);assert.equal(f.defensiveDecision.officialPossession,false);}
+      if(a?.action==='shot'){
+       assert.equal(shotTick,null);shots++;shotTick=f.physicsTick;
+       assert.equal(a.playerId,side+'-10');assert.deepEqual(f.starts,[a.playerId]);
+       assert.equal(a.actualPhysicsImpulseApplied,true);
+       assert.equal(a.labShotCalibration.profile,'low');
+      }
+      if(w.contactTick===f.physicsTick){
+       contacts++;assert.ok(shotTick!==null&&f.physicsTick>shotTick);
+       assert.ok(f.starts.includes(defender)||f.smallSidedNativeBodyGuard.lowerLegBallStarts.includes(defender));
+       if(w.blocked){blocks++;assert.ok(w.velocityChangeMps>=0.6);}
+      }
+      assert.notEqual(a?.playerId,defender,'block must be a physical deflection, not a synthetic kick');
+      if(f.refereeEvidence?.lastEvent||f.keeperDive?.catchState?.confirmedTick!=null||shotTick!==null&&f.physicsTick-shotTick>=240)break;
+     }
+     assert.ok(shotTick!==null,'single native shot required');
+     if(!scene.snapshot().blockAudit.blocked)unblocked++;
+    }finally{scene.dispose();}
+   }
+   process.stdout.write('ME_628_D13_BLOCK '+JSON.stringify({side,shots,plans,contacts,blocks,unblocked})+'\n');
+   assert.equal(shots,30);assert.ok(plans>0&&contacts>0&&blocks>0&&unblocked>0,'observe both real blocks and unblocked shots on both sides');
+  }
+ });

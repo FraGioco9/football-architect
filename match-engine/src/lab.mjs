@@ -105,6 +105,23 @@ function recordPerformedActions(frame){
  if(keeper?.reboundRecoveryTick===tick)events.push({id:keeper.shooterId,kind:'rebound-contact',label:'Rebound contact'});
  if(dive?.catchState?.confirmedTick===tick)events.push({id:dive.keeperId,kind:'catch',label:'Catch'});
  if(dive?.catchState?.released)events.push({id:dive.keeperId,kind:'grip-lost',label:'Grip lost'});
+ // Actual actions are attributed to the acting player, not the starting role.
+ if(frame.nativeDribbleAudit&&!frame.nativeDribbleAudit.soloCarry){
+  for(const id of ids){
+   const observed=events.find(e=>e.id===id&&['tackle','interception','carry'].includes(e.kind));
+   if(observed?.kind==='tackle')observed.label=action.defensiveTarget?.intervention==='sliding-tackle'?'Sliding tackle contact':'Standing tackle attempt';
+   else if(observed?.kind==='interception')observed.label='Interception contact';
+   else if(observed?.kind==='carry')observed.label='Carry';
+   else if(frame.starts?.includes(id)||frame.smallSidedNativeBodyGuard?.lowerLegBallStarts?.includes(id))
+    events.push({id,kind:'ball-contact',label:'Ball contact'});
+  }
+  if(frame.defensiveSlide?.started&&frame.defensiveSlide.tick===tick)events.push({id:frame.defensiveSlide.actorId,kind:'sliding-tackle',label:'Sliding tackle attempt'});
+  if(frame.duelTransition?.lastShoulder?.tick===tick)events.push({id:frame.duelTransition.lastShoulder.actorId,kind:'shoulder-challenge',label:'Shoulder challenge'});
+  if(frame.shieldAudit?.retained)events.push({id:frame.shieldAudit.actorId,kind:'retained-touch',label:'Retained touch'});
+  if(action?.tick===tick&&action?.decisionContext?.isolatedDribbleTouch?.shieldingIntent){
+   const carry=events.find(e=>e.kind==='carry'&&e.id===action.playerId);if(carry)carry.label='Carry · Shielding';
+  }
+ }
  const pass=frame.passPairAudit?.receivingContact;
  if(pass?.realRapierShoeStart===true&&pass.contactTick===tick)
   events.push({id:pass.receiverId,kind:'receiving-contact',
@@ -134,7 +151,7 @@ const smallSidedDecisionLabels=Object.freeze({
  'carry-ball':'Carry the ball','approach-ball':'Approach the ball',
  'hold-pass-target':'Hold receiving position',
  'support-run':'Support the attack','press-ball':'Close down the ball',
- 'goalkeeping':'Protect the goal'
+ 'goalkeeping':'Protect the goal','getting-up':'—','shoulder-challenge':'Shoulder challenge','intercept-ball':'Intercept ball','block-shot':'Block shot'
 });
 const humanPlayer=id=>id.replace('home-','HOME #').replace('away-','AWAY #');
 function appendDecisionEvent(event){
@@ -147,7 +164,7 @@ function trackOnFieldDecisionChanges(frame){
   const observedPhase=row.carryPhase??null;
   const decisionKey=row.kind+'|'+(observedPhase??'');
   if(lastMovementKinds.get(row.id)!==decisionKey){
-   appendDecisionEvent({tick:frame.physicsTick,id:row.id,
+   if(row.kind!=='getting-up')appendDecisionEvent({tick:frame.physicsTick,id:row.id,
     label:smallSidedDecisionLabels[row.kind]+
      (observedPhase?' · '+observedPhase.charAt(0).toUpperCase()+
        observedPhase.slice(1):''),physical:false});
@@ -340,6 +357,8 @@ function restart() {
        variantIndex:activeVariantIndex,shotProfile:activeScene.shotProfile??'power',firstTimeShot:activeScene.firstTimeShot===true,
        bodyGuardEnabled:id!=='carry-solo'&&id!=='pass-pair'&&id!=='cross-pair'&&id!=='shot-solo',
        keeperSingleShot:!archiveMode&&id==='keeper-1v1',
+       directedDribble:!archiveMode&&id==='dribble-1v1',
+       duelTackleProfile:activeScene.duelTackleProfile??'mixed',
        // Visible fixed Carry now runs in a long open-space native research
        // runway. Only actual same-world Rapier shoe STARTs authorize a push.
        // Leave the original ordinary 22-player physics unmodified.
@@ -399,6 +418,7 @@ function restart() {
 }
 function keeperSingleShotFinished(frame){
  const audit=frame?.keeperShotAudit;
+ if(!archiveMode&&frame?.blockAudit?.shotTick!=null)return frame.physicsTick-frame.blockAudit.shotTick>=240;
  if(archiveMode||activeScene?.id!=='keeper-1v1'||!audit)return false;
  if(frame.keeperDive?.catchState?.active&&frame.keeperDive.catchState.confirmedTick!==null)return true;
  return audit.shotTick!==null&&(
@@ -463,10 +483,11 @@ function drawInlinePlayers(ctx,X,Y){
   if(focus&&!focus.has(p.id))continue;
   const x=X(p.x),y=Y(p.y);
   ctx.beginPath();ctx.arc(x,y,p.role==='goalkeeper'?LAB_MARKER_RADII_PX.goalkeeper:LAB_MARKER_RADII_PX.player,0,Math.PI*2);
+  const gettingUp=(frame.duelTransition?.getUpUntil?.[p.id]??-1)>=frame.physicsTick;
   ctx.fillStyle=p.team==='home'?'#a8dfff':'#ffb39a';
   ctx.fill();ctx.strokeStyle=p.role==='goalkeeper'?'#fbdfaa':'#183f36';
   ctx.lineWidth=1.5;ctx.stroke();
-  if(Number.isFinite(p.facingRad)){
+  if(!gettingUp&&Number.isFinite(p.facingRad)){
    ctx.beginPath();ctx.moveTo(x,y);
    ctx.lineTo(x+Math.cos(p.facingRad)*14,y+Math.sin(p.facingRad)*14);
    ctx.strokeStyle='#142e29';ctx.lineWidth=1.6;ctx.stroke();
@@ -717,7 +738,8 @@ function render() {
     // Concise, observational summary only. Preserve the full diagnostics above.
     const shot=f.shotSoloAudit, pass=f.passPairAudit, cross=f.crossPairAudit;
     const keeper=f.keeperShotAudit;
-    const summary=keeper?
+    const mixedControl=f.duelTackleProfile==='mixed'&&f.duelTransition?.ballControl;
+    const summary=f.blockAudit?(f.blockAudit.blocked?'Shot blocked':f.blockAudit.contactTick!==null?'Defender contact':f.blockAudit.phase==='flight'?'Shot in flight':'Waiting for shot'):f.interceptionAudit?({ready:'Waiting for pass',flight:'Pass in flight',intercepted:'Interception contact',collected:'Ball recovered',received:'Pass reached receiver'})[f.interceptionAudit.phase]:keeper?
       (keeper.crossing?(keeper.crossing.kind==='goal'?'Goal observed':'Ball out'):
        f.keeperDive?.catchState?.active&&f.keeperDive.catchState.confirmedTick!==null?'Ball held':
        f.keeperDive?.catchState?.active?'Securing ball':
@@ -734,7 +756,10 @@ function render() {
         pass.attempted?'Pass observed':'Waiting for pass'):
       cross?(cross.arrival?'Arrival observed':
         cross.attempted?'Cross observed':'Waiting for cross'):
-      f.soloCarryPhase?.phase?'Carry · '+f.soloCarryPhase.phase:
+      mixedControl?(mixedControl.kind==='controlled'?'Ball controlled':'Loose ball'):
+      f.nativeDribbleAudit&&!f.nativeDribbleAudit.soloCarry?
+        (Object.values(f.duelTransition?.getUpUntil??{}).some(until=>until>=f.physicsTick)?'Loose ball':f.duelTransition?.lastShoulder?.tick===f.physicsTick?'Shoulder challenge':f.defensiveSlide?.phase==='slide'?'Sliding tackle':f.defensiveSlide?.phase==='recovery'?'Defender recovery':f.duelTransition?.phase==='counter'?'Counter carry':f.duelTransition?.phase==='recover'?'Loose ball recovery':f.shieldAudit?.shielding?'Shielding':f.nativeDribbleAudit.defenderShoeStarts>0||f.nativeDribbleAudit.nativeBodyBallContactTicks>0?'Physical contest':f.nativeDribbleAudit.appliedCarryActions>0?'Dribbling':'Waiting for touch'):
+       f.soloCarryPhase?.phase?'Carry · '+f.soloCarryPhase.phase:
       lastInlineFootballAction?'Last action: '+lastInlineFootballAction.action:
       activeScene.kind==='action'?'Waiting for action':'Movement';
     byId('me-inline-summary').textContent=summary;
@@ -748,12 +773,30 @@ function renderActiveMetrics(f){
  const shot=f.shotSoloAudit,pass=f.passPairAudit,cross=f.crossPairAudit;
  let entries;
  const keeper=f.keeperShotAudit;
- if(keeper){
+ if(f.blockAudit){
+  const a=f.blockAudit;
+  entries=[['Shot',a.shotTick===null?'—':'Observed'],['Launch speed',speed(a.shotSpeedMps)],['Defender contact',a.contactTick===null?'—':n((a.contactTick-a.shotTick)*FIXED_DT,' s')],['Incoming speed',speed(a.incomingSpeedMps)],['Outgoing speed',speed(a.outgoingSpeedMps)],['Result',a.blocked?'Blocked':a.contactTick!==null?'Contact observed':'—']];
+ }else if(f.interceptionAudit){
+  const a=f.interceptionAudit;
+  entries=[['Pass distance',n(a.passDistanceM,' m')],['Pass',a.passTick===null?'—':'Observed'],['Interception',a.interceptionTick===null?'—':n((a.interceptionTick-a.passTick)*FIXED_DT,' s')],['Recovery',a.carryTick===null?'—':n((a.carryTick-a.interceptionTick)*FIXED_DT,' s')],['Receiver contact',a.recipientTick===null?'—':'Observed']];
+ }else if(keeper){
   entries=[['Shots',count(keeper.shots)],['Launch speed',speed(keeper.launchSpeedMps)],
    ['Keeper contact',n(keeper.keeperContactTick===null?null:keeper.keeperContactTick*FIXED_DT,' s')],
    ['Deflection',keeper.deflection?({reversed:'Reversed',redirected:'Redirected',slowed:'Slowed'})[keeper.deflection.kind]:keeper.parryTick!==null?'Foot parry':'—'],
    ['Rebound',n(keeper.reboundTick===null?null:(keeper.reboundTick-keeper.shotTick)*FIXED_DT,' s')],
    ['Result',keeper.crossing?(keeper.crossing.kind==='goal'?'Goal':'Ball out'):f.keeperDive?.catchState?.active&&f.keeperDive.catchState.confirmedTick!==null?'Ball held':keeper.reboundTick!==null?'Ball in play':'—']];
+ }else if(f.nativeDribbleAudit&&!f.nativeDribbleAudit.soloCarry){
+  const d=f.nativeDribbleAudit;
+  if(f.duelTackleProfile==='mixed'&&f.duelTransition?.ballControl){
+   const control=f.duelTransition.ballControl,decision=f.defensiveDecision;
+   const decisionLabels={'standing-tackle':'Standing tackle','sliding-tackle':'Sliding tackle','shoulder-challenge':'Shoulder challenge','interception':'Interception','recover':'Recover ball','none':'—'};
+   entries=[['Ball control',control.kind==='controlled'?(control.playerId.startsWith('home-')?'HOME #':'AWAY #')+control.playerId.split('-').at(-1):'Loose ball'],
+    ['Defensive intent',decisionLabels[decision?.kind]??'—'],['Touches',count(d.appliedCarryActions)],
+    ['Defensive touches',count(d.defensiveTackleAttempts+d.defensiveInterceptionAttempts)],
+    ['Ball path',n(d.ballPath2DM,' m')],['Peak ball speed',speed(d.peakBallSpeedMps)]];
+  }else entries=[['Touches',count(d.appliedCarryActions)],['Forward distance',n(d.ballForwardDistanceM,' m')],
+   ['Peak ball speed',speed(d.peakBallSpeedMps)],['Defender contacts',count(d.defenderShoeStarts)],
+   ['Closest defender gap',n(d.minimumRealDefenderBallGapM,' m')],['Mean touch gap',n(d.meanAppliedTouchIntervalTicks==null?null:d.meanAppliedTouchIntervalTicks*FIXED_DT,' s')]];
  }else if(shot){
   entries=[['Distance',n(shot.distanceM,' m')],['Launch speed',speed(shot.attempted?shot.launchSpeedMps:null)],
    ['Peak height',n(shot.attempted?shot.peakClearanceM:null,' m')],
@@ -2303,6 +2346,13 @@ function setupUnifiedScenarioMenu(){
    ['action:duel-3v3','3v3 · team decisions']
   ]]]:[['Goalkeeping',[
    ['action:keeper-1v1','1v1 · goalkeeper']
+  ]],['Dribbling & defending',[
+   ['action:dribble-1v1','1v1 · autonomous duel'],
+   ['action:dribble-1v1:standing','Standing tackle'],
+   ['action:dribble-1v1:sliding','Sliding tackle'],
+   ['action:dribble-1v1:shoulder','Shoulder challenge'],
+   ['action:pass-pair:interception','Interception'],
+   ['action:defender-1v1:block','Block']
   ]]])
  ];
  const available=new Set([...byId('action-labs-choice').options].map(x=>x.value));
@@ -2315,7 +2365,10 @@ function setupUnifiedScenarioMenu(){
       (shotMode!==null&&(id!=='shot-solo'||!LAB_SHOT_PROFILES.includes(lockedPhase)||shotMode!=='first-time'))||
       (lockedPhase!==null&&
        !((id==='carry-solo'&&SOLO_CARRY_PHASES.includes(lockedPhase))||
-         (id==='shot-solo'&&LAB_SHOT_PROFILES.includes(lockedPhase)))))
+         (id==='shot-solo'&&LAB_SHOT_PROFILES.includes(lockedPhase))||
+         (!archiveMode&&id==='defender-1v1'&&lockedPhase==='block')||
+         (!archiveMode&&id==='pass-pair'&&lockedPhase==='interception')||
+         (!archiveMode&&id==='dribble-1v1'&&['standing','sliding','shoulder'].includes(lockedPhase)))))
     throw new Error('Missing authentic LAB scenario '+value);
    const opt=document.createElement('div');
    opt.className='language-option';
@@ -2335,8 +2388,8 @@ function setupUnifiedScenarioMenu(){
   root.dataset.selectedScene='action:carry-solo:moderate';
   // Detailed research panels stay in the archive surface.
  }
- if(menu.querySelectorAll('[role="option"][data-value]').length!==(archiveMode?24:18)||
-    menu.querySelectorAll('.me-scenario-group-label').length!==(archiveMode?5:4))
+ if(menu.querySelectorAll('[role="option"][data-value]').length!==(archiveMode?24:24)||
+    menu.querySelectorAll('.me-scenario-group-label').length!==5)
   throw new Error('Unexpected active or archived LAB catalog');
 }
 function restoreOriginalScenario(){
@@ -2352,12 +2405,16 @@ function launchSelectedScenario(value){
  const firstTimeShot=shotMode==='first-time';
  const soloCarryLockedPhase=id==='carry-solo'?lockedProfile:null;
  const shotProfile=id==='shot-solo'?(lockedProfile??'power'):null;
+ const duelTackleProfile=id==='defender-1v1'&&lockedProfile==='block'?'block':id==='pass-pair'&&lockedProfile==='interception'?'interception':id==='dribble-1v1'?(lockedProfile??'mixed'):'mixed';
  if(parts.length<2||parts.length>4||
     (shotMode!==null&&(id!=='shot-solo'||kind!=='action'||!LAB_SHOT_PROFILES.includes(lockedProfile)||!firstTimeShot))||
     !['action','movement'].includes(kind)||!id||
     (lockedProfile!==null&&(kind!=='action'||
       !((id==='carry-solo'&&SOLO_CARRY_PHASES.includes(lockedProfile))||
-        (id==='shot-solo'&&LAB_SHOT_PROFILES.includes(lockedProfile))))))
+        (id==='shot-solo'&&LAB_SHOT_PROFILES.includes(lockedProfile))||
+        (!archiveMode&&id==='defender-1v1'&&lockedProfile==='block')||
+        (!archiveMode&&id==='pass-pair'&&lockedProfile==='interception')||
+        (!archiveMode&&id==='dribble-1v1'&&['standing','sliding','shoulder'].includes(lockedProfile))))))
   throw new RangeError('Invalid Scenario kind');
  const prefix=kind==='action'?'action-labs':'movement-labs';
  const choice=byId(prefix+'-choice');
@@ -2369,10 +2426,10 @@ function launchSelectedScenario(value){
  // Selecting a new exercise starts at V01. Side change and Reset replay
  // the current variation; Next/Previous are the only variation controls.
  if(!activeScene||activeScene.kind!==kind||activeScene.id!==id||
-    activeScene.soloCarryLockedPhase!==soloCarryLockedPhase||activeScene.shotProfile!==shotProfile||activeScene.firstTimeShot!==firstTimeShot){
+    activeScene.soloCarryLockedPhase!==soloCarryLockedPhase||activeScene.shotProfile!==shotProfile||activeScene.firstTimeShot!==firstTimeShot||activeScene.duelTackleProfile!==duelTackleProfile){
    activeVariantIndex=0;
   }
- activeScene={kind,id,soloCarryLockedPhase,shotProfile,firstTimeShot};
+ activeScene={kind,id,soloCarryLockedPhase,shotProfile,firstTimeShot,duelTackleProfile};
  try{restart();}catch(error){
   disposeInline();restoreOriginalScenario();
   say('LAB could not start: '+error.message,true);

@@ -175,7 +175,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  soloShoeLengthScale=1,soloRecoveryStepScale=1,
  soloSprintCadenceScale=1,soloSprintLateralTrackScale=1,
  soloSprintActiveFootReleaseM=0,intentDrivenSoloCarry=false,
- firstTimeShotReleaseId=null}={}){
+ firstTimeShotReleaseId=null,sharedDuelStride=false}={}){
  if(firstTimeShotReleaseId!==null&&(
     activePlayerIds?.length!==1||activePlayerIds[0]!==firstTimeShotReleaseId||
     !/^(home|away)-10$/.test(firstTimeShotReleaseId)||dribbleAttackerId!==null||
@@ -239,6 +239,9 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     ![0.9,1,1.1].includes(soloSprintLateralTrackScale)||
     ((soloSprintCadenceScale!==1||soloSprintLateralTrackScale!==1)&&!soloCarry))
   throw new TypeError('DEV Sprint cadence and tracks require genuine solo Carry');
+ if(typeof sharedDuelStride!=='boolean'||sharedDuelStride&&(!isolatedPhysicalBodies||soloCarry||activePlayerIds?.length!==2||dribbleAttackerId===null))
+  throw new TypeError('Shared stride requires original guarded duel');
+ const strideIds=new Set(sharedDuelStride?activePlayerIds:dribbleAttackerId===null?[]:[dribbleAttackerId]);
  const soloShoeHalfWidthM=FOOT_CONTACT_HALF_WIDTH_M*soloShoeWidthScale;
  const soloShoeHalfLengthM=FOOT_CONTACT_HALF_LENGTH_M*soloShoeLengthScale;
  const physicalIds=activePlayerIds===null?null:new Set(activePlayerIds);
@@ -247,12 +250,13 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  const colliders=[],bodies=[],idsByCollider=new Map();
  // D-01 retains its original single shoe. Solo Carry stages TWO native
  // kinematic shoes whose lateral tracks and opposing strides remain distinct.
- function shoeFeet(frame,stepTick,gait=null){
+ function shoeFeet(frame,stepTick,gait=null,duelGaits=null){
   if(dribbleAttackerId===null)return frame;
-  const swingM=gait?.forwardM??-0.105*Math.cos(2*Math.PI*stepTick/24);
-  const lateralM=gait?.sideM??0;
   return Object.freeze(frame.map((p,i)=>{
-   if(initialPlayers[i].id!==dribbleAttackerId)return p;
+   if(!strideIds.has(initialPlayers[i].id))return p;
+   const chosen=duelGaits?.[initialPlayers[i].id]??gait;
+   const swingM=chosen?.forwardM??-0.105*Math.cos(2*Math.PI*stepTick/24);
+   const lateralM=chosen?.sideM??0;
    if(soloCarry)return soloCarryTwoFootPositions(p,gait,{
     recoveryStepScale:soloRecoveryStepScale,
     sprintLateralTrackScale:soloSprintLateralTrackScale
@@ -325,6 +329,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   tick=0,disposed=false;
  let actualShoeFeet=stagedFeet;
  let gaitPhaseRad=0,lastGaitFrequencyHz=null;
+ const duelPhases=Object.fromEntries([...strideIds].map(id=>[id,0]));
  const shotReleaseIndex=firstTimeShotReleaseId===null?-1:
   initialPlayers.findIndex(p=>p.id===firstTimeShotReleaseId);
  let shotRelease=null,releasePreviousNativePose=null;
@@ -363,6 +368,8 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
    carryPhase:soloCarry?playerFrame.soloCarryPhase?.phase:null,
    sprintCadenceScale:soloCarry?soloSprintCadenceScale:1
   }):null;
+  const duelGaits=sharedDuelStride?Object.fromEntries(playerFrame.players.filter(p=>strideIds.has(p.id)).map(p=>[p.id,
+   advanceD01LiveShoeGait({phaseRad:duelPhases[p.id],player:p,ball:preStepBall,tick:nextTick,solo:false})])):null;
   if(soloCarry)lastGaitFrequencyHz=gait.frequencyHz;
   // Separate stride cadence from contact frequency without turning the
   // foot into a 7 m/s lateral paddle. Genuine side-step motion is limited
@@ -390,7 +397,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   let proposed=experimentalFeet?
    Object.freeze(shoeFeet(next,nextTick,gait).map((p,i)=>
     initialPlayers[i].id===dribbleAttackerId?experimentalFeet.left:p)):
-   shoeFeet(next,nextTick,gait);
+   shoeFeet(next,nextTick,gait,duelGaits);
   if(releasePreviousNativePose!==null){
    const age=nextTick-shotRelease.strikeTick;
    // Continuous lateral recovery at 6 m/s, one hold step, then return.
@@ -413,7 +420,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   // ownership is synthesized.
   const newFeet=dribbleAttackerId===null?proposed:
    Object.freeze(proposed.map((rawFoot,i)=>{
-    if(initialPlayers[i].id!==dribbleAttackerId)return rawFoot;
+    if(!strideIds.has(initialPlayers[i].id))return rawFoot;
     const foot=limitSoloFootLateralMotion(rawFoot,actualShoeFeet[i]);
     const prior=footProxyTransform(actualShoeFeet[i]);
     const desired=footProxyTransform(foot);
@@ -447,7 +454,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   const poses=newFeet.map(footProxyTransform);
   for(let i=0;i<poses.length;i++){
    const p=poses[i];
-   if(initialPlayers[i].id===dribbleAttackerId||i===shotReleaseIndex){
+   if(strideIds.has(initialPlayers[i].id)||i===shotReleaseIndex){
     const previous=footProxyTransform(actualShoeFeet[i]);
     if(Math.hypot(p.x-previous.x,p.y-previous.y)>7/60+1e-5)
      throw new TypeError('D-01 real shoe exceeds original 7m/s continuity');
@@ -470,6 +477,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   }
   positions=next;actualShoeFeet=newFeet;
   if(gait)gaitPhaseRad=gait.phaseRad;
+  if(duelGaits)for(const id of strideIds)duelPhases[id]=duelGaits[id].phaseRad;
  }
  function observe(nextTick,priorBall,postBall,sharedEvents=null){
   live();
