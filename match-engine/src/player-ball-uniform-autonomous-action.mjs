@@ -16,6 +16,9 @@ import {chooseIsolatedDribbleTouch,chooseSharedDuelTouch,chooseDirectedDribbleTo
 export const UNIFORM_AUTONOMOUS_ACTION_VERSION=
  'me-pb-55-closed-real-contact-uniform-action-v1';
 export const UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS=12;
+export function nativeActionCooldownTicks({pairedPhysicalSource=false,isolatedDribbleContext=null}={}){
+ return !pairedPhysicalSource&&['dribble-1v1','carry-solo'].includes(isolatedDribbleContext?.situationId)?4:UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS;
+}
 const ACTION_IMPULSE_NS=Object.freeze({pass:2.4,shot:3.0,cross:2.7,save:2.6,tackle:1.9,interception:2.1,clearance:2.7,carry:0.42});
 export const PROVISIONAL_PHYSICAL_CARRY_IMPULSE_NS=0.42;
 // C3.2a: a small GROUND touch is a real Rapier impulse, NOT a virtual
@@ -305,7 +308,7 @@ export const PHYSICAL_REJECTION_REASONS_VERSION=
 export function inspectPhysicalActionRejection({
  tick,contactStarted,contactActive,playerFrame,ballPosition,ballVelocity,
  lastActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS,ballRadiusM,
- allowPhysicalCarry=false,isolatedDribbleContext=null
+ allowPhysicalCarry=false,isolatedDribbleContext=null,pairedPhysicalSource=false
 }={}){
  if(!Number.isSafeInteger(tick)||tick<1||
     !Array.isArray(contactStarted)||!Array.isArray(contactActive)||
@@ -330,8 +333,7 @@ export function inspectPhysicalActionRejection({
   contactStarted[0]===contactActive[0];
  const actor=exclusive?players.find(p=>p.id===contactStarted[0]):null;
  const gap=actor?Math.hypot(actor.x-ballPosition.x,actor.y-ballPosition.y):null;
- const requiredCooldown=['dribble-1v1','carry-solo'].includes(isolatedDribbleContext?.situationId)?
-  4:UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS;
+ const requiredCooldown=nativeActionCooldownTicks({pairedPhysicalSource,isolatedDribbleContext});
  const firstFailedGate=!exclusive?'no-exclusive-shoe-start':
   tick-lastActionTick<requiredCooldown?'cooldown':
   ballPosition.z<ballRadiusM-0.015||
@@ -352,7 +354,7 @@ export function selectUniformAutonomousContactAction({
  tick,contactStarted,contactActive,playerFrame,ballPosition,ballVelocity,
  lastActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS,ballRadiusM,
  allowPhysicalCarry=false,activePlayerIds=null,smallSidedDecisionContext=null,
- isolatedDribbleContext=null,keeperSingleShotSide=null,duelTransition=null,interceptionContext=null,blockContext=null,collectiveControl=null,nativeActionPolicy=false,attackPolarity=1,allowedFundamentals=null,requiredLoftedProfile=null
+ isolatedDribbleContext=null,keeperSingleShotSide=null,duelTransition=null,interceptionContext=null,blockContext=null,collectiveControl=null,nativeActionPolicy=false,attackPolarity=1,allowedFundamentals=null,requiredLoftedProfile=null,pairedPhysicalSource=false,nativeCarryParameters=null
 }){
  const mask=createNativeFundamentalMask(allowedFundamentals),permits=kind=>nativeFundamentalAllowed(mask,kind);
  validateAttackPolarity(attackPolarity);
@@ -410,8 +412,7 @@ export function selectUniformAutonomousContactAction({
  // Multi-contact remains real physics evidence, never a possession award.
  if(contactStarted.length!==1||contactActive.length!==1||
     contactActive[0]!==contactStarted[0])return null;
- const requiredCooldown=isolatedDribbleContext!==null?
-  4:UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS;
+ const requiredCooldown=nativeActionCooldownTicks({pairedPhysicalSource,isolatedDribbleContext});
  if(tick-lastActionTick<requiredCooldown||
     ballPosition.z<ballRadiusM-0.015||
     ballPosition.z>ballRadiusM+MAX_HEIGHT_M||
@@ -523,7 +524,7 @@ export function selectUniformAutonomousContactAction({
    action=duelDefensiveTouch.kind;dx=duelDefensiveTouch.dx;dy=duelDefensiveTouch.dy;
    rule=collectiveTouch?'collective-native-defensive-ground-touch':'directed-duel-native-defensive-ground-touch';
   }else if(dribbleTouch!==null){
-   if(!permits('carry')||dribbleTouch.magnitudeNs<0.025)continue;
+   if(!permits('carry')||!pairedPhysicalSource&&dribbleTouch.magnitudeNs<0.025)continue;
    action='carry';dx=dribbleTouch.dx;dy=dribbleTouch.dy;
    rule=ic?'interception-recovery-native-carry':isolatedDribbleContext?.directed===true?'directed-live-opponent-ground-touch':'isolated-dribble-real-shoe-variable-ground-touch';
   }else if(eligibleLiveKeeperSave(player,ballPosition,ballVelocity,attackPolarity)){
@@ -617,17 +618,17 @@ export function selectUniformAutonomousContactAction({
   // satisfactory rolling ball. Other action kinds remain untouched.
   if(!permits(action))continue;
   let nativeCarryTouch=null;
-  if(collective&&action==='carry'){
+  if((collective||pairedPhysicalSource&&!activeKeeperAttacker)&&action==='carry'){
    const nearest=nearestNativeCarryOpponent(player,ballPosition,actors);
    nativeCarryTouch=planNativeCarryTouch({attacker:player,attackingSide:player.team,defender:nearest,ballPosition,ballVelocity,attackPolarity,
-    phase:playerFrame.smallSidedMovementDecisions?.find(d=>d.id===id&&d.tick===tick&&d.kind==='carry-ball')?.carryPhase??null});
+    phase:playerFrame.smallSidedMovementDecisions?.find(d=>d.id===id&&d.tick===tick&&d.kind==='carry-ball')?.carryPhase??null,...(nativeCarryParameters??{})});
    if(nativeCarryTouch.magnitudeNs<0.025)continue;
    dx=nativeCarryTouch.dx;dy=nativeCarryTouch.dy;
    rule='native-live-opponent-ground-touch';
   }
   const length=Math.hypot(dx,dy);
   if(length<1e-5)continue;
-  const magnitude=duelDefensiveTouch?.magnitudeNs??dribbleTouch?.magnitudeNs??nativeCarryTouch?.magnitudeNs??(activeKeeperAttacker&&action==='carry'?duelIntent.magnitude:ACTION_IMPULSE_NS[action]),factor=magnitude/
+  const magnitude=duelDefensiveTouch?.magnitudeNs??nativeCarryTouch?.magnitudeNs??dribbleTouch?.magnitudeNs??(activeKeeperAttacker&&action==='carry'?duelIntent.magnitude:ACTION_IMPULSE_NS[action]),factor=magnitude/
    Math.hypot(dx,dy,vertical*length);
   const impulseNs=Object.freeze({x:dx*factor,y:dy*factor,
    z:vertical*length*factor});

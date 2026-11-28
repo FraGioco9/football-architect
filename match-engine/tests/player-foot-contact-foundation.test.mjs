@@ -332,3 +332,27 @@ test('ME-01-QA U-01F7: paired carry diagnostic is a read-only projection of actu
   assert.throws(()=>nativePairedCarryReadout(null,{actorId:id}),/Actual paired/);
  }
 });
+
+import {nativeActionCooldownTicks} from '../src/player-ball-uniform-autonomous-action.mjs';
+import {nativeTimelineOnsetMotion} from '../src/player-foot-contact-timeline.mjs';
+
+test('ME-01-QA U-01F7b: common paired cooldown and actual foot trajectory evidence',()=>{
+ for(const situationId of ['carry-solo','dribble-1v1',null]){
+  const isolatedDribbleContext=situationId?{situationId}:null;
+  assert.equal(nativeActionCooldownTicks({pairedPhysicalSource:true,isolatedDribbleContext}),12);
+  assert.equal(nativeActionCooldownTicks({pairedPhysicalSource:false,isolatedDribbleContext}),situationId?4:12);
+ }
+ for(const team of ['home','away']){
+  const dir=team==='home'?1:-1,id=team+'-10';
+  const ball={position:{x:dir,y:0},velocity:{x:0,y:0}};
+  const before={x:0,y:0},after={x:dir*.1,y:0};
+  const approaching=nativeTimelineOnsetMotion(ball,before,after,id);
+  const separating=nativeTimelineOnsetMotion(ball,before,{x:-dir*.1,y:0},id);
+  assert.ok(Math.abs(approaching.closingSpeedMps-6)<1e-9);
+  assert.equal(approaching.separatingSpeedMps,0);
+  assert.ok(Math.abs(separating.separatingSpeedMps-6)<1e-9);
+  assert.equal(separating.closingSpeedMps,0);
+  assert.equal(nativeTimelineOnsetMotion(ball,null,after,id).relativeSpeedMps,null);
+  assert.equal(nativeTimelineOnsetMotion(ball,before,null,id).geometry,'ambiguous-native-feet');
+ }
+});

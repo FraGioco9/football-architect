@@ -408,6 +408,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  let gaitPhaseRad=0,lastGaitFrequencyHz=null;
  const duelPhases=Object.fromEntries([...strideIds].map(id=>[id,0]));
  const nativeStridePhases=new Map();
+ let pairedPreviousPoses=null;
  const shotReleaseIndex=firstTimeShotReleaseId===null?-1:
   initialPlayers.findIndex(p=>p.id===firstTimeShotReleaseId);
  let shotRelease=null,releasePreviousNativePose=null;
@@ -529,6 +530,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   // Paired open-play shoes use the same live phase-dependent geometry
   // as Solo Carry, and return to a neutral two-foot stance otherwise.
   if(nativeCarryStride){
+   pairedPreviousPoses=Object.fromEntries([...nativePairs].map(([id,pair])=>[id,{left:vector(bodies[initialPlayers.findIndex(p=>p.id===id)].translation()),right:vector(pair.body.translation())}]));
    newFeet=Object.freeze(newFeet.map((foot,i)=>{
     const p=playerFrame.players[i],pair=nativePairs.get(p.id);
     if(!pair)return foot;
@@ -673,7 +675,8 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
    // Whole-ball delta includes gravity/turf; never shoe attribution.
    onsetBallDeltaVelocityMps:started.size?dv:null
   });
-  const observedTimeline=timeline.observe(collision,priorBall,actualShoeFeet);
+  const pairedTrajectories=nativeCarryStride?Object.fromEntries([...nativePairs].map(([id,pair])=>[id,{left:{before:pairedPreviousPoses[id].left,after:vector(bodies[initialPlayers.findIndex(p=>p.id===id)].translation())},right:{before:pairedPreviousPoses[id].right,after:vector(pair.body.translation())}}])):null;
+  const observedTimeline=timeline.observe(collision,priorBall,actualShoeFeet,pairedTrajectories);
   const forcePairs=new Map(),soloFootForces=new Map();
   const visitForce=(a,b,f,d,totalMagnitude,maxMagnitude)=>{
    const other=a===ballCollider.handle?b:

@@ -318,7 +318,7 @@ export function createPrivatePhysicalActionExecutor({
    contactStarted:contact.started,contactActive:contact.active,
    playerFrame,ballPosition:ballBody.translation(),
    ballVelocity:ballBody.linvel(),ballRadiusM,lastActionTick,
-   allowPhysicalCarry,isolatedDribbleContext
+   allowPhysicalCarry,isolatedDribbleContext,pairedPhysicalSource:contact.nativePairedFeet!==undefined
   };
   const gates=inspectPhysicalActionRejection(input);
   // When the private B06b match is PAUSED for a real referee-issued
@@ -336,6 +336,7 @@ export function createPrivatePhysicalActionExecutor({
   const originalChoice=suppressOriginalAction||suppressPhysicalBodyContact||
    !isolatedNativeShoeSourceValid||!pairedSourceValid?null:
    selectUniformAutonomousContactAction({...input,activePlayerIds,allowedFundamentals:nativeSequenceGroundMask(fundamentalMask,aerialSequence,contact.started[0],sequenceDeliveryApplied),requiredLoftedProfile:aerialSequence?.profile??null,
+    nativeCarryParameters:nativeFixedCarryResearch&&contact.nativePairedFeet!==undefined?{phase:playerFrame.soloCarryPhase?.lockedPhase,playerAttributes:playerFrame.soloCarryPhase?.carryPlayerAttributes,nativeFixedSprintLongStride}:null,
     smallSidedDecisionContext,isolatedDribbleContext,keeperSingleShotSide,duelTransition,collectiveControl,nativeActionPolicy,attackPolarity,
     interceptionContext:interceptionPassSide===null?null:{side:interceptionPassSide,phase:interceptionPhase},
     blockContext:blockShotSide===null?null:{side:blockShotSide,shotTaken:blockShotTaken}});
@@ -440,8 +441,9 @@ export function createPrivatePhysicalActionExecutor({
   // The *existing* uniform policy and Rapier exclusive shoe START remain
   // the only action authority. Native phase calibration can adjust that
   // action's impulse or decline it, never generate an extra contact/action.
+  const commonPhase=originalChosen?.decisionContext?.nativeCarryTouch?.phaseProposal;
   const nativeTune=nativeFixedCarryResearch&&originalChosen?.action==='carry'?
-   chooseNativeFixedCarryImpulse({
+   contact.nativePairedFeet!==undefined?(commonPhase?Object.freeze({source:'authentic-native-two-shoe-calibrated-impulse',...commonPhase,nativeShoeContactVerified:true,originalFootEventOnly:commonPhase.impulseNs===null,noExtraShoeEvent:true,officialPossession:false,originalRapierBall:true}):null):chooseNativeFixedCarryImpulse({
     phase:playerFrame.soloCarryPhase?.lockedPhase,
     playerAttributes:playerFrame.soloCarryPhase?.carryPlayerAttributes,
     player:playerFrame.players.find(p=>p.id===originalChosen.playerId),
@@ -528,7 +530,7 @@ export function createPrivatePhysicalActionExecutor({
    }):passCalibration?Object.freeze({
     x:chosen.impulseNs.x*passCalibration.scale,
     y:chosen.impulseNs.y*passCalibration.scale,z:0
-   }):nativeTune?.impulseNs??chosen.impulseNs;
+   }):contact.nativePairedFeet!==undefined?chosen.impulseNs:nativeTune?.impulseNs??chosen.impulseNs;
    ballBody.applyImpulse(impulse,true);
    let shotSpin=null;
    if(shotCalibration?.targetAngularVelocity){
