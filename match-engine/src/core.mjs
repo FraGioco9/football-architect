@@ -1083,7 +1083,8 @@ export function createEngine(RAPIER, input = {}, {
     if(restarting){
      const placement=nativeRestartPending,at=placement.spot,id=placement.takerId;
      const foot=shoeBridge.snapshot(),solver=shoeBridge.solver(),p=body.translation();
-     const otherBody=smallBodyGuard.snapshot().lowerLegBallContacts.some(actor=>actor!==id);
+     const restartBody=smallBodyGuard.snapshot();
+     const otherBody=restartBody.lowerLegBallContacts.length>0||(restartBody.headBallContacts?.length??0)>0||(restartBody.aerialControlContacts?.length??0)>0||keeperSnapshots().some(k=>k.contact||k.catchState?.active||k.distribution?.tick===tick||k.boundedRelease?.tick===tick);
      const exclusive=nativeGroundRestartContactReady({mask:restartMask,kind:placement.kind,tick,takerId:id,foot,solver,exclusive:hasExclusiveNativeShoeStart(foot,id),otherBody});
      if(!nativeRestartAllowed(restartMask,placement.kind))throw new TypeError('Native restart not permitted');
      if(placement.kind==='throw-in'){
@@ -1122,7 +1123,7 @@ export function createEngine(RAPIER, input = {}, {
      const raw=actionExecutor.actionSnapshot(),hands=keeperSnapshots();
      nativeMatchReferee.observe({physics:result,playerFrame,foot:shoeBridge.snapshot(),
       solver:shoeBridge.solver(),action:raw?.tick===tick?raw:null,
-      ...nativeRefereeKeeperEvidence(hands),
+      ...nativeRefereeKeeperEvidence(hands),bodyEvidence:smallBodyGuard.snapshot(),
       ...(nativeAerialEnabled?{aerialEvidence:smallBodyGuard.snapshot().aerial,
        aerialConflict:smallBodyGuard.snapshot().lowerLegBallContacts.length>0||keeperSnapshots().some(k=>k.contact||k.catchState?.active||k.distribution?.tick===tick||k.boundedRelease?.tick===tick)}:{})});
      if(nativeRestartTake?.tick===tick&&nativeRestartTake.type==='throw-in')

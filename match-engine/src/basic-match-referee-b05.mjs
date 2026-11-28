@@ -1,3 +1,4 @@
+import {hasExclusiveNativeShoeStart} from './rapier-foot-contact-bridge.mjs';
 import {exclusiveNativeAerialStart} from './small-sided-native-body-guard.mjs';
 // #628 ACTIONS-B05: original 60Hz Rapier ball crossing and minimal referee
 // restarts. DEV read-only source auditor; never fabricates an action, possession,
@@ -10,8 +11,24 @@ import {validateAttackPolarity,teamAttackingEnd,oppositeTeam} from './match-dire
 // keeper identity is inferred when more than one new glove contact exists.
 export function nativeRefereeKeeperEvidence(states){
  if(!Array.isArray(states))throw new TypeError('Native keeper states required');
- const starts=states.filter(k=>k?.contactStarted===true);
- return Object.freeze({keeperDive:starts.length===1?starts[0]:null,keeperContactConflict:starts.length>1});
+ const contacts=states.filter(k=>k?.contact===true||k?.contactStarted===true||k?.catchState?.active===true);
+ return Object.freeze({keeperDive:contacts.length===1?contacts[0]:null,keeperContactConflict:contacts.length>1});
+}
+// Undefined preserves prior evidence; null clears ambiguous attribution.
+export function resolveNativeRefereeTouch({tick,foot,aerialEvidence=[],aerialConflict=false,bodyStarts=[],bodyActive=[],keeperDive=null,keeperContactConflict=false}={}){
+ const aerial=(aerialEvidence??[]).filter(s=>s.contact);
+ const glove=keeperDive?.contact===true||keeperDive?.contactStarted===true||keeperDive?.catchState?.active===true;
+ const sources=Number(foot.active.length>0||foot.started.length>0)+Number(aerial.length>0)+Number(bodyActive.length>0)+Number(glove);
+ if(keeperContactConflict||sources>1||aerial.length>1||bodyActive.length>1||foot.active.length>1||foot.started.length>1)return null;
+ if(aerial.length){
+  const hit=exclusiveNativeAerialStart(aerialEvidence,foot.started,foot.active,aerialConflict);
+  if(hit)return Object.freeze({tick,playerId:hit.actorId,team:hit.team,...(hit.version==='me-628-native-aerial-head-v1'?{nativeHeadContact:true}:{nativeAerialControlContact:true,surface:hit.surface})});
+  return aerialConflict||aerial.some(s=>s.contactStarted)?null:undefined;
+ }
+ if(glove)return keeperDive.contactStarted===true?Object.freeze({tick,playerId:keeperDive.keeperId,team:keeperDive.keeperId.split('-')[0],nativeGloveContact:true}):undefined;
+ if(bodyActive.length)return bodyStarts.length===1&&bodyStarts[0]===bodyActive[0]?Object.freeze({tick,playerId:bodyStarts[0],team:bodyStarts[0].split('-')[0],nativeLowerLegContact:true}):bodyStarts.length?null:undefined;
+ if(foot.started.length)return hasExclusiveNativeShoeStart(foot,foot.started[0])?Object.freeze({tick,playerId:foot.started[0],team:foot.started[0].split('-')[0],nativeExclusiveShoeStart:true}):null;
+ return undefined;
 }
 export const B05_REFEREE_VERSION='actions-b05-native-boundary-referee-v1';
 export const B05_GOAL_WIDTH_M=7.32;
@@ -105,7 +122,7 @@ export function createBasicMatchRefereeB05({attackPolarity=1}={}){
    matchAuthority:false,officialMatchResult:null,
    officialPossession:false});
  }
- function observe({physics,playerFrame,foot,solver,action=null,keeperDive=null,keeperContactConflict=false,aerialEvidence=null,aerialConflict=false}={}){
+ function observe({physics,playerFrame,foot,solver,action=null,keeperDive=null,keeperContactConflict=false,aerialEvidence=null,aerialConflict=false,bodyEvidence=null}={}){
   const next=physics?.tick,ball=physics?.ball;
   if(!Number.isSafeInteger(next)||next!==tick+1||next<0||
     playerFrame?.tick!==next||foot?.tick!==next||
@@ -138,15 +155,21 @@ export function createBasicMatchRefereeB05({attackPolarity=1}={}){
       s.sameOriginalRapierWorld!==true||s.actualNativeSolverContact!==s.contact||
       s.contactStarted&&!s.contact||!playerFrame.players.some(p=>p.id===s.actorId&&p.team===s.team&&p.role!=='goalkeeper'))))
    throw new TypeError('B05 head touch requires current original native evidence');
-  const heads=(aerialEvidence??[]).filter(s=>s.contact);
+  if(bodyEvidence!==null&&(bodyEvidence.tick!==next||bodyEvidence.oneOriginalRapierWorld!==true||bodyEvidence.evidenceSource!=='native-rapier-solver-manifold'||
+     !Array.isArray(bodyEvidence.lowerLegBallStarts)||!Array.isArray(bodyEvidence.lowerLegBallContacts)||
+     bodyEvidence.lowerLegBallStarts.some(id=>!bodyEvidence.lowerLegBallContacts.includes(id))||
+     bodyEvidence.lowerLegBallContacts.some(id=>!knownIds.has(id))))
+   throw new TypeError('B05 lower-leg touch requires current original native evidence');
+  const bodyStarts=bodyEvidence?.lowerLegBallStarts??[],bodyActive=bodyEvidence?.lowerLegBallContacts??[];
   const headStart=exclusiveNativeAerialStart(aerialEvidence,foot.started,foot.active,aerialConflict);
   const headerAction=action?.nativeExclusiveHeadStart===true&&headStart?.version==='me-628-native-aerial-head-v1'&&action.actualNativeSolverContact===true&&headStart?.actorId===action.playerId;
   const aerialControlAction=action?.nativeExclusiveAerialControlStart===true&&headStart?.version==='me-628-native-aerial-control-v1'&&action.surface===headStart.surface&&action.actualNativeSolverContact===true&&headStart.actorId===action.playerId;
+  const aerialAction=action?.nativeExclusiveHeadStart===true||action?.nativeExclusiveAerialControlStart===true;
   if(action!==null&&(
     action.tick!==next||action.appliedByRapier!==true||
     action.actualPhysicsImpulseApplied!==true||
     action.officialMatchAction!==false||
-    (!headerAction&&!aerialControlAction&&(foot.started.length!==1||foot.started[0]!==action.playerId))))
+    (aerialAction?(!headerAction&&!aerialControlAction):!hasExclusiveNativeShoeStart(foot,action.playerId))))
    throw new TypeError('B05 last touch requires authenticated original action');
   // A native sole START is touch evidence even without a uniform kick.
   // Simultaneous STARTs cannot be assigned to either team.
@@ -156,16 +179,8 @@ export function createBasicMatchRefereeB05({attackPolarity=1}={}){
      keeperDive.contact!==true||keeperDive.source!=='native-rapier-solver-manifold'||
      !playerFrame.players.some(p=>p.id===keeperDive.keeperId&&p.role==='goalkeeper')))
    throw new TypeError('B05 keeper glove touch requires same-tick native evidence');
-  if(keeperContactConflict||heads.length&&(!headStart||gloveStart))lastTouch=null;
-  else if(headStart)lastTouch=freeze({tick:next,playerId:headStart.actorId,team:headStart.team,...(headStart.version==='me-628-native-aerial-head-v1'?{nativeHeadContact:true}:{nativeAerialControlContact:true,surface:headStart.surface})});
-  else if(gloveStart&&foot.started.length===0)
-   lastTouch=freeze({tick:next,playerId:keeperDive.keeperId,team:keeperDive.keeperId.split('-')[0],nativeGloveContact:true});
-  else if(gloveStart&&foot.started.some(id=>id!==keeperDive.keeperId))lastTouch=null;
-  else if(foot.started.length===1)
-   lastTouch=freeze({tick:next,playerId:foot.started[0],
-    team:foot.started[0].split('-')[0],
-    nativeExclusiveShoeStart:true});
-  else if(foot.started.length>1)lastTouch=null;
+  const touch=resolveNativeRefereeTouch({tick:next,foot,aerialEvidence,aerialConflict,bodyStarts,bodyActive,keeperDive,keeperContactConflict});
+  if(touch!==undefined)lastTouch=touch;
   // A source-verified, physically restarted dead ball can begin a NEW
   // independent phase. Unresolved dead balls cannot create repeated
   // phantom exits or goals.

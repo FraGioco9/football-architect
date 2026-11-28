@@ -11,7 +11,7 @@ import {createControlledActionLab} from '../src/action-labs.mjs';
 import {ACTION_LAB_SCENARIOS,B05_LAB_STARTS}
  from '../src/action-lab-scenarios.mjs';
 import {B05_REFEREE_VERSION,detectFirstFullyOutBallB05,
- createBasicMatchRefereeB05,nativeRefereeKeeperEvidence} from '../src/basic-match-referee-b05.mjs';
+ createBasicMatchRefereeB05,nativeRefereeKeeperEvidence,resolveNativeRefereeTouch} from '../src/basic-match-referee-b05.mjs';
 
 test('B05 exact full-ball goal plane, posts, bar, corners and boundary ordering (pure geometry)',()=>{
  assert.deepEqual(ACTION_LAB_SCENARIOS.filter(s=>
@@ -168,4 +168,29 @@ test('ME-01-QA U-02d2: common keeper last-touch source does not resolve ambiguou
  assert.equal(nativeRefereeKeeperEvidence([home,idle]).keeperDive,home);
  for(const states of [[home,away],[away,home]])assert.deepEqual(nativeRefereeKeeperEvidence(states),{keeperDive:null,keeperContactConflict:true});
  assert.throws(()=>nativeRefereeKeeperEvidence(null),/Native keeper states/);
+});
+
+test('ME-01-QA U-02d6: referee distinguishes exclusive, ongoing and competing physical surfaces',()=>{
+ for(const side of ['home','away']){
+  const id=side+'-10',other=(side==='home'?'away':'home')+'-2',keeperId=side+'-1',tick=7;
+  const foot={started:[id],active:[id]},empty={started:[],active:[]};
+  const base={tick,foot:empty};
+  const head={actorId:id,team:side,version:'me-628-native-aerial-head-v1',contact:true,contactStarted:true,actualNativeSolverContact:true,sameOriginalRapierWorld:true};
+  const chest={...head,version:'me-628-native-aerial-control-v1',surface:'chest'};
+  const glove={keeperId,contact:true,contactStarted:true};
+  assert.equal(resolveNativeRefereeTouch(base),undefined);
+  assert.equal(resolveNativeRefereeTouch({...base,foot}).nativeExclusiveShoeStart,true);
+  assert.equal(resolveNativeRefereeTouch({...base,foot:{started:[],active:[id]}}),undefined);
+  assert.equal(resolveNativeRefereeTouch({...base,foot:{...foot,active:[id,other]}}),null);
+  assert.equal(resolveNativeRefereeTouch({...base,foot:{...foot,nativePairedFeet:{[id]:{actorId:id,independentColliders:2,exclusivePhysicalStart:false,started:['left','right'],active:['left','right']}}}}),null);
+  assert.equal(resolveNativeRefereeTouch({...base,bodyStarts:[id],bodyActive:[id]}).nativeLowerLegContact,true);
+  assert.equal(resolveNativeRefereeTouch({...base,bodyActive:[id]}),undefined);
+  assert.equal(resolveNativeRefereeTouch({...base,aerialEvidence:[head]}).nativeHeadContact,true);
+  assert.equal(resolveNativeRefereeTouch({...base,aerialEvidence:[chest]}).surface,'chest');
+  assert.equal(resolveNativeRefereeTouch({...base,aerialEvidence:[{...head,contactStarted:false}]}),undefined);
+  assert.equal(resolveNativeRefereeTouch({...base,keeperDive:glove}).nativeGloveContact,true);
+  assert.equal(resolveNativeRefereeTouch({...base,keeperDive:{...glove,contactStarted:false}}),undefined);
+  for(const patch of [{foot,bodyStarts:[id],bodyActive:[id]},{foot,aerialEvidence:[head]},{foot,keeperDive:glove},{aerialEvidence:[head,chest]},{aerialEvidence:[head],bodyActive:[id]},{aerialEvidence:[head],aerialConflict:true},{keeperDive:glove,bodyActive:[keeperId]},{keeperContactConflict:true}])assert.equal(resolveNativeRefereeTouch({...base,...patch}),null);
+  assert.equal(nativeRefereeKeeperEvidence([glove,{keeperId:other,contact:true,contactStarted:false}]).keeperContactConflict,true);
+ }
 });

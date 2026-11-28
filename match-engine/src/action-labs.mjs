@@ -1006,6 +1006,7 @@ export function createControlledActionLab(RAPIER,id,{
   const refereeEvidence=refereeObserver?.observe({
    physics,playerFrame,foot,solver:engine.footContactSolverSnapshot(),
    action:effectiveAerialSurfaces.length?action:nativeAction,...nativeRefereeKeeperEvidence(refereeKeeperStates),
+   ...(bodyGuardEnabled&&physics.tick>0?{bodyEvidence:engine.smallSidedBodyGuardSnapshot()}:{}),
    ...(effectiveAerialSurfaces.length&&physics.tick>0?{aerialEvidence:engine.smallSidedBodyGuardSnapshot().aerial,
     aerialConflict:engine.smallSidedBodyGuardSnapshot().lowerLegBallContacts.length>0||
      refereeKeeperStates.some(k=>k.contact||k.catchState?.active||k.distribution?.tick===physics.tick||k.boundedRelease?.tick===physics.tick)}:{})
