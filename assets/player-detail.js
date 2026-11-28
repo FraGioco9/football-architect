@@ -50,6 +50,8 @@
  const statsHost=preview?null:panel.querySelector('[data-detail-stats]');
  const matchesHost=preview?null:panel.querySelector('[data-detail-matches]');
  const historyHost=preview?null:panel.querySelector('[data-detail-history]');
+ const contractHost=preview?null:panel.querySelector('[data-detail-contract]');
+ let contractData=null,contractState='loading',contractRead=null;
  let historyController=null,historyControllerPromise=null;
  let matchesController=null,matchesControllerPromise=null;
  let statsController=null,statsControllerPromise=null;
@@ -120,7 +122,7 @@
  const numeric=value=>typeof value==='string'&&/^[1-9][0-9]*$/.test(value)&&Number.isSafeInteger(Number(value));
  const draftPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
  const params=new URLSearchParams(location.search);
- let view=params.get('view')==='info'?'info':(!preview&&params.get('view')==='stats'?'stats':!preview&&params.get('view')==='matches'?'matches':!preview&&params.get('view')==='history'?'history':'overview');
+ let view=params.get('view')==='info'?'info':(!preview&&params.get('view')==='contract'?'contract':!preview&&params.get('view')==='stats'?'stats':!preview&&params.get('view')==='matches'?'matches':!preview&&params.get('view')==='history'?'history':'overview');
  const context={draftId:params.get('draftId'),index:params.get('index'),returnView:params.get('returnView'),returnGroup:params.get('returnGroup'),returnPage:params.get('returnPage'),returnScroll:params.get('returnScroll'),returnSort:params.get('returnSort'),returnOrder:params.get('returnOrder')};
  const idMatch=!preview&&/^\/players\/([1-9][0-9]*)$/.exec(location.pathname);
  const id=idMatch&&numeric(idMatch[1])?Number(idMatch[1]):null;
@@ -294,15 +296,15 @@
   name.textContent=c.primaryName;link.append(name);stack.append(link);
   clubNode.replaceChildren(stack);
  }
- async function resolveClubCatalog(ticket){
-  if(!player||!player.clubKey)return;
+ async function resolveClubCatalog(ticket,contract=false){
+  if(!player||(!player.clubKey&&!contract))return;
   if(!clubCatalogPromise)clubCatalogPromise=import('/assets/match-public-context.mjs')
    .then(module=>module.publicClubIdentityCatalog())
    .then(manifest=>Array.isArray(manifest.clubs)&&manifest.clubs.length===320?manifest:null)
    .catch(()=>null);
   const manifest=await clubCatalogPromise;
   if(ticket!==request)return;
-  clubCatalog=manifest;clubCatalogResolved=true;
+  clubCatalog=manifest;clubCatalogResolved=true;renderContract();
   renderClub();
  }
  function syncStatsScoreLabel(){
@@ -394,6 +396,69 @@
    matchesHost.setAttribute('aria-busy','false');
   }).finally(()=>{matchesControllerPromise=null});
  }
+ 
+ const contractCopies={"en":"Contract|Salary|Representation|Status|Club|Signed on|Start|Expiry|Duration|Remaining term|Signed salary|Current seasonal salary|Earned this season|Paid this season|Agent|Under contract|Signed — not yet effective|Free agent|Retired|Unavailable|AI Agent|Human agent|Season|Day|End of Season|Contract history|Contract information unavailable","it":"Contratto|Ingaggio|Rappresentanza|Stato|Club|Firma|Decorrenza|Scadenza|Durata|Durata residua|Ingaggio firmato|Ingaggio stagionale attuale|Maturato in stagione|Pagato in stagione|Agente|Sotto contratto|Firmato — non ancora effettivo|Svincolato|Ritirato|Non disponibile|Agente IA|Agente umano|Stagione|Giorno|Fine stagione|Storico contratti|Informazioni contrattuali non disponibili","de":"Vertrag|Gehalt|Vertretung|Status|Verein|Unterzeichnet am|Beginn|Ablauf|Laufzeit|Restlaufzeit|Vereinbartes Gehalt|Aktuelles Saisongehalt|Diese Saison verdient|Diese Saison gezahlt|Agent|Unter Vertrag|Unterzeichnet — noch nicht wirksam|Vereinslos|Karriere beendet|Nicht verfügbar|KI-Agent|Menschlicher Agent|Saison|Tag|Ende der Saison|Vertragshistorie|Vertragsinformationen nicht verfügbar","es":"Contrato|Salario|Representación|Estado|Club|Firmado el|Inicio|Vencimiento|Duración|Duración restante|Salario firmado|Salario actual por temporada|Devengado esta temporada|Pagado esta temporada|Agente|Bajo contrato|Firmado — aún no vigente|Agente libre|Retirado|No disponible|Agente IA|Agente humano|Temporada|Día|Fin de temporada|Historial de contratos|Información contractual no disponible","fr":"Contrat|Salaire|Représentation|Statut|Club|Signé le|Début|Expiration|Durée|Durée restante|Salaire signé|Salaire saisonnier actuel|Acquis cette saison|Payé cette saison|Agent|Sous contrat|Signé — pas encore effectif|Libre|Retraité|Indisponible|Agent IA|Agent humain|Saison|Jour|Fin de saison|Historique des contrats|Informations contractuelles indisponibles"};
+ const contractKeys=["status","club","signed","start","expiry","duration","remaining","signedSalary","currentSalary","earned","paid","agent"];
+ const contractWords=()=>(contractCopies[language()]||contractCopies.en).split('|');
+ const contractInteger=(n,min=0)=>Number.isSafeInteger(n)&&n>=min;
+ function validContract(data){
+  if(!data||data.schemaVersion!==1||data.playerId!==id||!contractInteger(data.season)||!contractInteger(data.day)||data.day>56)return false;
+  if(!['under_contract','signed_pending','free_agent','retired','unavailable'].includes(data.status))return false;
+  const c=data.contract,m=data.representation;
+  if(m!==null&&(!m||!['ai','human'].includes(m.kind)||!(m.username===null||typeof m.username==='string'&&/^[A-Za-z0-9_]{3,24}$/.test(m.username))))return false;
+  if(['free_agent','retired','unavailable'].includes(data.status))return c===null;
+  return !!c&&typeof c.clubKey==='string'&&/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40)$/.test(c.clubKey)
+    &&typeof c.signedAt==='string'&&Number.isFinite(Date.parse(c.signedAt))
+    &&['startTick','endTick','durationSeasons','remainingDays','signedSalaryArc','currentSeasonalSalaryArc','earnedThisSeasonArc','paidThisSeasonArc'].every(k=>contractInteger(c[k]))
+    &&c.endTick>c.startTick&&c.durationSeasons>=1&&c.durationSeasons<=3&&c.signedSalaryArc>0&&c.currentSeasonalSalaryArc>0&&c.paidThisSeasonArc<=c.earnedThisSeasonArc;
+ }
+ function renderContract(){
+  if(!contractHost)return;
+  const w=contractWords(),locale=language(),data=contractData,c=data?.contract,m=data?.representation;
+  contractHost.querySelectorAll('[data-contract-title]').forEach(node=>node.textContent=w[Number(node.dataset.contractTitle)]);
+  contractKeys.forEach((key,i)=>{const node=contractHost.querySelector('[data-contract-label="'+key+'"]');if(node)node.textContent=w[3+i];});
+  const note=contractHost.querySelector('[data-contract-note]'),historyButton=contractHost.querySelector('[data-contract-history]');
+  if(historyButton)historyButton.textContent=w[25];
+  if(note)note.textContent=contractState==='error'||data?.status==='unavailable'?w[26]:'';
+  contractHost.setAttribute('aria-busy',String(contractState==='loading'));
+  const duration=n=>n+' '+({en:n===1?'season':'seasons',it:n===1?'stagione':'stagioni',de:n===1?'Saison':'Saisons',es:n===1?'temporada':'temporadas',fr:n===1?'saison':'saisons'}[locale]||'seasons');
+  const money=n=>new Intl.NumberFormat(locale).format(n)+' $ARC';
+  const day=t=>w[22]+' '+(Math.floor(t/56)+1)+' · '+w[23]+' '+(t%56+1);
+  const expiry=t=>t%56===0?w[24]+' '+Math.floor(t/56):day(t-1);
+  const states={under_contract:w[15],signed_pending:w[16],free_agent:w[17],retired:w[18],unavailable:w[19]};
+  const values={status:states[data?.status]||'—',agent:m?.kind==='ai'?w[20]:m?.kind==='human'?m.username||w[21]:'—'};
+  if(c){
+   values.signed=new Intl.DateTimeFormat(locale,{dateStyle:'medium',timeZone:'UTC'}).format(new Date(c.signedAt));
+   values.start=day(c.startTick);values.expiry=expiry(c.endTick);values.duration=duration(c.durationSeasons);
+   values.remaining=new Intl.NumberFormat(locale,{style:'unit',unit:'day',unitDisplay:'long'}).format(c.remainingDays);
+   values.signedSalary=money(c.signedSalaryArc);values.currentSalary=money(c.currentSeasonalSalaryArc);
+   values.earned=money(c.earnedThisSeasonArc);values.paid=money(c.paidThisSeasonArc);
+   const entry=clubCatalog?.clubs?.find(item=>item.countryId+'-'+item.clubId===c.clubKey);
+   const match=c.clubKey.split('-'),link=document.createElement('a');link.className='app-player-history-link';link.href='/clubs/'+match[0].toLowerCase()+'/'+match[1]+'/overview';
+   link.textContent=entry?.primaryName||c.clubKey;
+   const crest=verifiedClubCrest(c.clubKey,clubCatalog?.clubCrests);
+   const wrap=document.createElement('span');wrap.className='app-player-contract-club';
+   if(crest){const img=document.createElement('img');img.src='/'+crest;img.alt='';img.width=24;img.height=24;wrap.append(img);}
+   wrap.append(link);values.club=wrap;
+  }
+  contractKeys.forEach(key=>{
+   const node=contractHost.querySelector('[data-contract-value="'+key+'"]');if(!node)return;
+   if(contractState==='loading'){if(!node.querySelector('.app-skeleton-bar')){const bar=document.createElement('span');bar.className='app-skeleton-bar';bar.setAttribute('aria-hidden','true');node.replaceChildren(bar);}return;}
+   setContent(node,values[key]||'—');
+  });
+ }
+ function ensurePlayerContract(){
+  if(!contractHost||!id||!player||state!=='ready'||contractRead)return;
+  const ticket=request;
+  contractRead=fetch('/api/players/'+id+'/contract',{credentials:'omit',cache:'no-store'}).then(async response=>{
+   if(!response.ok)throw Error('contract unavailable');
+   const data=await response.json();if(!validContract(data))throw Error('invalid contract');
+   if(ticket!==request)return;
+   contractData=data;contractState='ready';renderContract();
+   if(data.contract?.clubKey&&!clubCatalogResolved)void resolveClubCatalog(ticket,true);
+  }).catch(()=>{if(ticket!==request)return;contractData=null;contractState='error';renderContract();});
+ }
+
  function ensurePlayerHistory(){
   if(preview||!historyHost||!id||!player||state!=='ready')return;
   if(historyController){historyController.render();void historyController.load();return;}
@@ -435,7 +500,7 @@
   document.documentElement.dataset.playerDetailView=view;
   views.forEach((tab,i)=>{
    const selected=tab.dataset.detailView===view;
-   tab.textContent=e.views[i];tab.classList.toggle('is-active',selected);
+   tab.textContent=tab.dataset.detailView==='contract'?contractWords()[0]:e.views[preview||i<2?i:i-1];tab.classList.toggle('is-active',selected);
    tab.setAttribute('aria-selected',String(selected));
    if(!tab.disabled)tab.tabIndex=selected?0:-1;
   });
@@ -443,7 +508,9 @@
   syncStatsScoreLabel();
   if(view==='stats')void ensurePlayerStats();else statsController?.render();
   if(view==='matches')void ensurePlayerMatches();else matchesController?.render();
-  if(view==='history')void ensurePlayerHistory();else historyController?.render();
+  if(state!=='loading'&&state!=='ready'&&contractState==='loading')contractState='error';
+   renderContract();if(view==='contract')void ensurePlayerContract();
+   if(view==='history')void ensurePlayerHistory();else historyController?.render();
   for(const [key,label] of [['positions',e.positions],['info',e.info],['attributes',e.attributes]]){
    panel.querySelector('[data-detail-section-title="'+key+'"]').textContent=label;
   }
@@ -519,6 +586,7 @@
   // Protected draft detail must not expose bfcache-private candidate data
   // until rechecking the active session and server-side draft on return.
   player=null;selectedPosition=null;state='loading';previewCommitted=false;resetPortrait();
+   contractData=null;contractRead=null;contractState='loading';
   if(preview)root.hidden=true;
   const skeleton=(extra='')=>{const bar=document.createElement('span');bar.className='app-skeleton-bar'+(extra?' '+extra:'');bar.setAttribute('aria-hidden','true');return bar;};
   nameNode.replaceChildren(skeleton('app-player-detail-name-skeleton'));roleNode.replaceChildren(skeleton());
@@ -559,14 +627,15 @@
   else url.searchParams.set('view',target);
  }
  function setView(next){
-  if(!['overview','info',...(preview?[]:['stats','matches','history'])].includes(next)||next===view)return;
+  if(!['overview','info',...(preview?[]:['contract','stats','matches','history'])].includes(next)||next===view)return;
   view=next;
   const url=new URL(location.href);
   syncViewParam(url,next);
   history.pushState(history.state,'',url.pathname+url.search+url.hash);
   render();
  }
- const activeTabs=views.filter(tab=>!tab.disabled);
+ contractHost?.querySelector('[data-contract-history]')?.addEventListener('click',()=>setView('history'));
+  const activeTabs=views.filter(tab=>!tab.disabled);
  activeTabs.forEach(tab=>{
   tab.addEventListener('click',()=>setView(tab.dataset.detailView));
   tab.addEventListener('keydown',event=>{
@@ -584,7 +653,7 @@
   if(url.pathname+url.search+url.hash!==current)
    history.replaceState(history.state,'',url.pathname+url.search+url.hash);
  }
- window.addEventListener('popstate',()=>{view=new URLSearchParams(location.search).get('view')==='info'?'info':(!preview&&new URLSearchParams(location.search).get('view')==='stats'?'stats':!preview&&new URLSearchParams(location.search).get('view')==='matches'?'matches':!preview&&new URLSearchParams(location.search).get('view')==='history'?'history':'overview');normalizeViewUrl();render();});
+ window.addEventListener('popstate',()=>{view=new URLSearchParams(location.search).get('view')==='info'?'info':(!preview&&new URLSearchParams(location.search).get('view')==='contract'?'contract':!preview&&new URLSearchParams(location.search).get('view')==='stats'?'stats':!preview&&new URLSearchParams(location.search).get('view')==='matches'?'matches':!preview&&new URLSearchParams(location.search).get('view')==='history'?'history':'overview');normalizeViewUrl();render();});
  window.addEventListener('pageshow',e=>{if(preview&&e.persisted)void load();});
  new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
  normalizeViewUrl();render();void load();

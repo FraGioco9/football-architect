@@ -273,6 +273,10 @@ test('#555 default player Overview is a clean URL across initial load, tabs, leg
  normal.listeners.popstate();
  assert.equal(normal.api.currentView(),'overview','Back/Forward restores Overview');
  assert.equal(normal.path(),'/players/33');
+ normal.api.setView('contract');
+ assert.equal(normal.path(),'/players/33?view=contract');
+ normal.navigate('/players/33?view=contract');normal.listeners.popstate();
+ assert.equal(normal.api.currentView(),'contract');
  normal.api.setView('stats');
  assert.equal(normal.path(),'/players/33?view=stats','public Stats has canonical query');
  assert.equal(normal.api.currentView(),'stats');
@@ -291,6 +295,7 @@ test('#555 default player Overview is a clean URL across initial load, tabs, leg
  const preview=setup('/admin/players/preview/player?draftId=example&index=1&returnPage=2&view=overview#positions');
  preview.api.normalizeViewUrl();
  assert.equal(preview.path(),'/admin/players/preview/player?draftId=example&index=1&returnPage=2#positions','draft context and fragment remain intact');
+ preview.api.setView('contract');assert.equal(preview.api.currentView(),'overview');
  preview.api.setView('stats');
  assert.equal(preview.api.currentView(),'overview','unpublished Admin draft must not expose Stats');
  assert.equal(preview.path(),'/admin/players/preview/player?draftId=example&index=1&returnPage=2#positions');
@@ -883,4 +888,14 @@ test('#763 header reserves wider panels and identical club skeleton and loaded t
   const content=width-(width<=390?52:58)-32;
   assert.ok(content/2-8>=110,'mobile panel width '+width);
  }
+});
+
+test('#822 Contract has reserved public-only layout and canonical first-paint route',()=>{
+ const html=read('players/_shared/index.html'),preview=read('admin/players/preview/player/index.html');
+ assert.match(html,/data-detail-view="contract"[^>]*aria-controls="player-detail-contract-panel"/);
+ assert.match(html,/data-detail-panel="contract"[^>]*aria-busy="true"/);
+ assert.doesNotMatch(preview,/data-detail-view="contract"|data-detail-panel="contract"/);
+ for(const key of ["status","club","signed","start","expiry","duration","remaining","signedSalary","currentSalary","earned","paid","agent"])assert.match(html,new RegExp('data-contract-value="'+key+'"><span class="app-skeleton-bar"'));
+ assert.doesNotMatch(html.slice(html.indexOf('data-detail-panel="contract"'),html.indexOf('data-detail-panel="stats"')),/Promotion adjustment|Outstanding arrears/);
+ assert.equal(renderPlayerDetailPage(read('players/index.html'),'public'),html);
 });
