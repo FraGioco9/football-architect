@@ -7,7 +7,8 @@ import {initializeRapier,createEngine,BALL_RADIUS,canonicalSnapshot}
  from '../src/core.mjs';
 import {INITIAL_PLAYERS,createPlayerMovement} from '../src/player-movement.mjs';
 import {footProxyTransform} from '../src/player-foot-contact.mjs';
-import {NATIVE_FUNDAMENTALS,createNativeFundamentalMask,nativeFundamentalAllowed,nativeLabFundamentalMask,nativeAerialSurfaceAllowed} from '../src/native-fundamental-mask.mjs';
+import {NATIVE_FUNDAMENTALS,createNativeFundamentalMask,nativeFundamentalAllowed,nativeLabFundamentalMask,nativeAerialSurfaceAllowed,createNativeDuelFundamentalMask,nativeDefensiveInterventionAllowed,nativePhysicalActionAllowed} from '../src/native-fundamental-mask.mjs';
+import {selectDefensiveIntervention} from '../src/defensive-intervention-selection.mjs';
 import {createNativeActionRestriction,evaluateNativeActionRestriction} from '../src/private-physical-action-executor.mjs';
 
 test('UME-05E isolated technical constraints filter the same native decision without creating actions',()=>{
@@ -141,9 +142,9 @@ test('ME-01-QA U-01F1: explicit fundamental masks never grant an action or mutat
   [{id:'shot-solo'},['shot']],
   [{id:'carry-solo'},['carry']],
   [{id:'dribble-1v1'},['carry']],
-  [{id:'dribble-1v1',directedDribble:true},['carry','tackle','interception','clearance']],
+  [{id:'dribble-1v1',directedDribble:true},['carry','tackle','interception','clearance','standing-tackle','sliding-tackle','shoulder-challenge']],
   [{id:'pass-pair',interceptionStart:true},['pass','interception','carry','reception']],
-  [{id:'defender-1v1',blockStart:true},['shot','save']],
+  [{id:'defender-1v1',blockStart:true},['shot','save','block']],
   [{id:'keeper-1v1',keeperSingleShot:true},['carry','shot','save']],
   [{id:'full-field-native',collective:true},NATIVE_FUNDAMENTALS],
   [{id:'dribble-1v1',collective:true},NATIVE_FUNDAMENTALS],
@@ -182,4 +183,25 @@ test('ME-01-QA U-01F3a: aerial surface capabilities are independent from ground 
   assert.equal(nativeAerialSurfaceAllowed(mask,'foot'),!!(bits&8)||!!(bits&2)&&!!(bits&4));
   assert.equal(nativeAerialSurfaceAllowed(mask,'unknown'),false);
  }
+});
+
+test('ME-01-QA U-01F3b: defense permissions precede selection, never grant evidence',()=>{
+ const kinds=['standing-tackle','sliding-tackle','shoulder-challenge','interception','block'];
+ for(const [profile,allowed] of [['standing',['standing-tackle']],['sliding',['sliding-tackle']],['shoulder',['shoulder-challenge']],['interception',['interception']],['mixed',kinds.slice(0,4)]]){
+  const mask=createNativeDuelFundamentalMask(profile);
+  for(const kind of kinds)assert.equal(nativeDefensiveInterventionAllowed(mask,kind),allowed.includes(kind));
+  for(const kind of kinds.slice(0,2))assert.equal(nativePhysicalActionAllowed(mask,{action:'tackle',defensiveTarget:{intervention:kind}}),allowed.includes(kind));
+  const input={actorId:'home-2',shoulder:{sideOn:true,parallel:true},standing:{kind:'tackle'},sliding:{},interception:{reachable:true},ballGapM:.5,allowedFundamentals:mask};
+  const picked=selectDefensiveIntervention(input);
+  assert.ok(allowed.includes(picked.kind));assert.equal(picked.physicalContactProven,false);
+  assert.equal(selectDefensiveIntervention({...input,unavailable:true}).kind,'none');
+  assert.equal(selectDefensiveIntervention({...input,activeSlide:true}).kind,allowed.includes('sliding-tackle')?'sliding-tackle':'none');
+  assert.equal(selectDefensiveIntervention({...input,context:'pass'}).kind,allowed.includes('interception')?'interception':'none');
+  assert.equal(selectDefensiveIntervention({...input,context:'shot',block:{}}).kind,'none');
+ }
+ const blockMask=nativeLabFundamentalMask({id:'defender-1v1',blockStart:true});
+ assert.equal(selectDefensiveIntervention({actorId:'away-2',context:'shot',block:{},allowedFundamentals:blockMask}).kind,'block');
+ assert.equal(selectDefensiveIntervention({actorId:'away-2',context:'shot',allowedFundamentals:blockMask}).kind,'none');
+ assert.equal(nativePhysicalActionAllowed(createNativeFundamentalMask(['tackle']),{action:'tackle'}),false);
+ assert.throws(()=>createNativeDuelFundamentalMask('invalid'),/Known/);
 });

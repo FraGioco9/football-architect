@@ -1,6 +1,6 @@
 import {attackDirection,validateAttackPolarity} from './match-directions.mjs';
 import {nearestNativeCarryOpponent} from './solo-carry-phases.mjs';
-import {createNativeFundamentalMask,nativeFundamentalAllowed} from './native-fundamental-mask.mjs';
+import {createNativeFundamentalMask,nativeFundamentalAllowed,nativePhysicalActionAllowed} from './native-fundamental-mask.mjs';
 // ME-PB-55 / A4.2b.1: self-contained, uniform 22-player football action
 // policy, called ONLY after an INTERNAL genuine Rapier shoe START.
 // Pure decision: never applies impulses, never accepts an authenticated
@@ -456,7 +456,7 @@ export function selectUniformAutonomousContactAction({
   const opponentControl=!!owner&&owner.team!==player.team&&Math.hypot(owner.x-ballPosition.x,owner.y-ballPosition.y)<=1.15;
   const nativeSlide=collective?playerFrame.nativeSlides?.[id]??null:null;
   if(collective&&(isNativeRecoveryLocked(collectiveControl,id,tick)||nativeSlide?.phase==='recovery'))continue;
-  const collectiveTouch=collective?chooseCollectiveDefensiveTouch({player,players:actors,ballPosition,ballVelocity,control:collectiveControl,tick,slide:nativeSlide,ballRadiusM,attackPolarity}):null;
+  const collectiveTouch=collective?chooseCollectiveDefensiveTouch({player,players:actors,ballPosition,ballVelocity,control:collectiveControl,tick,slide:nativeSlide,ballRadiusM,attackPolarity,allowedFundamentals:mask}):null;
   if(nativeSlide?.phase==='slide'&&!collectiveTouch)continue;
   const defensiveAttempt=collective?null:chooseBasicDefensiveAttempt({actor:player,players:actors,ball:ballPosition,velocity:ballVelocity});
   // LAB-VAR-02 only: AFTER verified genuine exclusive Rapier shoe START,
@@ -638,6 +638,7 @@ export function selectUniformAutonomousContactAction({
    ...(action==='tackle'?{intervention:(slide?.phase==='slide'||nativeSlide?.phase==='slide'&&duelDefensiveTouch.slidingStrike===true)?'sliding-tackle':'standing-tackle'}:{})}):defensiveAttempt&&
    ['tackle','interception'].includes(action)?
    Object.freeze({...defensiveAttempt,physicsTick:tick}):null;
+  if(!nativePhysicalActionAllowed(mask,{action,defensiveTarget}))continue;
   const saveTarget=action==='save'?Object.freeze({
    source:BASIC_KEEPER_SAVE_VERSION,
    actorId:id,team:player.team,physicsTick:tick,

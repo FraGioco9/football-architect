@@ -2,6 +2,7 @@ import {attackDirection,validateAttackPolarity} from './match-directions.mjs';
 import {selectNativeOpenCarryPhase,planNativeCarryPhaseImpulse,hasNativeOpenCarrySpace} from './solo-carry-phases.mjs';
 // #628 research: proposal only; actual ball impulse needs authentic Rapier START.
 import {selectDefensiveIntervention,planNativeShotBlock,observeNativeShotBlock} from './defensive-intervention-selection.mjs';
+import {createNativeFundamentalMask,createNativeDuelFundamentalMask,nativeDefensiveInterventionAllowed,nativePhysicalActionAllowed} from './native-fundamental-mask.mjs';
 export const ISOLATED_DRIBBLE_TOUCH_VERSION='me-628-dribble-grounded-pressure-paced-v3';
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const opposite=side=>side==='home'?'away':'home';
@@ -27,7 +28,8 @@ export const observeDuelBallControl=observeNativeBallControl;
 // participants. No LAB identity, formation, shirt number or attacker side.
 // A release, conflicting contact or witnessed successful physical challenge
 // invalidates the witness, never assigns it to another player.
-export function createNativeBallControlObserver(activeIds,outfieldIds){
+export function createNativeBallControlObserver(activeIds,outfieldIds,allowedFundamentals=null){
+ const mask=createNativeFundamentalMask(allowedFundamentals);
  if(!Array.isArray(activeIds)||!Array.isArray(outfieldIds)||
     new Set(activeIds).size!==activeIds.length||new Set(outfieldIds).size!==outfieldIds.length||
     !outfieldIds.every(id=>activeIds.includes(id)))throw new TypeError('Active physical participants required');
@@ -47,7 +49,7 @@ export function createNativeBallControlObserver(activeIds,outfieldIds){
    (header||aerialControl||starts.length===1&&starts[0]===action.playerId&&active.length===1&&active[0]===action.playerId)&&
    touching.length===1&&touching[0]===action.playerId&&action.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true;
   if(witness&&(headActive.length||aerialControlActive.length||started.some(id=>id!==witness.playerId)||touching.some(id=>id!==witness.playerId)||real&&action.action!=='carry'))witness=null;
-  const block=observeNativeShotBlock({tick,delivery,players:participants,starts,bodyStarts,before:beforeBallVelocity,after:afterSolverVelocity,attackPolarity});
+  const block=nativeDefensiveInterventionAllowed(mask,'block')?observeNativeShotBlock({tick,delivery,players:participants,starts,bodyStarts,before:beforeBallVelocity,after:afterSolverVelocity,attackPolarity}):null;
   if(block){lastBlock=block;if(block.blocked)blockCount++;}
   if(delivery&&(tick-delivery.tick>180||started.some(id=>id!==delivery.playerId)||touching.some(id=>id!==delivery.playerId)))delivery=null;
   if(real){
@@ -60,7 +62,7 @@ export function createNativeBallControlObserver(activeIds,outfieldIds){
   getUpUntil=Object.fromEntries(Object.entries(getUpUntil).filter(([,until])=>until>=tick));
   shoulderByPlayer=Object.fromEntries(Object.entries(shoulderByPlayer).filter(([,impact])=>impact.balance.until>=tick));
   lastInterventions=Object.fromEntries(Object.entries(lastInterventions).filter(([,impact])=>tick-impact.tick<=120));
-  if(real&&action.action==='tackle'&&action.defensiveTarget?.intervention==='sliding-tackle'){
+  if(real&&nativePhysicalActionAllowed(mask,action)&&action.action==='tackle'&&action.defensiveTarget?.intervention==='sliding-tackle'){
    const actor=participants.find(p=>p.id===action.playerId),rival=participants.find(p=>p.id===action.defensiveTarget.opponentId&&p.team!==actor?.team);
    if(actor&&rival){
     const impact=Object.freeze({tick,actorId:actor.id,opponentId:rival.id,intervention:'sliding-tackle',effective:observeEffectiveDuelIntervention(actor,rival,ball.position,ball.velocity)});
@@ -70,6 +72,7 @@ export function createNativeBallControlObserver(activeIds,outfieldIds){
   }
   let shoulderReleased=false;
   for(const plan of shoulderPlans){
+   if(!nativeDefensiveInterventionAllowed(mask,'shoulder-challenge'))continue;
    if(!outfieldIds.includes(plan.actorId)||!outfieldIds.includes(plan.opponentId)||shoulderByPlayer[plan.opponentId])continue;
    const impact=observeNativeShoulderChallenge({tick,plan,players:participants,ball:ball.position,torsoPairs,bodies});
    if(impact?.successful){shoulderByPlayer[impact.opponentId]=impact;shoulderReleased=true;}
@@ -632,17 +635,18 @@ export function chooseDuelInterceptionTouch({attackingSide,attacker,defender,bal
 // No LAB identity or player formation role determines the decision.
 export function planNativeDefensiveIntervention({attacker,recipient=null,defender,ballPosition,ballVelocity,
  unavailable=false,recovering=false,activeSlide=false,sliding=null,available=true,
- context='duel',allowShoulder=true,allowStanding=true,allowInterception=true,attackPolarity=1}={}){
+ context='duel',allowShoulder=true,allowStanding=true,allowInterception=true,attackPolarity=1,allowedFundamentals=null}={}){
+ const mask=createNativeFundamentalMask(allowedFundamentals),permits=kind=>nativeDefensiveInterventionAllowed(mask,kind);
  validateAttackPolarity(attackPolarity);
  if(!defender||defender.role==='goalkeeper')return null;
  const source={attackingSide:attacker?.team,attacker,defender,ballPosition,ballVelocity,attackPolarity};
  const eligible=available&&!unavailable&&!recovering;
- const shoulder=eligible&&context==='duel'&&allowShoulder?planDuelShoulderApproach(source):null;
- const standing=eligible&&context==='duel'&&allowStanding?chooseDribbleDefensiveTouch(source):null;
- const interception=eligible&&context!=='shot'&&allowInterception?
+ const shoulder=eligible&&context==='duel'&&allowShoulder&&permits('shoulder-challenge')?planDuelShoulderApproach(source):null;
+ const standing=eligible&&context==='duel'&&allowStanding&&(permits('standing-tackle')||permits('interception'))?chooseDribbleDefensiveTouch(source):null;
+ const interception=eligible&&context!=='shot'&&allowInterception&&permits('interception')?
   context==='pass'?planNativePassInterception({passer:attacker,recipient,defender,ballPosition,ballVelocity,attackPolarity}):planDuelInterception(source):null;
- const block=eligible&&context==='shot'?planNativeShotBlock({player:defender,ball:ballPosition,velocity:ballVelocity,attackPolarity}):null;
- const decision=selectDefensiveIntervention({actorId:defender.id,context,unavailable,recovering,activeSlide,
+ const block=eligible&&context==='shot'&&permits('block')?planNativeShotBlock({player:defender,ball:ballPosition,velocity:ballVelocity,attackPolarity}):null;
+ const decision=selectDefensiveIntervention({actorId:defender.id,context,unavailable,recovering,activeSlide,allowedFundamentals:mask,
   shoulder,standing,sliding:eligible?sliding:null,interception:context==='pass'?(interception?.reachable?interception:null):interception,block,
   ballGapM:Math.hypot(defender.x-ballPosition.x,defender.y-ballPosition.y)});
  return Object.freeze({decision,shoulder,standing,interception,block});
@@ -650,16 +654,18 @@ export function planNativeDefensiveIntervention({attacker,recipient=null,defende
 // COL-05: the same standing/interception geometry for any outfield
 // participant, independent of formation role. An interception of a
 // loose pass needs a witnessed opposing release, not guessed ownership.
-export function chooseCollectiveDefensiveTouch({player,players,ballPosition,ballVelocity,control,tick,slide=null,ballRadiusM=0.11,attackPolarity=1}){
+export function chooseCollectiveDefensiveTouch({player,players,ballPosition,ballVelocity,control,tick,slide=null,ballRadiusM=0.11,attackPolarity=1,allowedFundamentals=null}){
+ const mask=createNativeFundamentalMask(allowedFundamentals);
  validateAttackPolarity(attackPolarity);
  if(!player||player.role==='goalkeeper'||!Array.isArray(players)||!control)return null;
  const owner=control.kind==='controlled'?players.find(p=>p.id===control.playerId):null;
  if(slide?.phase==='slide'&&slide.actorId===player.id){
+  if(!nativeDefensiveInterventionAllowed(mask,'sliding-tackle'))return null;
   const rival=players.find(p=>p.id===slide.opponentId&&p.team!==player.team);
   return rival?chooseDribbleDefensiveTouch({attackingSide:rival.team,attacker:rival,defender:player,ballPosition,ballVelocity,sliding:true,attackPolarity}):null;
  }
  if(owner&&owner.team!==player.team&&Math.hypot(owner.x-ballPosition.x,owner.y-ballPosition.y)<=1.15){
-  const plan=planNativeDefensiveIntervention({attacker:owner,defender:player,ballPosition,ballVelocity,allowShoulder:false,allowInterception:false,attackPolarity});
+  const plan=planNativeDefensiveIntervention({attacker:owner,defender:player,ballPosition,ballVelocity,allowShoulder:false,allowInterception:false,attackPolarity,allowedFundamentals:mask});
   return plan?.decision?.kind==='standing-tackle'||plan?.decision?.kind==='interception'?plan.standing:null;
  }
  const delivery=control.delivery;
@@ -669,7 +675,7 @@ export function chooseCollectiveDefensiveTouch({player,players,ballPosition,ball
  const recipient=players.find(p=>p.id===delivery.recipientId&&p.team===delivery.team);
  if(!passer||!recipient)return null;
  const touch=chooseNativePassInterceptionTouch({passer,recipient,defender:player,ballPosition,ballVelocity,ballRadiusM,attackPolarity});
- const decision=selectDefensiveIntervention({actorId:player.id,context:'pass',interception:touch});
+ const decision=selectDefensiveIntervention({actorId:player.id,context:'pass',interception:touch,allowedFundamentals:mask});
  return decision.kind==='interception'?touch:null;
 }
 export const DUEL_TACKLE_PROFILES=Object.freeze(['mixed','standing','sliding','shoulder','interception']);
@@ -696,7 +702,8 @@ export function createDribbleTransitionObserver(side,profile='mixed'){
  const first=side+'-10',second=opposite(side)+'-2',ids=[first,second];
  let carrierId=first,candidateId=null,candidateTick=null,sourceTick=null,lastIntervention=null,recoveries=0,regains=0,changes=0;
  let getUpUntil=Object.freeze({}),lastShoulder=null,shoulderContacts=0,priorShoulderPair=null;
- const controlObserver=createNativeBallControlObserver(ids,ids);
+ const mask=createNativeDuelFundamentalMask(profile);
+ const controlObserver=createNativeBallControlObserver(ids,ids,mask);
  let latest=Object.freeze({tick:0,profile,phase:'attack',carrierId,candidateId,sourceTick,lastIntervention,getUpUntil,lastShoulder,shoulderContacts,recoveries,regains,changes,recovered:false,regained:false,ballControl:observeDuelBallControl(),officialPossession:false});
  function observe({tick,starts,active,bodyStarts,bodyActive,action,ball,players=[],shoulderPlan=null,torsoPairs=[],bodies=[]}){
   if(tick!==latest.tick+1)throw new TypeError('Same original physics tick required');
@@ -710,7 +717,7 @@ export function createDribbleTransitionObserver(side,profile='mixed'){
   if(!inField||candidateId!==null&&tick-candidateTick>120){
    candidateId=null;candidateTick=null;
   }
-  if(inField&&real&&['tackle','interception'].includes(action.action)){
+  if(inField&&real&&nativePhysicalActionAllowed(mask,action)&&['tackle','interception'].includes(action.action)){
    const actor=players.find(p=>p.id===action.playerId),rival=players.find(p=>ids.includes(p.id)&&p.id!==action.playerId);
    const effective=observeEffectiveDuelIntervention(actor,rival,ball.position,ball.velocity);
    lastIntervention=Object.freeze({tick,actorId:action.playerId,intervention:action.defensiveTarget?.intervention??action.action,effective});
@@ -738,7 +745,7 @@ export function createDribbleTransitionObserver(side,profile='mixed'){
     candidateId=null;candidateTick=null;
    }
   }
-  const shoulder=['shoulder','mixed'].includes(profile)&&inField?observeNativeShoulderChallenge({tick,plan:shoulderPlan,players,ball:ball.position,torsoPairs,bodies}):null;
+  const shoulder=nativeDefensiveInterventionAllowed(mask,'shoulder-challenge')&&inField?observeNativeShoulderChallenge({tick,plan:shoulderPlan,players,ball:ball.position,torsoPairs,bodies}):null;
   const shoulderPair=shoulder?[shoulder.actorId,shoulder.opponentId].sort().join('|'):null;
   const shoulderWindow=lastShoulder?.successful&&tick<=lastShoulder.tick+SHOULDER_COLLECTION_TICKS;
   if(shoulder&&shoulderPair!==priorShoulderPair){

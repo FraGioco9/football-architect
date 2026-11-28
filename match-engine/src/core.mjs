@@ -752,7 +752,7 @@ export function createEngine(RAPIER, input = {}, {
      unstagedFeedback:diagnosticUnstagedBodyFeedbackEnabled,
      ...(sharedContactQueue?{sharedQueue:sharedContactQueue}:{})
     }):null;
-  const nativeFundamentals=nativeLabFundamentalMask({id:smallSided?.id,collective:diagnosticCollectiveActions,interceptionStart:smallSided?.interceptionStart,blockStart:smallSided?.blockStart,keeperSingleShot:diagnosticKeeperSingleShot,directedDribble:diagnosticDirectedDribble});
+  const nativeFundamentals=nativeLabFundamentalMask({id:smallSided?.id,collective:diagnosticCollectiveActions,interceptionStart:smallSided?.interceptionStart,blockStart:smallSided?.blockStart,keeperSingleShot:diagnosticKeeperSingleShot,directedDribble:diagnosticDirectedDribble,duelTackleProfile:diagnosticDuelTackleProfile});
   const smallBodyGuard=diagnosticSmallSidedBodyGuardEnabled?
    createSmallSidedNativeBodyGuard(RAPIER,world,ballCollider,
      stagedShoes,smallSided.activeIds,{
@@ -773,7 +773,7 @@ export function createEngine(RAPIER, input = {}, {
     {closeChallengeEnabled:diagnosticKeeperSingleShot,nativeOpenPlayIds:diagnosticCollectiveActions?smallSided.activeIds:null,allowedFundamentals:nativeFundamentals}));
   const keeperDive=!diagnosticCollectiveActions?(keeperDives[0]??null):null;
   const keeperSnapshots=()=>Object.freeze(keeperDives.map(controller=>controller.snapshot()));
-  const collectiveObserver=diagnosticCollectiveActions?createNativeBallControlObserver(smallSided.activeIds,stagedShoes.filter(p=>smallSided.activeIds.includes(p.id)&&p.role!=='goalkeeper').map(p=>p.id)):null;
+  const collectiveObserver=diagnosticCollectiveActions?createNativeBallControlObserver(smallSided.activeIds,stagedShoes.filter(p=>smallSided.activeIds.includes(p.id)&&p.role!=='goalkeeper').map(p=>p.id),nativeFundamentals):null;
   const duelTransition=diagnosticDirectedDribble?createDribbleTransitionObserver(smallSided.side,diagnosticDuelTackleProfile):null;
   let sharedCollisionEventsLastTick=0,sharedForceEventsLastTick=0;
   const actionExecutor=diagnosticAutonomousFixtureActionEnabled?
