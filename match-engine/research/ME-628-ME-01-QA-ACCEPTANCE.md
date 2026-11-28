@@ -68,3 +68,6 @@ Case ID / LAB / side / variation / exact candidate SHA / test or visual observat
 
 ## Closure
 All required rows and supplemental shared fundamentals must have explicit disposition and evidence; fix failures in this PR, record owner visual review, certify exact-head checks and obtain separate merge authorization. ME-02 remains on HOLD until this PR is accepted and integrated.
+
+## U-01A — opposed carry intent parity (candidate)
+The directed LAB wrapper and native open play now invoke the same live geometry/impulse proposal, without a fixture seed or caller-selected ceiling. The shared opposed cap preserves the existing directed limit (0.30 Ns); open space retains 0.42 Ns when no opponent exists. Stable head-on tie selection uses live ball Y. Candidate paired pure-helper regression covers HOME/AWAY, three field Y values, three opponent offsets, three ball speeds, 30 seeds and two ticks (3,240 pairs). This is **not** Rapier replay, visual acceptance, or completion of U-01. Fixed-phase Control/Moderate/Sprint impulse and movement, restitution, body/foot geometry and control/recovery remain open; existing historical comparator stays intact. Actual hosted tests pending.

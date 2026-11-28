@@ -167,17 +167,17 @@ export function chooseDirectedDribbleTouch({attackingSide,ballPosition:b,ballVel
     defender.team==attackingSide||![b?.x,b?.y,v?.x,v?.y,defender.x,defender.y].every(Number.isFinite)||
     !Number.isSafeInteger(variantIndex)||variantIndex<0||variantIndex>29||!Number.isSafeInteger(tick)||tick<1)
   throw new TypeError('Directed dribble requires live ball and opposing defender');
- const live=planNativeCarryTouch({attacker,attackingSide,defender,ballPosition:b,ballVelocity:v,tieSide:variantIndex%2===0?1:-1,maxImpulseNs:0.30});
+ const live=planNativeCarryTouch({attacker,attackingSide,defender,ballPosition:b,ballVelocity:v});
  return Object.freeze({...live,version:'me-628-directed-dribble-v1',variantIndex,tick});
 }
-// One live carry geometry for free play and locked duels. The experiment
-// can retain its accepted impulse ceiling and tie preference; neither
-// selects a player or grants an impulse without the original shoe gate.
-export function planNativeCarryTouch({attacker=null,attackingSide,defender=null,ballPosition:b,ballVelocity:v,tieSide=1,maxImpulseNs=0.42,attackPolarity=1}={}){
+// One live carry geometry for free play and locked duels. Physical
+// strength and tie-break come from live state, never a fixture seed.
+// Retain the accepted opposed-dribble ceiling and open-space ceiling.
+export function planNativeCarryTouch({attacker=null,attackingSide,defender=null,ballPosition:b,ballVelocity:v,attackPolarity=1}={}){
  validateAttackPolarity(attackPolarity);
  if(!['home','away'].includes(attackingSide)||![b?.x,b?.y,v?.x,v?.y].every(Number.isFinite)||
-    (defender!==null&&(defender.team===attackingSide||![defender.x,defender.y].every(Number.isFinite)))||
-    ![-1,1].includes(tieSide)||![0.30,0.42].includes(maxImpulseNs))throw new TypeError('Live native carry geometry required');
+    (defender!==null&&(defender.team===attackingSide||![defender.x,defender.y].every(Number.isFinite))))throw new TypeError('Live native carry geometry required');
+ const tieSide=b.y>0?-1:1,maxImpulseNs=defender===null?0.42:0.30;
  const dir=attackDirection(attackingSide,attackPolarity);
  const ahead=defender?dir*(defender.x-b.x):Infinity,lateral=defender?defender.y-b.y:0;
  const pressure=clamp((5-Math.hypot(ahead,lateral))/3.5,0,1);

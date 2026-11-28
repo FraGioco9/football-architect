@@ -5,7 +5,7 @@ import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {INITIAL_PLAYERS} from '../src/player-movement.mjs';
 import {smallSidedSetup} from '../src/small-sided-lab-scenarios.mjs';
-import {planLooseDuelApproaches,observeDuelBallControl,chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver,planDribbleDefender,chooseDribbleDefensiveTouch,createDribbleTransitionObserver,chooseDribbleRecoveryTouch,planDribbleTransitionTarget,planDribbleContactRelease,dribbleReleaseApproach,chooseSharedDuelTouch,resolveDuelActors,planDefensiveBallRelease,planDuelRecoveryApproach,routeDuelAroundOpponent,planDuelPostContactAlignment,observeEffectiveDuelIntervention,SLIDING_TACKLE_MAX_IMPULSE_NS,SLIDING_TACKLE_TARGET_SPEED_MPS,STANDING_TACKLE_TARGET_SPEED_MPS,isDuelGettingUp,SLIDING_GET_UP_TACKLER_TICKS,SLIDING_GET_UP_RIVAL_TICKS,planDuelShoulderApproach,observeNativeShoulderChallenge,planShoulderBalanceRecovery,isShoulderCollecting,SHOULDER_DISPLACE_TICKS,SHOULDER_COLLECTION_TICKS,planDuelInterception,chooseDuelInterceptionTouch,isSlideCollecting} from '../src/isolated-dribble-touches.mjs';
+import {planLooseDuelApproaches,observeDuelBallControl,chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,planNativeCarryTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver,planDribbleDefender,chooseDribbleDefensiveTouch,createDribbleTransitionObserver,chooseDribbleRecoveryTouch,planDribbleTransitionTarget,planDribbleContactRelease,dribbleReleaseApproach,chooseSharedDuelTouch,resolveDuelActors,planDefensiveBallRelease,planDuelRecoveryApproach,routeDuelAroundOpponent,planDuelPostContactAlignment,observeEffectiveDuelIntervention,SLIDING_TACKLE_MAX_IMPULSE_NS,SLIDING_TACKLE_TARGET_SPEED_MPS,STANDING_TACKLE_TARGET_SPEED_MPS,isDuelGettingUp,SLIDING_GET_UP_TACKLER_TICKS,SLIDING_GET_UP_RIVAL_TICKS,planDuelShoulderApproach,observeNativeShoulderChallenge,planShoulderBalanceRecovery,isShoulderCollecting,SHOULDER_DISPLACE_TICKS,SHOULDER_COLLECTION_TICKS,planDuelInterception,chooseDuelInterceptionTouch,isSlideCollecting} from '../src/isolated-dribble-touches.mjs';
 import {advanceD01LiveShoeGait,soloCarryTwoFootPositions}
  from '../src/rapier-foot-contact-bridge.mjs';
 import {advanceSoloCarryPhase,soloCarryPhaseConfiguration}
@@ -1296,3 +1296,27 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
    assert.equal(shots,30);assert.ok(plans>0&&contacts>0&&blocks>0&&unblocked>0,'observe both real blocks and unblocked shots on both sides');
   }
  });
+
+test('ME-01-QA U-01A: locked and autonomous opposed carry have identical live touch intent for every seed',()=>{
+ for(const attackingSide of ['home','away']){
+  const dir=attackingSide==='home'?1:-1,team=attackingSide==='home'?'away':'home';
+  for(const y of [-5,0,5])for(const lateral of [-0.8,0,0.8])for(const vx of [0,1,3.5]){
+   const source={attackingSide,attacker:{id:attackingSide+'-10',team:attackingSide,x:dir*29.6,y,vx:dir*vx,vy:0},
+    defender:{id:team+'-2',team,x:dir*32,y:y+lateral},ballPosition:{x:dir*30,y,z:0.11},ballVelocity:{x:dir*vx,y:0,z:0}};
+   const common=planNativeCarryTouch(source);
+   for(let variantIndex=0;variantIndex<30;variantIndex++){
+    for(const tick of [1,99]){
+     const {version,variantIndex:seed,tick:at,...locked}=chooseDirectedDribbleTouch({...source,variantIndex,tick});
+     const {version:commonVersion,...expected}=common;
+     assert.deepEqual(locked,expected);
+     assert.ok(locked.magnitudeNs<=0.30);
+     assert.equal(locked.genuineRapierShoeStartRequired,true);
+     assert.equal(locked.officialPossession,false);
+    }
+   }
+  }
+ }
+ const source={attackingSide:'home',ballPosition:{x:30,y:0},ballVelocity:{x:0,y:0}};
+ assert.ok(planNativeCarryTouch(source).magnitudeNs<=0.42);
+ assert.throws(()=>planNativeCarryTouch({...source,defender:{team:'home',x:32,y:0}}),/Live native carry geometry/);
+});
