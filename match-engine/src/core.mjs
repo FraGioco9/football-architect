@@ -986,7 +986,9 @@ export function createEngine(RAPIER, input = {}, {
     // This is read exclusively from native post-step Rapier solver contact
     // manifolds. Never inject player collisions or attribute a goal/possession.
     if(smallBodyGuard)smallBodyGuard.observe(tick+1);
-    for(const controller of keeperDives)controller.observe(tick+1,body.linvel());
+    const physicalBallConflict=!!(shoeBridge?.snapshot().active.length||smallBodyGuard?.snapshot().lowerLegBallContacts.length||
+     smallBodyGuard?.snapshot().headBallContacts?.length||smallBodyGuard?.snapshot().aerialControlContacts?.length);
+    for(const controller of keeperDives)controller.observe(tick+1,body.linvel(),{otherBallContact:physicalBallConflict});
     // Exponential airborne-only decay after integration; zero rate preserves
     // the original physics-v4 path without any angular-velocity setter.
     if(diagnosticSpinDecayRatePerS>0 &&

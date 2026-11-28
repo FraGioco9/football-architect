@@ -661,10 +661,10 @@ export function createControlledActionLab(RAPIER,id,{
      starts.length===1&&starts[0]===action.playerId&&!headerCrossAudit)headerCrossAudit=action;
   if(id==='keeper-high-cross'&&headerCrossAudit){
    const k=engine.nativeKeeperSnapshots().find(k=>k.keeperId===smallSided.opponent+'-1');
-   if(k?.plan?.kind==='high-claim'&&k.started&&!highClaimAudit)highClaimAudit=Object.freeze({cross:headerCrossAudit,attemptTick:k.tick,keeperId:k.keeperId,contactTick:null,confirmedTick:null,gripReleased:false});
+   if(k?.plan?.kind==='high-claim'&&k.started&&!highClaimAudit)highClaimAudit=Object.freeze({cross:headerCrossAudit,attemptTick:k.tick,keeperId:k.keeperId,contactTick:null,confirmedTick:null,punchTick:null,gripReleased:false});
    if(highClaimAudit&&k){
     const contactTick=highClaimAudit.contactTick??(k.contactStarted&&k.plan?.kind==='high-claim'?k.tick:null);
-    highClaimAudit=Object.freeze({...highClaimAudit,contactTick,confirmedTick:highClaimAudit.confirmedTick??(contactTick!==null?k.catchState?.confirmedTick??null:null),gripReleased:highClaimAudit.gripReleased||k.catchState?.released===true});
+    highClaimAudit=Object.freeze({...highClaimAudit,contactTick,confirmedTick:highClaimAudit.confirmedTick??(contactTick!==null?k.catchState?.confirmedTick??null:null),punchTick:highClaimAudit.punchTick??(contactTick!==null&&k.highHandAction?.kind==='punch'&&k.highHandAction.actualPhysicsImpulseApplied===true?k.tick:null),gripReleased:highClaimAudit.gripReleased||k.catchState?.released===true});
    }
   }
   if(aerialLab&&action?.nativeExclusiveHeadStart===true&&headerCrossAudit&&
